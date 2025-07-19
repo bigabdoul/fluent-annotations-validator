@@ -1,6 +1,12 @@
 ## FluentAnnotationsValidator
 
+[![NuGet - FluentAnnotationsValidator](https://img.shields.io/nuget/v/FluentAnnotationsValidator.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator)
+[![NuGet - FluentAnnotationsValidator.AspNetCore](https://img.shields.io/nuget/v/FluentAnnotationsValidator.AspNetCore.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator.AspNetCore)
+[![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
+
 A lightweight, dynamic bridge between `System.ComponentModel.DataAnnotations` and FluentValidation.
+
+Supports localized error messages, DI registration, convention-based resolution, and ASP.NET Core integration.
 
 ---
 

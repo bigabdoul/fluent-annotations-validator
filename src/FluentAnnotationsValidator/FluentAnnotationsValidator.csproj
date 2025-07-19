@@ -1,12 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <!-- NuGet metadata -->
     <PackageId>FluentAnnotationsValidator</PackageId>
+    <Version>1.0.2</Version>
     <Authors>bigabdoul</Authors>
     <Company>2KS Solutions</Company>
     <Product>FluentAnnotationsValidator</Product>
