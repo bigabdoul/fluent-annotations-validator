@@ -1,57 +1,55 @@
-## FluentAnnotationsValidator
+# FluentAnnotationsValidator
 
 [![NuGet - FluentAnnotationsValidator](https://img.shields.io/nuget/v/FluentAnnotationsValidator.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator)
 [![NuGet - FluentAnnotationsValidator.AspNetCore](https://img.shields.io/nuget/v/FluentAnnotationsValidator.AspNetCore.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator.AspNetCore)
 [![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
+[![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
 A lightweight, dynamic bridge between `System.ComponentModel.DataAnnotations` and FluentValidation.
 
-Supports localized error messages, DI registration, convention-based resolution, and ASP.NET Core integration.
+Supports localized error messages, DI registration, convention-based resolution, ASP.NET Core integration — and ships with full Source Link and step-through symbol support.
 
 ---
 
-### ✨ Purpose
+## ✨ Purpose
 
-`FluentAnnotationsValidator` is a reflection-powered adapter that converts standard `[ValidationAttribute]` annotations into fluent validation rules at runtime. It supports localized error messaging, DI registration, and performance caching — making it a drop-in enhancement for any .NET API or ASP.NET Core backend.
+`FluentAnnotationsValidator` is a reflection-powered adapter that converts standard `[ValidationAttribute]` annotations into fluent validation rules at runtime. It supports localized error messaging, DI registration, performance caching, and debugging, making it a drop-in enhancement for any .NET API or ASP.NET Core backend.
 
 ---
 
-### 🧠 Key Features
+## 🧠 Key Features
 
 - Converts `[Required]`, `[EmailAddress]`, `[MinLength]`, `[StringLength]`, `[Range]`, and more to FluentValidation rules
 - Resolves localized error messages from `.resx` or static resource classes
 - Supports conventional message keys (`Property_Attribute`) and explicit `ErrorMessageResourceName`
+- Seamless registration via DI (`IValidator<T>`)
 - High-performance validation with caching and no boilerplate
-- Seamless registration via DI for ASP.NET Core (`IValidator<T>`)
-- Compatible with Minimal APIs, MVC, and Blazor
+- Compatible with Minimal APIs, MVC, Blazor, and Web APIs
+- Includes Source Link metadata for step-through debugging
+- Published with deterministic builds and `.snupkg` symbols
 
 ---
 
-### 📦 Installation
+## 📦 Installation
 
 Add via NuGet:
 
-```bash
-dotnet add package FluentAnnotationsValidator
-```
-
-To enable ASP.NET Core integration:
-
-```bash
-dotnet add package FluentAnnotationsValidator.AspNetCore
-```
+| Package | Version | Install |
+|--------|---------|---------|
+| FluentAnnotationsValidator | 1.0.6 | `dotnet add package FluentAnnotationsValidator` |
+| FluentAnnotationsValidator.AspNetCore | 1.0.6 | `dotnet add package FluentAnnotationsValidator.AspNetCore` |
 
 ---
 
-### 🚀 Quickstart
+## 🚀 Quickstart
 
-#### 1. Register validators (Minimal API or MVC)
+### 1. Register validators
 
 ```csharp
 builder.Services.AddFluentAnnotationsValidators();
 ```
 
-#### 2. Decorate your DTO using standard attributes
+### 2. Annotate your DTO
 
 ```csharp
 [ValidationResource(typeof(ValidationMessages))]
@@ -67,7 +65,7 @@ public class RegistrationDto
 }
 ```
 
-#### 3. Resolve localized messages via convention:
+### 3. Define localized messages
 
 ```csharp
 public static class ValidationMessages
@@ -79,7 +77,7 @@ public static class ValidationMessages
 }
 ```
 
-#### 4. Validate in endpoint
+### 4. Validate in endpoint
 
 ```csharp
 app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto> validator) =>
@@ -95,17 +93,18 @@ app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto>
 
 ---
 
-### 🧪 Testing
+## 🧪 Testing
 
 Included in `FluentAnnotationsValidator.Tests`:
 
 - Unit tests for all supported `ValidationAttribute` types
 - Localized error resolution using `.resx` and static resource classes
 - Edge cases like invalid formats, missing values, and multiple violations
+- Deterministic build verification and CI workflow coverage
 
 ---
 
-### 📚 Project Layout
+## 📚 Project Layout
 
 ```
 src/
@@ -126,6 +125,18 @@ tests/
 
 ---
 
-### 📄 License
+## 📘 Documentation (Coming Soon)
+
+Plans include architecture docs, validator internals, customization strategies, and onboarding guides. Stay tuned or open an issue if you'd like to contribute.
+
+---
+
+## 📄 License
 
 Licensed under the MIT License.
+
+---
+
+## 🤝 Contributing
+
+Have an idea for an extension point, message strategy, or improved experience? PRs and issues welcome. This validator is designed to be extensible, teachable, and fun to debug.
