@@ -125,9 +125,14 @@ tests/
 
 ---
 
-## 📘 Documentation (Coming Soon)
+## 📘 Documentation
 
-Plans include architecture docs, validator internals, customization strategies, and onboarding guides. Stay tuned or open an issue if you'd like to contribute.
+Detailed guides, examples, and diagrams are available in the [documentation folder](docs/index.md):
+
+- Architecture internals
+- Localization strategies
+- Extensibility patterns
+- Validation flow breakdown
 
 ---
 
