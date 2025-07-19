@@ -3,11 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [v1.0.6] - 2025-07-19
-### 🔧 Fixes & Workflow Enhancements
-- Corrected CI workflow path to core `.csproj` (publish pipeline was failing)
-- Verified test project `.NET SDK` targets (net8.0) and removed all net9.0 references
-- Confirmed deterministic build settings across all projects
-- Validated `.snupkg` symbol publishing and Source Link embed
+### 🚀 Finalized Release
+- Fixed CI workflow path to core `.csproj`
+- Bumped `.csproj` versions to `1.0.6` to match tag
+- Published both packages successfully to NuGet
+- Verified Source Link, symbols, icon, and metadata
+- Added install badges and NuGet listing polish
 
 ## [v1.0.5] - 2025-07-19
 ### 🛠 Package Stabilization
