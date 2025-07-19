@@ -7,7 +7,7 @@
 
     <!-- NuGet metadata -->
     <PackageId>FluentAnnotationsValidator</PackageId>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>bigabdoul</Authors>
     <Company>2KS Solutions</Company>
     <Product>FluentAnnotationsValidator</Product>
@@ -29,5 +29,20 @@ Initial release with:
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
 </Project>
