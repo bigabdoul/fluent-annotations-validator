@@ -18,6 +18,10 @@
     <LicenseExpression>MIT</LicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>
+Initial release with:
+- ASP.NET Core DI integration
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

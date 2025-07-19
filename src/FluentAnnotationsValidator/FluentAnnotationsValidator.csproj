@@ -18,6 +18,12 @@
     <LicenseExpression>MIT</LicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReleaseNotes>
+Initial release with:
+- Reflection-based validator builder
+- Convention-based message resolver
+- ASP.NET Core DI integration
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
