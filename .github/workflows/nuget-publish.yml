@@ -37,3 +37,6 @@ jobs:
 
       - name: Pack NuGet packages (with symbols, source, and deterministic metadata)
         run: dotnet pack --configuration Release --output ./nupkg --include-symbols --include-source /p:ContinuousIntegrationBuild=true
+
+      - name: Show .NET SDK version
+        run: dotnet --info
