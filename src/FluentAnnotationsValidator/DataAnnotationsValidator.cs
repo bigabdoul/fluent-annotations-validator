@@ -38,18 +38,17 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
 
     private static string ResolveErrorMessage(ValidationAttribute attr, string propertyName)
     {
-        if (!string.IsNullOrWhiteSpace(attr.ErrorMessage))
-            return attr.FormatErrorMessage(propertyName);
-
         if (attr.ErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
         {
-            var prop = attr.ErrorMessageResourceType.GetProperty(attr.ErrorMessageResourceName, BindingFlags.Public | BindingFlags.Static);
+            var prop = attr.ErrorMessageResourceType.GetProperty(attr.ErrorMessageResourceName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
             var val = prop?.GetValue(null)?.ToString();
             return string.IsNullOrWhiteSpace(val)
                 ? $"Invalid value for {propertyName}"
                 : string.Format(val, propertyName);
         }
 
-        return $"Invalid value for {propertyName}";
+        return !string.IsNullOrWhiteSpace(attr.ErrorMessage) 
+            ? attr.FormatErrorMessage(propertyName) 
+            : $"Invalid value for {propertyName}";
     }
 }
