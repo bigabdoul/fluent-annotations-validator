@@ -63,36 +63,36 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         /// <summary>
         ///   Looks up a localized string similar to The e-mail address is invalid..
         /// </summary>
-        internal static string EmailAddressInvalid {
+        internal static string Email_EmailAddress {
             get {
-                return ResourceManager.GetString("EmailAddressInvalid", resourceCulture);
+                return ResourceManager.GetString("Email.EmailAddress", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The e-mail address is required..
         /// </summary>
-        internal static string EmailAddressRequired {
+        internal static string Email_Required {
             get {
-                return ResourceManager.GetString("EmailAddressRequired", resourceCulture);
+                return ResourceManager.GetString("Email.Required", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The password should have a minimum of {0} characters..
         /// </summary>
-        internal static string PasswordMinLength {
+        internal static string Password_MinLength {
             get {
-                return ResourceManager.GetString("PasswordMinLength", resourceCulture);
+                return ResourceManager.GetString("Password.MinLength", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The password is required..
         /// </summary>
-        internal static string PasswordRequired {
+        internal static string Password_Required {
             get {
-                return ResourceManager.GetString("PasswordRequired", resourceCulture);
+                return ResourceManager.GetString("Password.Required", resourceCulture);
             }
         }
     }

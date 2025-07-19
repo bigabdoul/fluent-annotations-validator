@@ -35,7 +35,7 @@ public class RegistrationValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(dto.Email) &&
-            e.ErrorMessage == ValidationMessages.EmailAddressRequired);
+            e.ErrorMessage == ValidationMessages.Email_Required);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class RegistrationValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(dto.Password) &&
-            e.ErrorMessage == ValidationMessages.PasswordRequired);
+            e.ErrorMessage == ValidationMessages.Password_Required);
     }
 
     [Fact]

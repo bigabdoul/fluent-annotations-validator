@@ -7,11 +7,11 @@ using Resources;
 [ValidationResource(typeof(ValidationMessages))]
 public class TestRegistrationDto
 {
-    [Required(ErrorMessageResourceName = nameof(ValidationMessages.EmailAddressRequired))]
-    [EmailAddress(ErrorMessageResourceName = nameof(ValidationMessages.EmailAddressInvalid))]
+    [Required]
+    [EmailAddress]
     public string Email { get; set; } = default!;
 
-    [Required(ErrorMessageResourceName = nameof(ValidationMessages.PasswordRequired))]
-    [MinLength(6, ErrorMessageResourceName = nameof(ValidationMessages.PasswordMinLength))]
+    [Required]
+    [MinLength(6)]
     public string Password { get; set; } = default!;
 }

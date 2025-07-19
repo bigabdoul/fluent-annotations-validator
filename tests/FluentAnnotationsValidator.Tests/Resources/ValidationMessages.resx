@@ -117,16 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="EmailAddressRequired" xml:space="preserve">
+  <data name="Email.Required" xml:space="preserve">
     <value>The e-mail address is required.</value>
   </data>
-  <data name="PasswordRequired" xml:space="preserve">
+  <data name="Password.Required" xml:space="preserve">
     <value>The password is required.</value>
   </data>
-  <data name="PasswordMinLength" xml:space="preserve">
+  <data name="Password.MinLength" xml:space="preserve">
     <value>The password should have a minimum of {0} characters.</value>
   </data>
-  <data name="EmailAddressInvalid" xml:space="preserve">
+  <data name="Email.EmailAddress" xml:space="preserve">
     <value>The e-mail address is invalid.</value>
   </data>
 </root>
