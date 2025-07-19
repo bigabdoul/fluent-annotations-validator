@@ -1,11 +1,20 @@
+using FluentValidation;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using FluentValidation;
 
 namespace FluentAnnotationsValidator;
 
+/// <summary>
+/// A FluentValidation adapter that inspects <see cref="ValidationAttribute"/> metadata on model properties
+/// and dynamically applies equivalent FluentValidation rules at runtime.
+/// Supports error message resolution via FormatErrorMessage, resource keys, and localization.
+/// </summary>
+/// <typeparam name="T">The model type to validate.</typeparam>
 public class DataAnnotationsValidator<T> : AbstractValidator<T>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataAnnotationsValidator{T}"/> class.
+    /// </summary>
     public DataAnnotationsValidator()
     {
         var metadata = ValidationMetadataCache.Get(typeof(T));
