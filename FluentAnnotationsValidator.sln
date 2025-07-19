@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAnnotationsValidator"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAnnotationsValidator.AspNetCore", "src\FluentAnnotationsValidator.AspNetCore\FluentAnnotationsValidator.AspNetCore.csproj", "{D3FEAEF4-8735-4648-A7E8-19F94BDCB312}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAnnotationsValidator.Tests", "tests\FluentAnnotationsValidator.Tests\FluentAnnotationsValidator.Tests.csproj", "{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +47,18 @@ Global
 		{D3FEAEF4-8735-4648-A7E8-19F94BDCB312}.Release|x64.Build.0 = Release|Any CPU
 		{D3FEAEF4-8735-4648-A7E8-19F94BDCB312}.Release|x86.ActiveCfg = Release|Any CPU
 		{D3FEAEF4-8735-4648-A7E8-19F94BDCB312}.Release|x86.Build.0 = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|x64.Build.0 = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Debug|x86.Build.0 = Debug|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|x64.ActiveCfg = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|x64.Build.0 = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|x86.ActiveCfg = Release|Any CPU
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +66,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{2C760301-627E-4A69-BED5-3F6F7D66D020} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{D3FEAEF4-8735-4648-A7E8-19F94BDCB312} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{0BF07DA6-7EB2-4B02-93C2-51D6C7510690} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
