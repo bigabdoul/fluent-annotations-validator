@@ -4,6 +4,20 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet metadata -->
+    <PackageId>FluentAnnotationsValidator.AspNetCore</PackageId>
+    <Authors>bigabdoul</Authors>
+    <Company>2KS Solutions</Company>
+    <Product>FluentAnnotationsValidator.AspNetCore</Product>
+    <Description>ASP.NET Core integration for FluentAnnotationsValidator. Adds DI registration and runtime detection for validators built from validation attributes.</Description>
+    <PackageTags>FluentValidation;Validation;DataAnnotations;ASP.NET;.NETCore;Blazor;MinimalAPI</PackageTags>
+    <PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <LicenseExpression>MIT</LicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

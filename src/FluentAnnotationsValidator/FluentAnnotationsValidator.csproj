@@ -4,10 +4,23 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet metadata -->
+    <PackageId>FluentAnnotationsValidator</PackageId>
+    <Authors>bigabdoul</Authors>
+    <Company>2KS Solutions</Company>
+    <Product>FluentAnnotationsValidator</Product>
+    <Description>A reflection-powered FluentValidation adapter that bridges System.ComponentModel.DataAnnotations to FluentValidation rules with full localization, caching, and DI support.</Description>
+    <PackageTags>FluentValidation;DataAnnotations;Validation;.NET;.NETCore;NuGet;MinimalAPI</PackageTags>
+    <PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <LicenseExpression>MIT</LicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.0.0" />
   </ItemGroup>
-
 </Project>
