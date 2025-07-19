@@ -36,13 +36,18 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
         }
     }
 
+    private static readonly Type? _fallbackResourceType = typeof(T)
+        .GetCustomAttribute<ValidationResourceAttribute>(inherit: true)
+        ?.ErrorMessageResourceType;
+
     private static string ResolveErrorMessage(ValidationAttribute attr, string propertyName)
     {
+        var resourceType = attr.ErrorMessageResourceType ?? _fallbackResourceType;
+
         // Prefer localization via resource provider
-        if (attr.ErrorMessageResourceType is not null &&
-            !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
+        if (resourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
         {
-            var prop = attr.ErrorMessageResourceType.GetProperty(
+            var prop = resourceType.GetProperty(
                 attr.ErrorMessageResourceName,
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 
