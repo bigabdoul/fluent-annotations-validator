@@ -28,7 +28,7 @@ jobs:
         run: dotnet build FluentAnnotationsValidator.sln --configuration Release
 
       - name: Pack
-        run: dotnet pack ./src/FluentAnnotationsValidator.csproj --configuration Release --output ./nupkg
+        run: dotnet pack ./src/FluentAnnotationsValidator/FluentAnnotationsValidator.csproj --configuration Release --output ./nupkg
 
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
