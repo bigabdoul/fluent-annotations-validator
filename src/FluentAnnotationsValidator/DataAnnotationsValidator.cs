@@ -38,17 +38,45 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
 
     private static string ResolveErrorMessage(ValidationAttribute attr, string propertyName)
     {
-        if (attr.ErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
+        // Prefer localization via resource provider
+        if (attr.ErrorMessageResourceType is not null &&
+            !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
         {
-            var prop = attr.ErrorMessageResourceType.GetProperty(attr.ErrorMessageResourceName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            var val = prop?.GetValue(null)?.ToString();
-            return string.IsNullOrWhiteSpace(val)
-                ? $"Invalid value for {propertyName}"
-                : string.Format(val, propertyName);
+            var prop = attr.ErrorMessageResourceType.GetProperty(
+                attr.ErrorMessageResourceName,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+
+            var rawMessage = prop?.GetValue(null)?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(rawMessage))
+            {
+                object? contextArg = GetFormatValue(attr);
+                return contextArg is not null
+                    ? string.Format(rawMessage, contextArg)
+                    : string.Format(rawMessage, propertyName);
+            }
         }
 
-        return !string.IsNullOrWhiteSpace(attr.ErrorMessage) 
-            ? attr.FormatErrorMessage(propertyName) 
+        // Use inline ErrorMessage or fallback to default
+        return !string.IsNullOrWhiteSpace(attr.ErrorMessage)
+            ? attr.FormatErrorMessage(propertyName)
             : $"Invalid value for {propertyName}";
+    }
+
+    private static object? GetFormatValue(ValidationAttribute attr)
+    {
+        return attr switch
+        {
+            MinLengthAttribute m => m.Length,
+            MaxLengthAttribute m => m.Length,
+            StringLengthAttribute s => s.MaximumLength,
+            RangeAttribute r => $"{r.Minimum}–{r.Maximum}",
+            RequiredAttribute => null, // Usually no format arg needed
+            EmailAddressAttribute => null,
+            UrlAttribute => null,
+            CreditCardAttribute => null,
+            RegularExpressionAttribute r => r.Pattern,
+            _ => null // Leave room for future extensibility or custom types
+        };
     }
 }
