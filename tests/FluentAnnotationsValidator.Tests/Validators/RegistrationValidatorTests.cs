@@ -5,7 +5,7 @@ namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
-    private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = new();
+    private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = new(new ValidationMessageResolver());
 
     [Fact]
     public void ValidDto_ShouldPass()
