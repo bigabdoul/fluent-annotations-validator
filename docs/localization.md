@@ -13,10 +13,30 @@ version: v1.0.6
 
 ## Message Resolution Flow
 
-1. Match `Property_Attribute` key (e.g. `Email_Required`)
-2. Fallback to `[ErrorMessageResourceName]` if defined
-3. Use `[ErrorMessage]` if set
-4. Default to system message if nothing is resolved
+1. **Explicit Resource Name**  
+   If `ErrorMessageResourceName` property is provided:
+   - Use `ErrorMessageResourceType` if set
+   - Otherwise, fall back to the model’s `[ValidationResource]` attribute
+   - Retrieve static property by name and format
+
+2. **Conventional Key (Property_Attribute)**  
+   Construct key from property name and attribute type  
+   e.g. `Email_Required` → `ValidationMessages.Email_Required`
+
+3. **Inline Message or Fallback**  
+   If `ErrorMessage` is set, format and return it  
+   Else, fallback to `"Invalid value for {Property}"`
+
+## Technical Note
+
+The `PropertyValidationInfo` now includes a new field:
+
+```csharp
+public Type TargetModelType { get; set; }
+```
+
+This enables resolution logic to anchor back to the declaring DTO for 
+resource scanning and convention fallback.
 
 ## Example
 

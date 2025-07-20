@@ -129,10 +129,10 @@ tests/
 
 Detailed guides, examples, and diagrams are available in the [documentation folder](docs/index.md):
 
-- Architecture internals
-- Localization strategies
-- Extensibility patterns
-- Validation flow breakdown
+- [Architecture internals](docs/architecture.md)
+- [Localization strategies](docs/localization.md)
+- [Customization & Extensibility](docs/customization.md)
+- [Validation flow breakdown](docs/validation-flow.md)
 
 ---
 
