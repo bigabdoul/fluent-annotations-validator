@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [v1.0.6] - 2025-07-20
+## [v1.0.7] - 2025-07-20
 ### 🧠 Message Resolution Refactor
 - Refactored `ValidationMessageResolver` into DI-enabled service
 - Introduced `IValidationMessageResolver` interface for customization
