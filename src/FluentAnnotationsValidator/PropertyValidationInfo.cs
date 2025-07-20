@@ -18,4 +18,9 @@ public class PropertyValidationInfo
     /// An array of validation attributes applied to the property.
     /// </summary>
     public ValidationAttribute[] Attributes { get; set; } = [];
+
+    /// <summary>
+    /// The target model type to inspect.
+    /// </summary>
+    public Type TargetModelType { get; set; } = default!;
 }
