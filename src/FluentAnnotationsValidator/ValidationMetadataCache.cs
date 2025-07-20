@@ -19,7 +19,6 @@ public static class ValidationMetadataCache
     /// <param name="type">The target model type to inspect.</param>
     /// <returns>An array of property metadata, each linked to relevant <see cref="ValidationAttribute"/>s.</returns>
     public static PropertyValidationInfo[] Get(Type type)
-
     {
         return _cache.GetOrAdd(type, t =>
             [.. t.GetProperties()
@@ -27,6 +26,7 @@ public static class ValidationMetadataCache
              .Select(p => new PropertyValidationInfo
              {
                  Property = p,
+                 TargetModelType = type,
                  Attributes = [.. p.GetCustomAttributes<ValidationAttribute>(true)]
              })
              .Where(p => p.Attributes.Length != 0)]
