@@ -14,7 +14,7 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="DataAnnotationsValidator{T}"/> class.
     /// </summary>
-    public DataAnnotationsValidator()
+    public DataAnnotationsValidator(IValidationMessageResolver resolver)
     {
         var metadata = ValidationMetadataCache.Get(typeof(T));
 
@@ -27,7 +27,7 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
                     {
                         if (!attr.IsValid(value))
                         {
-                            var message = attr.ResolveMessage(prop.Property.Name, typeof(T));
+                            var message = resolver.ResolveMessage(prop, attr);
                             ctx.AddFailure(prop.Property.Name, message);
                         }
                     });

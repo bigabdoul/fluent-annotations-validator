@@ -7,7 +7,7 @@ namespace FluentAnnotationsValidator;
 /// Provides mechanisms for resolving localized error messages associated with <see cref="ValidationAttribute"/> instances.
 /// Supports conventional lookup, explicit resource naming, and fallback formatting strategies.
 /// </summary>
-public static class ValidationMessageResolver
+public class ValidationMessageResolver : IValidationMessageResolver
 {
     /// <summary>
     /// Resolves a validation error message for a given <see cref="ValidationAttribute"/>, using one of the following:
@@ -23,12 +23,14 @@ public static class ValidationMessageResolver
     ///   </item>
     /// </list>
     /// </summary>
+    /// <param name="propertyInfo">The name of the property to which the attribute is applied.</param>
     /// <param name="attr">The <see cref="ValidationAttribute"/> being evaluated.</param>
-    /// <param name="propertyName">The name of the property to which the attribute is applied.</param>
-    /// <param name="modelType">The model type containing the property.</param>
     /// <returns>A formatted error message suitable for display or logging.</returns>
-    public static string ResolveMessage(this ValidationAttribute attr, string propertyName, Type modelType)
+    public virtual string ResolveMessage(PropertyValidationInfo propertyInfo, ValidationAttribute attr)
     {
+        var modelType = propertyInfo.TargetModelType;
+        var propertyName = propertyInfo.Property.Name;
+        
         // 1️ Explicit resource name + type wins
         if (!string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
         {
