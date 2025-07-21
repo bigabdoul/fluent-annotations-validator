@@ -1,6 +1,6 @@
 ---
 title: Localization Strategy
-breadcrumb: FluentAnnotationsValidator > Documentation > Localization Strategy
+breadcrumb: [FluentAnnotationsValidator](../README.md) > [Documentation](index.md) > Localization Strategy
 version: v1.0.6
 ---
 

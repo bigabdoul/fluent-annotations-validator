@@ -1,6 +1,6 @@
 ---
 title: Customization & Extensibility
-breadcrumb: FluentAnnotationsValidator > Documentation > Customization & Extensibility
+breadcrumb: [FluentAnnotationsValidator](../README.md) > [Documentation](index.md) > Customization & Extensibility
 version: v1.0.6
 ---
 

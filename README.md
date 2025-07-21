@@ -133,6 +133,34 @@ Detailed guides, examples, and diagrams are available in the [documentation fold
 - [Localization strategies](docs/localization.md)
 - [Customization & Extensibility](docs/customization.md)
 - [Validation flow breakdown](docs/validation-flow.md)
+- [Fluent validation configuration](docs/configuration/fluent.md)
+
+### Fluent Validation Configuration
+
+Define conditional rules per property, model, and context:
+
+```csharp
+services.AddFluentAnnotationsValidators()
+    .UseFluentAnnotations()
+    .For<LoginDto>()
+        .When(x => x.Email, dto => dto.Role != "Admin")
+            .WithMessage("Non-admins must provide a valid email.")
+            .WithKey("Email.NonAdminRequired")
+            .Localized("NonAdmin_Email_Required")
+        .Except(x => x.Role)
+        .AlwaysValidate(x => x.Password)
+    .For<RegistrationDto>()
+        .When(x => x.Age, dto => dto.Age >= 18)
+    .Build();
+```
+
+Supports:
+- Strongly typed property access
+- Conditional logic via lambdas
+- Localized and custom error messages
+- Composable, discoverable, ergonomic configuration
+
+Full guide in [`docs/configuration/fluent.md`](docs/configuration/fluent.md)
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Architecture Overview
-breadcrumb: FluentAnnotationsValidator > Documentation > Architecture Overview
+breadcrumb: [FluentAnnotationsValidator](../README.md) > [Documentation](index.md) > Architecture Overview
 version: v1.0.6
 ---
 

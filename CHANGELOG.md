@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2025-07-21
+
+### Added
+
+- Introduced `IValidationTypeConfigurator<T>` for fluent per-type conditional validation
+- Enabled chaining methods: `.When(...)`, `.And(...)`, `.Except(...)`, `.AlwaysValidate(...)`
+- Added metadata overrides: `.WithMessage(...)`, `.WithKey(...)`, `.Localized(...)`
+- Fluent transitions via `.For<TNext>()` and finalization with `.Build()`
+- Buffered rule registration for safer message chaining
+
+### Internal
+
+- Enhanced `ValidationBehaviorOptions.AddCondition(...)` to support metadata and typed lambda expressions
+- Refactored `ConditionalValidationRule` to encapsulate predicate and metadata
+
+### Tests
+
+- Full unit test coverage for all fluent configurator methods (`ValidationTypeConfiguratorTests`)
+- Introduced reusable test assertions via `ValidationAssertions`
+
+### Docs
+
+- Added `/docs/configuration/fluent.md` guide for developer onboarding
+- Updated XML comments on public methods and interfaces
+
+
 ## [v1.0.7] - 2025-07-20
 ### 🧠 Message Resolution Refactor
 - Refactored `ValidationMessageResolver` into DI-enabled service

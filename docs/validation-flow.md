@@ -1,6 +1,6 @@
 ---
 title: Validation Flow
-breadcrumb: FluentAnnotationsValidator > Documentation > Validation Flow
+breadcrumb: [FluentAnnotationsValidator](../README.md) > [Documentation](index.md) > Validation Flow
 version: v1.0.6
 ---
 
@@ -21,3 +21,4 @@ version: v1.0.6
 - MVC actions
 - Blazor components
 - API endpoints with custom models
+- .NET Core
