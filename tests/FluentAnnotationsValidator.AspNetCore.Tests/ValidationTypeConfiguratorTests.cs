@@ -23,13 +23,8 @@ public class ValidationTypeConfiguratorTests
     {
         _validator.When(x => x.Email, dto => dto.Role == "Admin").Build();
 
-        var options = new ValidationBehaviorOptions();
-        _parent.Build(); // flushes into ServiceCollection
-
         // Simulate DI resolution
-        var provider = _services.BuildServiceProvider();
-
-        var resolved = provider.GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
+        var resolved = ResolveBehaviorOptions();
 
         Assert.True(resolved.ContainsKey(typeof(TestLoginDto), nameof(TestLoginDto.Email)));
     }
@@ -38,7 +33,10 @@ public class ValidationTypeConfiguratorTests
     public void And_IsAliasForWhen()
     {
         _validator.And(x => x.Password, dto => dto.Role != "Guest").Build();
-        // Assert same as above
+
+        var resolved = ResolveBehaviorOptions();
+
+        Assert.True(resolved.ContainsKey(typeof(TestLoginDto), nameof(TestLoginDto.Password)));
     }
 
     [Fact]
@@ -166,9 +164,15 @@ public class ValidationTypeConfiguratorTests
     {
         _parent.Build();
 
-        var provider = _services.BuildServiceProvider();
+        var resolved = ResolveBehaviorOptions();
 
-        var resolved = provider.GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
         return resolved.Get(typeof(TestLoginDto), property);
+    }
+
+    private ValidationBehaviorOptions ResolveBehaviorOptions()
+    {
+        var provider = _services.BuildServiceProvider();
+        var resolved = provider.GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
+        return resolved;
     }
 }
