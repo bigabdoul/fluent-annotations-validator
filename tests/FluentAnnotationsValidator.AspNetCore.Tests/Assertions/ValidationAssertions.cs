@@ -6,7 +6,7 @@ public static class ValidationAssertions
         string? expectedMessage = null,
         string? expectedKey = null,
         string? expectedResource = null,
-        Func<object, bool>? expectedPredicate = null)
+        object? predicateArg = null)
     {
         if (expectedMessage is not null)
             Assert.Equal(expectedMessage, rule.Message);
@@ -17,10 +17,10 @@ public static class ValidationAssertions
         if (expectedResource is not null)
             Assert.Equal(expectedResource, rule.ResourceKey);
 
-        if (expectedPredicate is not null)
+        if (predicateArg is not null)
         {
             Assert.NotNull(rule.Predicate.Target);
-            Assert.True(expectedPredicate(rule.Predicate.Target));
+            Assert.True(rule.Predicate(predicateArg));
         }
     }
 
@@ -28,7 +28,7 @@ public static class ValidationAssertions
         string? expectedMessage = null,
         string? expectedKey = null,
         string? expectedResource = null,
-        Func<object, bool>? expectedPredicate = null)
+        object? predicateArg = null)
     {
         if (expectedMessage is not null)
             Assert.NotEqual(expectedMessage, rule.Message);
@@ -39,10 +39,10 @@ public static class ValidationAssertions
         if (expectedResource is not null)
             Assert.NotEqual(expectedResource, rule.ResourceKey);
 
-        if (expectedPredicate is not null)
+        if (predicateArg is not null)
         {
             Assert.NotNull(rule.Predicate.Target);
-            Assert.False(expectedPredicate(rule.Predicate.Target));
+            Assert.False(rule.Predicate(predicateArg));
         }
     }
 }
