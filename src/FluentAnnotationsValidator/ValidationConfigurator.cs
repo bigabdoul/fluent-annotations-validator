@@ -14,7 +14,7 @@ public class ValidationConfigurator : IValidationConfigurator
     }
 
     public ValidationTypeConfigurator<T> For<T>()
-        => new(this, typeof(T));
+        => new(this);
 
     public void Register(Action<ValidationBehaviorOptions> config)
         => _registrations.Add(config);

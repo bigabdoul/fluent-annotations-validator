@@ -2,22 +2,13 @@
 
 namespace FluentAnnotationsValidator;
 
-public class ValidationTypeConfigurator<T> : IValidationTypeConfigurator<T>
+public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IValidationTypeConfigurator<T>
 {
-    private readonly ValidationConfigurator _parent;
-    private readonly Type _type;
-
-    public ValidationTypeConfigurator(ValidationConfigurator parent, Type type)
-    {
-        _parent = parent;
-        _type = type;
-    }
-
     public ValidationTypeConfigurator<T> When<TProp>(
         Expression<Func<T, TProp>> property,
         Func<T, bool> condition)
     {
-        _parent.Register(opts => opts.AddCondition(property, condition));
+        parent.Register(opts => opts.AddCondition(property, condition));
         return this;
     }
 
@@ -28,20 +19,20 @@ public class ValidationTypeConfigurator<T> : IValidationTypeConfigurator<T>
     public ValidationTypeConfigurator<T> Except<TProp>(
         Expression<Func<T, TProp>> property)
     {
-        _parent.Register(opts => opts.AddCondition(property, _ => false));
+        parent.Register(opts => opts.AddCondition(property, _ => false));
         return this;
     }
 
     public ValidationTypeConfigurator<T> AlwaysValidate<TProp>(
         Expression<Func<T, TProp>> property)
     {
-        _parent.Register(opts => opts.AddCondition(property, _ => true));
+        parent.Register(opts => opts.AddCondition(property, _ => true));
         return this;
     }
 
-    public ValidationTypeConfigurator<TNext> For<TNext>() => _parent.For<TNext>();
+    public ValidationTypeConfigurator<TNext> For<TNext>() => parent.For<TNext>();
 
-    public void Build() => _parent.Build();
+    public void Build() => parent.Build();
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
         => When(property, condition);
