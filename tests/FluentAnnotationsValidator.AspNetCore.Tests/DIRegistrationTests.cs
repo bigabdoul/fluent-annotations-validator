@@ -13,7 +13,7 @@ public class DIRegistrationTests
             .AddFluentAnnotationsValidators(typeof(LoginDto))
             .BuildServiceProvider();
 
-        var validator = services.GetRequiredService<IValidator<LoginDto>>();
+        var validator = services.GetService<IValidator<LoginDto>>();
         Assert.NotNull(validator);
     }
 }
