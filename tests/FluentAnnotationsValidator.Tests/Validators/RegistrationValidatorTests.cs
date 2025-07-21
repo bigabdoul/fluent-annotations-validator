@@ -1,12 +1,17 @@
 ﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using Microsoft.Extensions.Options;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
-    private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = new(new ValidationMessageResolver());
+    private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = 
+        new(new ValidationMessageResolver(), CreateOptions());
 
+    private static IOptions<ValidationBehaviorOptions> CreateOptions()
+        => Options.Create(new ValidationBehaviorOptions());
+    
     [Fact]
     public void ValidDto_ShouldPass()
     {

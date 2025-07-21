@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator;
@@ -14,14 +15,17 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="DataAnnotationsValidator{T}"/> class.
     /// </summary>
-    public DataAnnotationsValidator(IValidationMessageResolver resolver)
+    public DataAnnotationsValidator(IValidationMessageResolver resolver, IOptions<ValidationBehaviorOptions> options)
     {
         var metadata = ValidationMetadataCache.Get(typeof(T));
+        var config = options.Value;
 
         foreach (var prop in metadata)
         {
             foreach (var attr in prop.Attributes)
             {
+                var condition = config.Get(typeof(T), prop.Property.Name);
+
                 RuleFor(model => prop.Property.GetValue(model))
                     .Custom((value, ctx) =>
                     {
@@ -30,7 +34,8 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
                             var message = resolver.ResolveMessage(prop, attr);
                             ctx.AddFailure(prop.Property.Name, message);
                         }
-                    });
+                    })
+                    .When(model => model is not null && (condition?.Predicate(model) ?? true));
             }
         }
     }

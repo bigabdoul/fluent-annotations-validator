@@ -16,6 +16,19 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
     /// at least one property decorated with a <see cref="ValidationAttribute"/>.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="targetAssembliesTypes">
+    /// Optional: One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static IServiceCollection AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) => 
+        services.AddFluentAnnotationsValidators(configure: null, targetAssembliesTypes);
+
+    /// <summary>
+    /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
+    /// at least one property decorated with a <see cref="ValidationAttribute"/>.
     /// 
     /// Scans the provided assemblies (via types) or defaults to the current AppDomain.
     /// This method dynamically generates and registers transient validators based on
@@ -48,12 +61,14 @@ public static class ServiceCollectionExtensions
     /// </para>
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
     /// <param name="targetAssembliesTypes">
     /// Optional: One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes)
+    public static IServiceCollection AddFluentAnnotationsValidators(this IServiceCollection services,
+        Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes)
     {
         var validatorType = typeof(IValidator<>);
         var assemblies = targetAssembliesTypes.Length > 0
@@ -64,9 +79,9 @@ public static class ServiceCollectionExtensions
         {
             // retrieve all classes having at least one property
             // decorated with ValidationAttribute custom attribute
-            IList<Type> propertiesWithValidationAttributes = [..asm.GetTypes().Where(t =>
-                t.IsClass &&
-                t.GetProperties().Any(p => p.GetCustomAttributes<ValidationAttribute>().Any())
+            IList<Type> propertiesWithValidationAttributes = [..asm.GetTypes().Where(type =>
+                type.IsClass &&
+                type.GetProperties().Any(property => property.GetCustomAttributes<ValidationAttribute>(true).Any())
             )];
 
             foreach (var type in propertiesWithValidationAttributes)
@@ -80,6 +95,9 @@ public static class ServiceCollectionExtensions
         // Try to add a default validation message resolver.
         // This has no effect if a custom resolver has been previously added.
         services.TryAddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
+
+        // required to initialize IOptions<ValidationBehaviorOptions>
+        services.Configure<ValidationBehaviorOptions>(options => configure?.Invoke(options));
 
         return services;
     }
