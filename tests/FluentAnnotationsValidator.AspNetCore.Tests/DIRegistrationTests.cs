@@ -10,10 +10,10 @@ public class DIRegistrationTests
     public void Should_ResolveValidatorForAnnotatedType()
     {
         var services = new ServiceCollection()
-            .AddFluentAnnotationsValidators(typeof(LoginDto))
+            .AddFluentAnnotationsValidators(typeof(TestLoginDto))
             .BuildServiceProvider();
 
-        var validator = services.GetService<IValidator<LoginDto>>();
+        var validator = services.GetService<IValidator<TestLoginDto>>();
         Assert.NotNull(validator);
     }
 }

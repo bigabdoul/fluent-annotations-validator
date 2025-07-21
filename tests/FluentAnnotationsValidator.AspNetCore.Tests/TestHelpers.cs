@@ -7,7 +7,7 @@ namespace FluentAnnotationsValidator.AspNetCore.Tests;
 internal static class TestHelpers
 {
     internal static IServiceCollection CreateServices(Action<ValidationBehaviorOptions>? configure = null) =>
-        new ServiceCollection().AddFluentAnnotationsValidators(configure, typeof(LoginDto));
+        new ServiceCollection().AddFluentAnnotationsValidators(configure, typeof(TestLoginDto));
 
     internal static IValidator<T> GetValidator<T>(Action<ValidationBehaviorOptions>? configure = null)
     {
