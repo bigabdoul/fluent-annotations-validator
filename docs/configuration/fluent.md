@@ -1,6 +1,6 @@
 ---
 title: Fluent Configuration API
-breadcrumb: [FluentAnnotationsValidator](../../README.md) > [Documentation](../index.md) > [Fluent Configuration API](fluent.md)
+breadcrumb: FluentAnnotationsValidator > Documentation > Fluent Configuration API
 version: v1.1.0
 ---
 
