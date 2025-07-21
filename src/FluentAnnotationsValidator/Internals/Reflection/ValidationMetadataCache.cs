@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Internals.Reflection;
 
 /// <summary>
 /// Caches property-level <see cref="ValidationAttribute"/> metadata for any type.

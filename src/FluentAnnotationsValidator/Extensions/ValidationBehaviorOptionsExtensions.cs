@@ -1,6 +1,9 @@
+using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Runtime.Validators;
 using System.Linq.Expressions;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Extensions;
 
 /// <summary>
 /// Provides extension methods for the <see cref="ValidationBehaviorOptions"/> class.

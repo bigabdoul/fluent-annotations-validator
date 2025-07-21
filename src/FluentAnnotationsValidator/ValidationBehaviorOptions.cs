@@ -1,3 +1,4 @@
+using FluentAnnotationsValidator.Configuration;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FluentAnnotationsValidator;

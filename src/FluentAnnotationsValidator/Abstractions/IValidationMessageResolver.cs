@@ -1,6 +1,7 @@
+using FluentAnnotationsValidator.Internals.Reflection;
 using System.ComponentModel.DataAnnotations;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Interfaces;
 
 /// <summary>
 /// A contract that defines what it means to resolve messages across resource strategies.

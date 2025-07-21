@@ -1,8 +1,10 @@
+using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Internals.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Runtime.Validators;
 
 /// <summary>
 /// A FluentValidation adapter that inspects <see cref="ValidationAttribute"/> metadata on model properties

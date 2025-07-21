@@ -1,9 +1,10 @@
-﻿using FluentAnnotationsValidator.AspNetCore.Tests.Assertions;
-using FluentAnnotationsValidator.AspNetCore.Tests.Models;
+﻿using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Tests.Assertions;
+using FluentAnnotationsValidator.Tests.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace FluentAnnotationsValidator.AspNetCore.Tests;
+namespace FluentAnnotationsValidator.Tests.Configuration;
 using static TestHelpers;
 
 public class ValidationTypeConfiguratorTests

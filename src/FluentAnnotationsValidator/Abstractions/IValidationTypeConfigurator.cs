@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Interfaces;
 
 /// <summary>
 /// Provides a fluent interface for configuring conditional validation rules on a specific model type.

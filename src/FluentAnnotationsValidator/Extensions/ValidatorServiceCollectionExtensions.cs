@@ -1,17 +1,20 @@
+using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Runtime.Validators;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator.AspNetCore;
+namespace FluentAnnotationsValidator.Extensions;
 
 /// <summary>
 /// ASP.NET Core-specific service registration utilities for FluentAnnotationsValidator.
 /// Automatically discovers and registers <see cref="IValidator{T}"/> instances for types decorated
 /// with <see cref="ValidationAttribute"/>s.
 /// </summary>
-public static class ServiceCollectionExtensions
+public static class ValidatorServiceCollectionExtensions
 {
     /// <summary>
     /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
@@ -100,5 +103,22 @@ public static class ServiceCollectionExtensions
         services.Configure<ValidationBehaviorOptions>(options => configure?.Invoke(options));
 
         return services;
+    }
+
+    /// <summary>
+    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to add FluentAnnotations services to.</param>
+    /// <returns>
+    /// A <see cref="ValidationConfigurator"/> instance that allows for fluent configuration of conditional validation rules.
+    /// </returns>
+    /// <remarks>
+    /// This method also sets up a default configuration for <see cref="ValidationBehaviorOptions"/> as a fallback.
+    /// </remarks>
+    public static ValidationConfigurator UseFluentAnnotations(this IServiceCollection services)
+    {
+        var configurator = new ValidationConfigurator(services);
+        services.Configure<ValidationBehaviorOptions>(_ => { }); // Default fallback
+        return configurator;
     }
 }

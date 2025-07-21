@@ -1,6 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Interfaces;
+using System.Linq.Expressions;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Configuration;
 
 /// <summary>
 /// Provides a fluent, type-safe configuration surface for defining conditional validation logic

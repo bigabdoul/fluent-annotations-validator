@@ -1,7 +1,8 @@
-using FluentAnnotationsValidator.AspNetCore.Tests.Models;
+using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Tests.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FluentAnnotationsValidator.AspNetCore.Tests;
+namespace FluentAnnotationsValidator.Tests.Configuration;
 using static TestHelpers;
 
 public class ConditionalValidationTests

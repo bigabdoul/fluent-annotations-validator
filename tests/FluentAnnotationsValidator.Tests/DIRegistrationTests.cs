@@ -1,8 +1,9 @@
-﻿using FluentAnnotationsValidator.AspNetCore.Tests.Models;
+﻿using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Tests.Models;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FluentAnnotationsValidator.AspNetCore.Tests;
+namespace FluentAnnotationsValidator.Tests;
 
 public class DIRegistrationTests
 {

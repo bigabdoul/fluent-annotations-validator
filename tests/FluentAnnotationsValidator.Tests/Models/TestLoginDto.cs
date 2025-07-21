@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace FluentAnnotationsValidator.AspNetCore.Tests.Models;
+namespace FluentAnnotationsValidator.Tests.Models;
 
 // Don't use validation attributes on positional parameters in a record like this:
 // public record LoginDto([Required, EmailAddress] string Email, [Required] string Password, string? Role = null);

@@ -1,4 +1,6 @@
-﻿namespace FluentAnnotationsValidator.AspNetCore.Tests.Assertions;
+﻿using FluentAnnotationsValidator.Configuration;
+
+namespace FluentAnnotationsValidator.Tests.Assertions;
 
 public static class ValidationAssertions
 {

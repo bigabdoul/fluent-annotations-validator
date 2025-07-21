@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Internals.Reflection;
 
 /// <summary>
 /// Represents metadata for a single property decorated with one or more <see cref="ValidationAttribute"/> instances.
