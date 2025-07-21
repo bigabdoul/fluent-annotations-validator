@@ -1,7 +1,6 @@
 # FluentAnnotationsValidator
 
 [![NuGet - FluentAnnotationsValidator](https://img.shields.io/nuget/v/FluentAnnotationsValidator.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator)
-[![NuGet - FluentAnnotationsValidator.AspNetCore](https://img.shields.io/nuget/v/FluentAnnotationsValidator.AspNetCore.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator.AspNetCore)
 [![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
@@ -36,8 +35,7 @@ Add via NuGet:
 
 | Package | Version | Install |
 |--------|---------|---------|
-| FluentAnnotationsValidator | 1.0.6 | `dotnet add package FluentAnnotationsValidator` |
-| FluentAnnotationsValidator.AspNetCore | 1.0.6 | `dotnet add package FluentAnnotationsValidator.AspNetCore` |
+| FluentAnnotationsValidator | 1.1.0 | `dotnet add package FluentAnnotationsValidator` |
 
 ---
 
@@ -46,12 +44,34 @@ Add via NuGet:
 ### 1. Register validators
 
 ```csharp
+using FluentAnnotationsValidator.Extensions;
+
 builder.Services.AddFluentAnnotationsValidators();
+```
+
+### Fluent Validation Configuration
+
+Define conditional rules per property, model, and context:
+
+```csharp
+services.UseFluentAnnotations()
+    .For<LoginDto>()
+        .When(x => x.Email, dto => dto.Role != null && dto.Role != "Admin")
+            .WithMessage("Non-admins must provide a valid email.")
+            .WithKey("Email.NonAdminRequired")
+            .Localized("NonAdmin_Email_Required")
+        .Except(x => x.Role)
+        .AlwaysValidate(x => x.Password)
+    .For<RegistrationDto>()
+        .When(x => x.Age, dto => dto.Age >= 18)
+    .Build();
 ```
 
 ### 2. Annotate your DTO
 
 ```csharp
+using FluentAnnotationsValidator.Metadata;
+
 [ValidationResource(typeof(ValidationMessages))]
 public class RegistrationDto
 {
@@ -62,6 +82,8 @@ public class RegistrationDto
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = default!;
+
+    public string? Role { get; set; }
 }
 ```
 
@@ -104,23 +126,55 @@ Included in `FluentAnnotationsValidator.Tests`:
 
 ---
 
-## 📚 Project Layout
+## 🗂️ Solution Structure
+
+| Project | Description |
+|--------|-------------|
+| `FluentAnnotationsValidator` | Core library for fluent, annotation-driven validation |
+| `FluentAnnotationsValidator.Tests` | Unified test suite for all validation logic and fluent configuration |
+
+### 📚 Project Layout
 
 ```
 src/
 ├── FluentAnnotationsValidator/
-│   ├── DataAnnotationsValidator.cs
-│   ├── ValidationMetadataCache.cs
-│   ├── PropertyValidationInfo.cs
-│   ├── ValidationMessageResolver.cs
-│   └── ValidationResourceAttribute.cs
-├── FluentAnnotationsValidator.AspNetCore/
-│   └── ServiceCollectionExtensions.cs
+│   ├── Abstractions/
+│   │   ├── IValidationConfigurator.cs
+│   │   ├── IValidationMessageResolver<T>.cs
+│   │   └── IValidationTypeConfigurator.cs
+│   ├── Configuration/
+│   │   ├── ValidationBehaviorOptions.cs
+│   │   └── ValidationTypeConfigurator<T>.cs
+│   ├── Extensions/
+│   │   ├── ValidationBehaviorOptionsExtensions.cs
+│   │   └── ValidatorServiceCollectionExtensions.cs
+│   ├── Internal/
+│   │   └── Reflection/
+│   │       ├── PropertyValidationInfo.cs
+│   │       └── ValidationMetadataCache.cs
+│   ├── Messages/
+│   │   └── ValidationMessageResolver.cs
+│   ├── Runtime/
+│   │   └── Validators/
+│   │       └── DataAnnotationsValidator<T>.cs
+│   └── Metadata/
+│       └── ValidationResourceAttribute.cs
+
 tests/
 ├── FluentAnnotationsValidator.Tests/
+│   ├── Assertions/
+│   │   └── ValidationAssertions.cs
+│   ├── Configuration/
+│   │   └── ValidationTypeConfiguratorTests.cs
 │   ├── Models/
+│   │   ├── TestLoginDto.cs
+│   │   └── TestRegistrationDto.cs
+│   ├── Resources/
+│   │   └── ValidationMessages.cs
 │   ├── Validators/
-│   └── Resources/
+│   │   └── RegistrationValidatorTests.cs
+│   ├── DIRegistrationTests.cs
+|   └── TestHelpers.cs
 ```
 
 ---
@@ -134,25 +188,6 @@ Detailed guides, examples, and diagrams are available in the [documentation fold
 - [Customization & Extensibility](docs/customization.md)
 - [Validation flow breakdown](docs/validation-flow.md)
 - [Fluent validation configuration](docs/configuration/fluent.md)
-
-### Fluent Validation Configuration
-
-Define conditional rules per property, model, and context:
-
-```csharp
-services.AddFluentAnnotationsValidators()
-    .UseFluentAnnotations()
-    .For<LoginDto>()
-        .When(x => x.Email, dto => dto.Role != "Admin")
-            .WithMessage("Non-admins must provide a valid email.")
-            .WithKey("Email.NonAdminRequired")
-            .Localized("NonAdmin_Email_Required")
-        .Except(x => x.Role)
-        .AlwaysValidate(x => x.Password)
-    .For<RegistrationDto>()
-        .When(x => x.Age, dto => dto.Age >= 18)
-    .Build();
-```
 
 Supports:
 - Strongly typed property access

@@ -20,7 +20,7 @@ services.AddFluentAnnotationsValidators(targetAssembliesTypes: [typeof(LoginDto)
 
 services.UseFluentAnnotations()
     .For<LoginDto>()
-        .When(x => x.Email, dto => dto.Role != "Admin")
+        .When(x => x.Email, dto => dto.Role != null && dto.Role != "Admin")
             .WithMessage("Non-admins must provide a valid email.")
             .WithKey("Email.NonAdminRequired")
             .Localized("NonAdmin_Email_Required")
