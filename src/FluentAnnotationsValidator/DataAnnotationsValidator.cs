@@ -24,7 +24,7 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
         {
             foreach (var attr in prop.Attributes)
             {
-                var condition = config.Get(typeof(T), prop.Property.Name);
+                _ = config.TryGet(typeof(T), prop.Property.Name, out var condition);
 
                 RuleFor(model => prop.Property.GetValue(model))
                     .Custom((value, ctx) =>
