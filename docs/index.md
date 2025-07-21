@@ -20,7 +20,7 @@ Whether you're consuming the package or contributing to its internals, this docu
 
 Looking for a specific release? Here are direct links to notable versions:
 
-- [v1.1.0](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.1.0) — Introduced fluent validation DSL, conditional configuration, and message/localization chaining
+- [v1.1.0](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.1.0) — Introduced fluent validation DSL, conditional configuration, and message/localization chaining, and framework-neutral structure
 - [v1.0.6](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.0.6) — Core annotations adapter with localization and DI support
 - [v1.0.5](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.0.5)
 - [v1.0.4](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.0.4)
