@@ -1,7 +1,6 @@
-using FluentAnnotationsValidator.Configuration;
 using System.Diagnostics.CodeAnalysis;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Configuration;
 
 /// <summary>
 /// Represents a configurable container for conditional validation rules applied to specific model properties.

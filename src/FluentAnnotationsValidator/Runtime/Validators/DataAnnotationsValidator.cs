@@ -1,3 +1,4 @@
+using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Interfaces;
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentValidation;

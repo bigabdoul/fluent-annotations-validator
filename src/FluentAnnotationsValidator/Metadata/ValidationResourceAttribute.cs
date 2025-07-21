@@ -1,4 +1,4 @@
-﻿namespace FluentAnnotationsValidator;
+﻿namespace FluentAnnotationsValidator.Metadata;
 
 /// <summary>
 /// Specifies a default <see cref="ErrorMessageResourceType"/> to be used for resolving localized error messages

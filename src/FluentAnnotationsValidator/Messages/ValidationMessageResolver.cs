@@ -1,9 +1,10 @@
 ﻿using FluentAnnotationsValidator.Interfaces;
 using FluentAnnotationsValidator.Internals.Reflection;
+using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Messages;
 
 /// <summary>
 /// Provides mechanisms for resolving localized error messages associated with <see cref="ValidationAttribute"/> instances.

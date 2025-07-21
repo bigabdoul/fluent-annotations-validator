@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [1.1.0] - 2025-07-21
 
+### Solution Structure
+
+- Removed legacy `AspNetCore.Tests` project; unified test coverage under `FluentAnnotationsValidator.Tests`
+- Renamed `ServiceCollectionExtensions` to `ValidatorServiceCollectionExtensions` to better reflect scope
+- Relocated DI extensions to `FluentAnnotationsValidator.Extensions.ValidatorServiceCollectionExtensions`
+- Removed outdated AspNetCore workflow to emphasize framework-neutral architecture
+- Broad refactoring of internal folders and naming for clarity, discoverability, and contributor experience
+
 ### Added
 
 - Introduced `IValidationTypeConfigurator<T>` for fluent per-type conditional validation

@@ -1,5 +1,6 @@
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;

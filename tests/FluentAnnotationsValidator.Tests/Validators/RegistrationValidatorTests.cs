@@ -1,4 +1,6 @@
-﻿using FluentAnnotationsValidator.Runtime.Validators;
+﻿using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Messages;
+using FluentAnnotationsValidator.Runtime.Validators;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using Microsoft.Extensions.Options;

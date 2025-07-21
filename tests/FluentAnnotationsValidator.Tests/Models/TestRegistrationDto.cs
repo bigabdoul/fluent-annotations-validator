@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
+using FluentAnnotationsValidator.Metadata;
 using Resources;
 
 [ValidationResource(typeof(ValidationMessages))]
