@@ -8,31 +8,40 @@ namespace FluentAnnotationsValidator;
 public static class ValidationBehaviorOptionsExtensions
 {
     /// <summary>
-    /// Registers a conditional validation predicate for a given property.
+    /// Registers a conditional validation rule for a specific model type and property.
     /// </summary>
-    /// <typeparam name="TModel">The DTO type.</typeparam>
-    /// <typeparam name="TProperty">The property type.</typeparam>
-    /// <param name="options">The options instance being configured.</param>
-    /// <param name="propertyExpression">The property selector (e.g. x => x.Email).</param>
-    /// <param name="condition">Predicate to control whether validation should run for the selected property.</param>
-    public static void AddCondition<TModel, TProperty>(
-        this ValidationBehaviorOptions options,
-        Expression<Func<TModel, TProperty>> propertyExpression,
-        Func<TModel, bool> condition,
+    /// <typeparam name="TModel">The DTO or model type the condition applies to.</typeparam>
+    /// <param name="options">The <see cref="ValidationBehaviorOptions"/> instance to configure.</param>
+    /// <param name="propertyExpression">An expression identifying the property to which the condition applies.</param>
+    /// <param name="predicate">A delegate that determines whether validation should be executed for the specified property.</param>
+    /// <param name="message">An optional custom error message to override the default.</param>
+    /// <param name="key">An optional error key used for message resolution or logging.</param>
+    /// <param name="resourceKey">An optional resource key used for localized error messages.</param>
+    /// <remarks>
+    /// The condition will be stored and evaluated at runtime via <see cref="DataAnnotationsValidator{T}"/>. 
+    /// Metadata such as <paramref name="message"/>, <paramref name="key"/>, and <paramref name="resourceKey"/> 
+    /// are forwarded to the configured <see cref="IValidationMessageResolver"/>.
+    /// </remarks>
+    public static void AddCondition<TModel>(this ValidationBehaviorOptions options,
+        LambdaExpression propertyExpression,
+        Func<TModel, bool> predicate,
         string? message = null,
         string? key = null,
         string? resourceKey = null)
     {
         var propertyName = GetPropertyName(propertyExpression);
-        var rule = new ConditionalValidationRule(model => condition((TModel)model), message, key, resourceKey);
+        var rule = new ConditionalValidationRule(model => predicate((TModel)model), message, key, resourceKey);
         options.Set(typeof(TModel), propertyName, rule);
     }
 
-    private static string GetPropertyName<TModel, TProperty>(Expression<Func<TModel, TProperty>> expression)
+    private static string GetPropertyName(LambdaExpression propertyExpression)
     {
-        if (expression.Body is MemberExpression memberExpr)
+        var expr = (propertyExpression.Body as UnaryExpression)?.Operand;
+        if (expr is MemberExpression me)
+            return me.Member.Name;
+        if (propertyExpression.Body is MemberExpression memberExpr)
             return memberExpr.Member.Name;
-
-        throw new ArgumentException("Expression must be a property access", nameof(expression));
+        throw new ArgumentException(
+            $"{nameof(propertyExpression)}.Body is not a {nameof(MemberExpression)}.", nameof(propertyExpression));
     }
 }
