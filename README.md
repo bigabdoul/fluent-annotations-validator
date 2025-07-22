@@ -56,14 +56,11 @@ Define conditional rules per property, model, and context:
 ```csharp
 services.UseFluentAnnotations()
     .For<LoginDto>()
-        .When(x => x.Email, dto => dto.Role != null && dto.Role != "Admin")
-            .WithMessage("Non-admins must provide a valid email.")
-            .WithKey("Email.NonAdminRequired")
-            .Localized("NonAdmin_Email_Required")
-        .Except(x => x.Role)
-        .AlwaysValidate(x => x.Password)
-    .For<RegistrationDto>()
-        .When(x => x.Age, dto => dto.Age >= 18)
+        .WithValidationResource<ValidationMessages>()
+        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
+            .Localized("Password_Required")
+            .UseFallbackMessage("Mot de passe requis.")
     .Build();
 ```
 
