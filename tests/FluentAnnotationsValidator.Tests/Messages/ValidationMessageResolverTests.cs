@@ -45,7 +45,7 @@ public class ValidationMessageResolverTests
         };
 
         var message = _resolver.ResolveMessage(info, attr);
-        Assert.Equal("Email is required.", message);
+        Assert.Equal(ValidationMessages.EmailRequired, message);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ValidationMessageResolverTests
             ResourceType: typeof(ValidationMessages));
 
         var message = _resolver.ResolveMessage(info, attr, rule);
-        Assert.Equal("Password cannot be blank.", message);
+        Assert.Equal(ValidationMessages.PasswordRequired, message);
     }
 
     [Fact]
@@ -93,6 +93,6 @@ public class ValidationMessageResolverTests
         };
 
         var message = _resolver.ResolveMessage(info, attr);
-        Assert.Equal("Email is required (convention).", message);
+        Assert.Equal(ConventionValidationMessages.Email_Required, message);
     }
 }

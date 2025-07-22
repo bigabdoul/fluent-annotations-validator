@@ -13,23 +13,26 @@ public class Resolver_CultureTests
     [Fact]
     public void Formats_Message_Using_Provided_Culture()
     {
+        // Arrange
         var rule = new ConditionalValidationRule(
             dto => true,
-            ResourceKey: nameof(FrenchMessages.LengthMessage),
-            ResourceType: typeof(FrenchMessages),
-            Culture: CultureInfo.GetCultureInfo("fr-FR")
+            ResourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
+            ResourceType: typeof(ValidationMessages),
+            Culture: ValidationMessages.Culture = CultureInfo.GetCultureInfo("fr-FR") // must set the Culture on ValidationMessages
         );
 
-        var attr = new StringLengthAttribute(5);
+        var (min, max) = (6, 20);
+        var attr = new RangeAttribute(min, max);
+        var expectedMessage = string.Format(ValidationMessages.Password_Range, min, max);
         var info = new PropertyValidationInfo
         {
             Property = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
             TargetModelType = typeof(TestLoginDto)
         };
 
-        var resolver = new ValidationMessageResolver();
-        var msg = resolver.ResolveMessage(info, attr, rule);
+        // Act
+        var resolvedMessage = new ValidationMessageResolver().ResolveMessage(info, attr, rule);
 
-        Assert.Equal("Mot de passe requis: 5 caractères max.", msg);
+        Assert.Equal(expectedMessage, resolvedMessage);
     }
 }

@@ -88,11 +88,29 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Password should contain a maximum of {0} characters (convention)..
+        /// </summary>
+        internal static string Password_MaxLength {
+            get {
+                return ResourceManager.GetString("Password_MaxLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Password should contain a minimum of {0} characters (convention)..
         /// </summary>
         internal static string Password_MinLength {
             get {
                 return ResourceManager.GetString("Password_MinLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password required between {0} and {1} characters (convention)..
+        /// </summary>
+        internal static string Password_Range {
+            get {
+                return ResourceManager.GetString("Password_Range", resourceCulture);
             }
         }
         

@@ -84,18 +84,21 @@ public class RegistrationValidatorTests
     [Fact]
     public void ShortPassword_ShouldFailMinLength()
     {
+        // Arrange
         var dto = new TestRegistrationDto
         {
             Email = "user@example.com",
             Password = "123"
         };
 
+        // Act
         var result = _validator.Validate(dto);
 
+        // Assert
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(dto.Password) &&
-            (e.ErrorMessage.Contains("minimum") || e.ErrorMessage.Contains("length")));
+            (e.ErrorMessage.Contains("min")));
     }
 
     [Fact]

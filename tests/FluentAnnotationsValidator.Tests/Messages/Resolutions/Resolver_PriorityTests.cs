@@ -13,6 +13,11 @@ public class Resolver_PriorityTests
 {
     private readonly ValidationMessageResolver _resolver = new();
 
+    private static class WrongMessages
+    {
+        public static string WrongKey => "Wrong!";
+    }
+
     [Fact]
     public void Rule_Message_OverridesEverything()
     {
@@ -37,11 +42,11 @@ public class Resolver_PriorityTests
             ResourceType: typeof(ValidationMessages)
         );
 
-        var attr = new RequiredAttribute { ErrorMessageResourceName = "WrongKey", ErrorMessageResourceType = typeof(WrongMessages) };
+        var attr = new RequiredAttribute { ErrorMessageResourceName = nameof(WrongMessages.WrongKey), ErrorMessageResourceType = typeof(WrongMessages) };
         var info = CreateInfo<TestLoginDto>(x => x.Email);
 
         var msg = _resolver.ResolveMessage(info, attr, rule);
-        Assert.Equal("Email is required.", msg);
+        Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
     [Fact]
@@ -55,7 +60,7 @@ public class Resolver_PriorityTests
 
         var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
         var msg = _resolver.ResolveMessage(info, attr);
-        Assert.Equal("Email is required.", msg);
+        Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
     [Fact]
@@ -65,7 +70,8 @@ public class Resolver_PriorityTests
         var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
 
         var msg = _resolver.ResolveMessage(info, attr);
-        Assert.Equal("Email is required (convention).", msg);
+
+        Assert.Equal(ConventionValidationMessages.Email_Required, msg); // uses conventional key
     }
 
     [Fact]

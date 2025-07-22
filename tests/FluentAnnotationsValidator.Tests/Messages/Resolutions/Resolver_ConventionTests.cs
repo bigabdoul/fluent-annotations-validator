@@ -19,7 +19,7 @@ public class Resolver_ConventionTests
 
         var resolver = new ValidationMessageResolver();
         var msg = resolver.ResolveMessage(info, attr);
-        Assert.Equal("Email is required (convention).", msg);
+        Assert.Equal(ConventionValidationMessages.Email_Required, msg);
     }
 
     [Fact]
@@ -40,6 +40,6 @@ public class Resolver_ConventionTests
         var resolver = new ValidationMessageResolver();
         var msg = resolver.ResolveMessage(info, attr, rule);
 
-        Assert.Equal("Invalid value for Email", msg);
+        Assert.Equal($"Invalid value for {nameof(LoginDtoWithResource.Email)}", msg);
     }
 }

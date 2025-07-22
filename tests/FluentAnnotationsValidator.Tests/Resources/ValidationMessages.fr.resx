@@ -118,30 +118,30 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="EmailRequired" xml:space="preserve">
-    <value>Email is required.</value>
+    <value>Email est requis</value>
   </data>
   <data name="PasswordRequired" xml:space="preserve">
-    <value>Password cannot be blank.</value>
+    <value>Mot de passe: ne peut être vide.</value>
   </data>
   <data name="PasswordMinLength" xml:space="preserve">
-    <value>The password should have a minimum of {0} characters.</value>
+    <value>Le mot de passe doit avoir au minimum {0} caractères.</value>
   </data>
   <data name="EmailEmailAddress" xml:space="preserve">
-    <value>The e-mail address is invalid.</value>
+    <value>L'adresse e-mail est invalide.</value>
   </data>
   <data name="Email_Required" xml:space="preserve">
-    <value>The e-mail address is required (convention).</value>
+    <value>L'adresse e-mail est requise (convention).</value>
   </data>
   <data name="Password_Required" xml:space="preserve">
-    <value>The password is required (convention).</value>
+    <value>Le mot de passe est requis (convention).</value>
   </data>
   <data name="Password_MinLength" xml:space="preserve">
-    <value>Password should contain a minimum of {0} characters (convention).</value>
+    <value>Mot de passe requis: {0} caractères minimum (convention).</value>
   </data>
   <data name="Password_MaxLength" xml:space="preserve">
-    <value>Password should contain a maximum of {0} characters (convention).</value>
+    <value>Mot de passe requis: {0} caractères maximum (convention).</value>
   </data>
   <data name="Password_Range" xml:space="preserve">
-    <value>Password required between {0} and {1} characters (convention).</value>
+    <value>Mot de passe requis entre {0} et {1} caractères (convention).</value>
   </data>
 </root>
