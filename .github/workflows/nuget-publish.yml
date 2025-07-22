@@ -29,11 +29,11 @@ jobs:
 
       - name: Pack NuGet packages (with symbols, source, and deterministic metadata)
         run: dotnet pack ./src/FluentAnnotationsValidator/FluentAnnotationsValidator.csproj \
-            --configuration Release \
-            --output ./nupkg \
-            --include-symbols \
-            --include-source \
-            /p:ContinuousIntegrationBuild=true
+              --configuration Release \
+              --output ./nupkg \
+              --include-symbols \
+              --include-source \
+              --property:ContinuousIntegrationBuild=true
 
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg \
