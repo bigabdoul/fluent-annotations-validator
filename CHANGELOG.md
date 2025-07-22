@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2025-07-22
+
+### Scoped Localization + Resilient Fallbacks
+
+- Introduced `.WithCulture(...)` for culture-sensitive formatting
+- Added `.UseFallbackMessage(...)` to gracefully handle resolution failures
+- Enabled `.DisableConventionalKeys()` for strict key control
+- Refactored `ResolveMessageInternal(...)` to respect rule and attribute metadata hierarchy
+- Added `TryResolveFromResource(...)` helper for safe, extensible localization
+- Extended `ConditionalValidationRule` with `Culture`, `FallbackMessage`, `UseConventionalKeyFallback`
+- Expanded resolver test matrix with edge cases and priority validation
+
 ## [1.1.0] - 2025-07-21
 
 ### Solution Structure

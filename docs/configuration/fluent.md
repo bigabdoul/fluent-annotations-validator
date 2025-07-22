@@ -131,3 +131,27 @@ services.UseFluentAnnotations()
 ```
 
 This eliminates the need for `[ValidationResource(...)]` on your DTO — making localization more discoverable and intentional from configuration code.
+
+---
+
+### Culture and Fallbacks
+
+Your DSL now supports scoped culture and graceful fallback behavior:
+
+```csharp
+services.UseFluentAnnotations()
+    .For<LoginDto>()
+        .WithValidationResource<ValidationMessages>()
+        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+        .DisableConventionalKeys()
+        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
+            .Localized("Password_Required")
+            .UseFallbackMessage("Mot de passe requis.")
+    .Build();
+```
+
+| Method | Description |
+|--------|-------------|
+| `WithCulture(CultureInfo)` | Specifies culture for formatting localized messages |
+| `UseFallbackMessage(string)` | Defines a message to use if localization fails |
+| `DisableConventionalKeys()` | Prevents fallback to `"Property_Attribute"` keys |
