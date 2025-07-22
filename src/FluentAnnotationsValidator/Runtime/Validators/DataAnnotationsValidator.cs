@@ -4,6 +4,7 @@ using FluentAnnotationsValidator.Internals.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
+using FluentValidation.Results;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
 
@@ -35,7 +36,8 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
                         if (!attr.IsValid(value))
                         {
                             var message = resolver.ResolveMessage(prop, attr, rule);
-                            ctx.AddFailure(prop.Property.Name, message);
+                            var failure = new ValidationFailure(prop.Property.Name, message, value);
+                            ctx.AddFailure(failure);
                         }
                     })
                     .When(model => model is not null && (rule?.Predicate(model) ?? true));
