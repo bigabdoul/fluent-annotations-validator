@@ -1,4 +1,4 @@
-﻿using FluentAnnotationsValidator.Interfaces;
+﻿using FluentAnnotationsValidator.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Configuration;

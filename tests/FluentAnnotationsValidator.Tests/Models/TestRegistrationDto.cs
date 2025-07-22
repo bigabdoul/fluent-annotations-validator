@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using FluentAnnotationsValidator.Metadata;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
-using FluentAnnotationsValidator.Metadata;
-using Resources;
-
-[ValidationResource(typeof(ValidationMessages))]
+[ValidationResource(typeof(Resources.ValidationMessages))]
 public class TestRegistrationDto
 {
     [Required]

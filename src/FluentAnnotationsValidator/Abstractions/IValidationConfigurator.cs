@@ -1,4 +1,4 @@
-﻿namespace FluentAnnotationsValidator.Interfaces;
+﻿namespace FluentAnnotationsValidator.Abstractions;
 
 /// <summary>
 /// Defines the contract for configuring conditional validation rules

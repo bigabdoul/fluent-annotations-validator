@@ -1,6 +1,9 @@
+using FluentAnnotationsValidator.Extensions;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
+using static ValidationBehaviorOptionsExtensions;
 
 /// <summary>
 /// Represents a configurable container for conditional validation rules applied to specific model properties.
@@ -26,6 +29,17 @@ public class ValidationBehaviorOptions
     }
 
     /// <summary>
+    /// Associates a <see cref="ConditionalValidationRule"/> with the specified property,
+    /// identified via a strongly typed lambda expression. If a rule already exists for 
+    /// the given key, it will be replaced.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="property"></param>
+    /// <param name="rule"></param>
+    public virtual void Set<T>(Expression<Func<T, string?>> property, ConditionalValidationRule rule)
+        => Set(typeof(T), GetPropertyName(property), rule);
+
+    /// <summary>
     /// Retrieves the <see cref="ConditionalValidationRule"/> associated with the specified model type and property name.
     /// </summary>
     /// <param name="modelType">The type of the model.</param>
@@ -43,6 +57,21 @@ public class ValidationBehaviorOptions
     }
 
     /// <summary>
+    /// Retrieves a <see cref="ConditionalValidationRule"/> associated with the specified property,
+    /// identified via a strongly typed lambda expression.
+    /// </summary>
+    /// <typeparam name="T">The type of the model.</typeparam>
+    /// <param name="property">
+    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
+    /// </param>
+    /// <returns>The associated <see cref="ConditionalValidationRule"/>.</returns>
+    /// <exception cref="KeyNotFoundException">
+    /// Thrown if no rule is found for the given type and property name.
+    /// </exception>
+    public virtual ConditionalValidationRule Get<T>(Expression<Func<T, string?>> property)
+        => Get(typeof(T), GetPropertyName(property));
+
+    /// <summary>
     /// Attempts to retrieve a <see cref="ConditionalValidationRule"/> associated with the specified model type and property name.
     /// </summary>
     /// <param name="modelType">The type of the model.</param>
@@ -57,6 +86,21 @@ public class ValidationBehaviorOptions
     }
 
     /// <summary>
+    /// Attempts to retrieve a <see cref="ConditionalValidationRule"/> associated with the specified property,
+    /// identified via a strongly typed lambda expression.
+    /// </summary>
+    /// <typeparam name="T">The type of the model.</typeparam>
+    /// <param name="property">
+    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
+    /// </param>
+    /// <param name="rule">
+    /// When this method returns, contains the associated rule if found and non-null; otherwise, <c>null</c>.
+    /// </param>
+    /// <returns><see langword="true"/> if a non-null rule was found; otherwise, <see langword="false"/>.</returns>
+    public virtual bool TryGet<T>(Expression<Func<T, string?>> property, [NotNullWhen(true)] out ConditionalValidationRule? rule)
+        => TryGet(typeof(T), GetPropertyName(property), out rule);
+
+    /// <summary>
     /// Determines whether a rule exists for the specified model type and property name.
     /// </summary>
     /// <param name="modelType">The type of the model.</param>
@@ -64,4 +108,17 @@ public class ValidationBehaviorOptions
     /// <returns><see langword="true"/> if a rule exists; otherwise, <see langword="false"/>.</returns>
     public virtual bool ContainsKey(Type modelType, string propertyName)
         => PropertyConditions.ContainsKey((modelType, propertyName));
+
+    /// <summary>
+    /// Determines whether a rule exists for the specified property,
+    /// identified via a strongly typed lambda expression.
+    /// </summary>
+    /// <typeparam name="T">The type of the model.</typeparam>
+    /// <typeparam name="TProp">The type of the property.</typeparam>
+    /// <param name="property">
+    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
+    /// </param>
+    /// <returns><see langword="true"/> if a rule exists; otherwise, <see langword="false"/>.</returns>
+    public virtual bool ContainsKey<T>(Expression<Func<T, string?>> property)
+        => ContainsKey(typeof(T), GetPropertyName(property));
 }

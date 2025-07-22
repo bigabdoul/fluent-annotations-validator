@@ -17,8 +17,12 @@
 /// <param name="ResourceKey">
 /// An optional localization resource key to resolve the validation message.
 /// </param>
+/// <param name="ResourceType">
+/// An optional localization resource type to resolve the validation message.
+/// </param>
 public record ConditionalValidationRule(
     Func<object, bool> Predicate,
     string? Message = null,
     string? Key = null,
-    string? ResourceKey = null);
+    string? ResourceKey = null,
+    Type? ResourceType = null);

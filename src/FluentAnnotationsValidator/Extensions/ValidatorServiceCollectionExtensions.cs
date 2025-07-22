@@ -1,5 +1,5 @@
 using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using FluentValidation;

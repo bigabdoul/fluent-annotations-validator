@@ -15,4 +15,3 @@ public record TestLoginDto(string Email, string Password, string? Role = null)
 
     public string? Role { get; } = Role;
 }
-

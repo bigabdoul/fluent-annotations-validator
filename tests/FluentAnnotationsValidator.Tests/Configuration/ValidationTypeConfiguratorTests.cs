@@ -1,8 +1,11 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Tests.Assertions;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAnnotationsValidator.Tests.Resources;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
 using static TestHelpers;
@@ -20,6 +23,46 @@ public class ValidationTypeConfiguratorTests
     }
 
     [Fact]
+    public void WithValidationResource_SetsResourceTypeCorrectly()
+    {
+        // Arrange
+        var configurator = new ValidationTypeConfigurator<TestLoginDto>(_parent);
+
+        // Act
+        var result = configurator.WithValidationResource<ValidationMessages>();
+
+        // Assert
+        var field = typeof(ValidationTypeConfigurator<TestLoginDto>)
+            .GetField("_resourceType", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        var value = field?.GetValue(configurator);
+        Assert.Equal(typeof(ValidationMessages), value);
+        Assert.Same(configurator, result); // fluent chaining
+    }
+
+    [Fact]
+    public void Build_PersistsResourceTypeOnRules()
+    {
+        // Arrange
+        var configurator = new ValidationTypeConfigurator<TestLoginDto>(_parent)
+            .WithValidationResource<ValidationMessages>()
+            .When(x => x.Email, dto => string.IsNullOrWhiteSpace(dto.Email));
+
+        // Act
+        configurator.Build();
+
+        var resolved = ResolveBehaviorOptions();
+        _ = resolved.TryGet<TestLoginDto>(x => x.Email, out var rule);
+
+        // Assert
+        Assert.Multiple
+        (
+            () => Assert.NotNull(rule),
+            () => Assert.Equal(typeof(ValidationMessages), rule!.ResourceType)
+        );
+    }
+
+    [Fact]
     public void When_AddsConditionalRule()
     {
         _validator.When(x => x.Email, dto => dto.Role == "Admin").Build();
@@ -27,7 +70,7 @@ public class ValidationTypeConfiguratorTests
         // Simulate DI resolution
         var resolved = ResolveBehaviorOptions();
 
-        Assert.True(resolved.ContainsKey(typeof(TestLoginDto), nameof(TestLoginDto.Email)));
+        Assert.True(resolved.ContainsKey<TestLoginDto>(x => x.Email));
     }
 
     [Fact]
@@ -37,14 +80,14 @@ public class ValidationTypeConfiguratorTests
 
         var resolved = ResolveBehaviorOptions();
 
-        Assert.True(resolved.ContainsKey(typeof(TestLoginDto), nameof(TestLoginDto.Password)));
+        Assert.True(resolved.ContainsKey<TestLoginDto>(x => x.Password));
     }
 
     [Fact]
     public void Except_DisablesValidation()
     {
         _validator.Except(x => x.Role).Build();
-        var rule = GetRule(nameof(TestLoginDto.Role));
+        var rule = GetRule(x => x.Role);
 
         rule.ShouldNotMatch(predicateArg: new TestLoginDto("a", "b", "c"));
     }
@@ -53,7 +96,7 @@ public class ValidationTypeConfiguratorTests
     public void AlwaysValidate_AlwaysReturnsTrue()
     {
         _validator.AlwaysValidate(x => x.Password).Build();
-        var rule = GetRule(nameof(TestLoginDto.Password));
+        var rule = GetRule(x => x.Password);
 
         rule.ShouldMatch(predicateArg: new TestLoginDto("a", "b", "c"));
     }
@@ -65,8 +108,8 @@ public class ValidationTypeConfiguratorTests
             .WithMessage("Custom error")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
-        
+        var rule = GetRule(x => x.Email);
+
         rule.ShouldMatch(expectedMessage: "Custom error");
     }
 
@@ -77,7 +120,7 @@ public class ValidationTypeConfiguratorTests
             .WithKey("Email.AdminRequired")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
+        var rule = GetRule(x => x.Email);
 
         rule.ShouldMatch(expectedKey: "Email.AdminRequired");
     }
@@ -89,7 +132,7 @@ public class ValidationTypeConfiguratorTests
             .Localized("Admin_Email_Required")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
+        var rule = GetRule(x => x.Email);
 
         rule.ShouldMatch(expectedResource: "Admin_Email_Required");
     }
@@ -110,8 +153,8 @@ public class ValidationTypeConfiguratorTests
                   .WithMessage("Must validate password")
                .Build();
 
-        var emailr = GetRule(nameof(TestLoginDto.Email));
-        var passwr = GetRule(nameof(TestLoginDto.Password));
+        var emailr = GetRule(x => x.Email);
+        var passwr = GetRule(x => x.Password);
 
         emailr.ShouldMatch(expectedMessage: "Must validate email");
         passwr.ShouldMatch(expectedMessage: "Must validate password");
@@ -126,10 +169,10 @@ public class ValidationTypeConfiguratorTests
             .Localized("Email_Required_Localized")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
+        var rule = GetRule(x => x.Email);
 
-        rule.ShouldMatch(expectedMessage: "Required", 
-            expectedKey: "Email.Required", 
+        rule.ShouldMatch(expectedMessage: "Required",
+            expectedKey: "Email.Required",
             expectedResource: "Email_Required_Localized");
     }
 
@@ -140,7 +183,7 @@ public class ValidationTypeConfiguratorTests
             .WithMessage("Email required")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
+        var rule = GetRule(x => x.Email);
 
         rule.ShouldMatch(expectedMessage: "Email required");
     }
@@ -154,20 +197,18 @@ public class ValidationTypeConfiguratorTests
             .Localized("Email_Required")
             .Build();
 
-        var rule = GetRule(nameof(TestLoginDto.Email));
+        var rule = GetRule(x => x.Email);
 
-        rule.ShouldMatch(expectedMessage: "Custom message", 
-            expectedKey: "Email.Required", 
+        rule.ShouldMatch(expectedMessage: "Custom message",
+            expectedKey: "Email.Required",
             expectedResource: "Email_Required");
     }
 
-    private ConditionalValidationRule GetRule(string property)
+    private ConditionalValidationRule GetRule(Expression<Func<TestLoginDto, string?>> property)
     {
         _parent.Build();
-
         var resolved = ResolveBehaviorOptions();
-
-        return resolved.Get(typeof(TestLoginDto), property);
+        return resolved.Get(property);
     }
 
     private ValidationBehaviorOptions ResolveBehaviorOptions()

@@ -1,5 +1,5 @@
 using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Interfaces;
+using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentValidation;
 using Microsoft.Extensions.Options;
@@ -27,18 +27,18 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
         {
             foreach (var attr in prop.Attributes)
             {
-                _ = config.TryGet(typeof(T), prop.Property.Name, out var condition);
+                _ = config.TryGet(typeof(T), prop.Property.Name, out var rule);
 
                 RuleFor(model => prop.Property.GetValue(model))
                     .Custom((value, ctx) =>
                     {
                         if (!attr.IsValid(value))
                         {
-                            var message = resolver.ResolveMessage(prop, attr);
+                            var message = resolver.ResolveMessage(prop, attr, rule);
                             ctx.AddFailure(prop.Property.Name, message);
                         }
                     })
-                    .When(model => model is not null && (condition?.Predicate(model) ?? true));
+                    .When(model => model is not null && (rule?.Predicate(model) ?? true));
             }
         }
     }

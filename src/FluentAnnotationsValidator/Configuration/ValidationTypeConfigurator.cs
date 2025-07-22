@@ -1,5 +1,5 @@
-﻿using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Interfaces;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Extensions;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
@@ -32,14 +32,30 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     private readonly List<PendingRule> _pendingRules = [];
 
     private PendingRule? _currentRule;
+    private Type? _resourceType;
 
     private record PendingRule(
         LambdaExpression Property,
         Func<T, bool> Predicate,
         string? Message = null,
         string? Key = null,
-        string? ResourceKey = null
+        string? ResourceKey = null,
+        Type? ResourceType = null
     );
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
+    public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
+    {
+        _resourceType = typeof(TResource);
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
+    public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
+    {
+        _resourceType = resourceType;
+        return this;
+    }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
     public ValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
@@ -47,7 +63,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         CommitCurrentRule();
         _currentRule = new PendingRule(
             CastToObjectExpression(property),
-            model => condition(model)
+            model => condition(model),
+            ResourceType: _resourceType
         );
         return this;
     }
@@ -68,7 +85,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Message = message };
+            _currentRule = _currentRule with { Message = message, ResourceType = _resourceType };
         return this;
     }
 
@@ -76,7 +93,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithKey(string key)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Key = key };
+            _currentRule = _currentRule with { Key = key, ResourceType = _resourceType };
         return this;
     }
 
@@ -84,7 +101,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> Localized(string resourceKey)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { ResourceKey = resourceKey };
+            _currentRule = _currentRule with { ResourceKey = resourceKey, ResourceType = _resourceType };
         return this;
     }
 
@@ -96,21 +113,29 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
+    /// <remarks>
+    /// The list is populated only when the <see cref="ValidationBehaviorOptions"/>
+    /// options is resolved, usually when an instance of <see cref="IServiceProvider"/>
+    /// calls provider.GetService(typeof(IOptions&lt;ValidationBehaviorOptions&gt;));
+    /// </remarks>
     public void Build()
     {
         CommitCurrentRule();
 
         foreach (var rule in _pendingRules)
         {
+            // registration action if deferred until ValidationBehaviorOptions is resolved
             parent.Register(opts =>
+            {
                 opts.AddCondition(
                     rule.Property,
                     rule.Predicate,
                     rule.Message,
                     rule.Key,
-                    rule.ResourceKey
-                )
-            );
+                    rule.ResourceKey,
+                    rule.ResourceType
+                );
+            });
         }
 
         _pendingRules.Clear();
@@ -131,7 +156,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         return Expression.Lambda<Func<T, object>>(Expression.Convert(expr.Body, typeof(object)), expr.Parameters);
     }
 
-    #region IValidationTypeConfigurator<T> implementation
+    #region IValidationTypeConfigurator<T>
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
         => When(property, condition);
@@ -150,6 +175,12 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         => Localized(resourceKey);
 
     IValidationTypeConfigurator<TNext> IValidationTypeConfigurator<T>.For<TNext>() => For<TNext>();
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithValidationResource<TResource>()
+        => WithValidationResource<TResource>();
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithValidationResource(Type? resourceType)
+        => WithValidationResource(resourceType);
 
     #endregion
 }

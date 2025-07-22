@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace FluentAnnotationsValidator.Interfaces;
+namespace FluentAnnotationsValidator.Abstractions;
 
 /// <summary>
 /// Provides a fluent interface for configuring conditional validation rules on a specific model type.
@@ -9,6 +9,20 @@ namespace FluentAnnotationsValidator.Interfaces;
 /// <typeparam name="T">The model type being configured.</typeparam>
 public interface IValidationTypeConfigurator<T>
 {
+    /// <summary>
+    /// Sets the default resource type for localization lookups in this configuration chain.
+    /// </summary>
+    /// <typeparam name="TResource">The type parameter of the validation resource type to use.</typeparam>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> WithValidationResource<TResource>();
+
+    /// <summary>
+    /// Sets the default resource type for localization lookups in this configuration chain.
+    /// </summary>
+    /// <param name="resourceType">The validation resource type to use. Can be null.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> WithValidationResource(Type? resourceType);
+
     /// <summary>
     /// Adds a conditional validation rule for a given property.
     /// </summary>
