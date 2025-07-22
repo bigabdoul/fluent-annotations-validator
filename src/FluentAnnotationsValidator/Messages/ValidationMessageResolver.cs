@@ -126,14 +126,14 @@ public class ValidationMessageResolver : IValidationMessageResolver
         var modelType = propertyInfo.TargetModelType;
         var propertyName = propertyInfo.Property.Name;
 
-        // 1️⃣ Rule-based explicit message override
+        // 1️ Rule-based explicit message override
         if (rule is not null && !string.IsNullOrWhiteSpace(rule.Message))
             return rule.Message;
 
         var formatArg = GetFormatValue(attr);
         var culture = rule?.Culture ?? CultureInfo.CurrentCulture;
 
-        // 2️⃣ Rule-based resource lookup
+        // 2️ Rule-based resource lookup
         if (rule is not null &&
             !string.IsNullOrWhiteSpace(rule.ResourceKey) &&
             rule.ResourceType is not null &&
@@ -142,7 +142,7 @@ public class ValidationMessageResolver : IValidationMessageResolver
             return resolvedFromRule;
         }
 
-        // 3️⃣ Attribute-based explicit resource key
+        // 3️ Attribute-based explicit resource key
         if (!string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
         {
             var explicitType = attr.ErrorMessageResourceType
@@ -155,7 +155,7 @@ public class ValidationMessageResolver : IValidationMessageResolver
             }
         }
 
-        // 4️⃣ Convention fallback via [ValidationResource]
+        // 4️ Convention fallback via [ValidationResource]
         var fallbackType = modelType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
 
         if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? true))
@@ -166,11 +166,11 @@ public class ValidationMessageResolver : IValidationMessageResolver
                 return resolvedFromConvention;
         }
 
-        // 5️⃣ Rule-level fallback message
+        // 5️ Rule-level fallback message
         if (rule is not null && !string.IsNullOrWhiteSpace(rule.FallbackMessage))
             return rule.FallbackMessage;
 
-        // 6️⃣ Inline message or final fallback
+        // 6️ Inline message or final fallback
         return !string.IsNullOrWhiteSpace(attr.ErrorMessage)
             ? attr.FormatErrorMessage(propertyName)
             : $"Invalid value for {propertyName}";

@@ -61,38 +61,65 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The e-mail address is invalid..
+        ///   Looks up a localized string similar to The e-mail address is required (convention)..
         /// </summary>
-        internal static string Email_EmailAddress {
+        internal static string Email_Required {
             get {
-                return ResourceManager.GetString("Email.EmailAddress", resourceCulture);
+                return ResourceManager.GetString("Email_Required", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The e-mail address is required..
+        ///   Looks up a localized string similar to The e-mail address is invalid..
         /// </summary>
-        internal static string Email_Required {
+        internal static string EmailEmailAddress {
             get {
-                return ResourceManager.GetString("Email.Required", resourceCulture);
+                return ResourceManager.GetString("EmailEmailAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email is required..
+        /// </summary>
+        internal static string EmailRequired {
+            get {
+                return ResourceManager.GetString("EmailRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Password should contain a minimum of {0} characters (convention)..
+        /// </summary>
+        internal static string Password_MinLength {
+            get {
+                return ResourceManager.GetString("Password_MinLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The password is required (convention)..
+        /// </summary>
+        internal static string Password_Required {
+            get {
+                return ResourceManager.GetString("Password_Required", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The password should have a minimum of {0} characters..
         /// </summary>
-        internal static string Password_MinLength {
+        internal static string PasswordMinLength {
             get {
-                return ResourceManager.GetString("Password.MinLength", resourceCulture);
+                return ResourceManager.GetString("PasswordMinLength", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password is required..
+        ///   Looks up a localized string similar to Password cannot be blank..
         /// </summary>
-        internal static string Password_Required {
+        internal static string PasswordRequired {
             get {
-                return ResourceManager.GetString("Password.Required", resourceCulture);
+                return ResourceManager.GetString("PasswordRequired", resourceCulture);
             }
         }
     }

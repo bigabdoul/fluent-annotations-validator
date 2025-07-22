@@ -9,6 +9,7 @@ namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
+    // Use a convention-based IValidator<TestRegistrationDto> by default
     private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = 
         new(new ValidationMessageResolver(), CreateOptions());
 

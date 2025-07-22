@@ -2,6 +2,7 @@
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAnnotationsValidator.Tests.Resources;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Messages;

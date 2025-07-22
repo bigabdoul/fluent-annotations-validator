@@ -1,7 +1,9 @@
-﻿namespace FluentAnnotationsValidator.Tests.Messages;
+﻿using FluentAnnotationsValidator.Metadata;
 
-public static class ValidationMessages
+namespace FluentAnnotationsValidator.Tests.Messages;
+
+[ValidationResource(typeof(ConventionValidationMessages))]
+public class LoginDtoWithResource
 {
-    public static string EmailRequired => "Email is required.";
-    public static string PasswordRequired => "Password cannot be blank.";
+    public string? Email { get; set; }
 }
