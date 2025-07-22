@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - Patch Release
+
+- Fixed array-based message formatting via FormatMessage(...)
+- Auto-assigned .Culture to resource classes in .resx when WithCulture(...) is used
+- Added format extraction for MinLength, MaxLength, StringLength, Range, Regex, and more
+
 ## [v1.2.0] - 2025-07-22
 
 ### Scoped Localization + Resilient Fallbacks

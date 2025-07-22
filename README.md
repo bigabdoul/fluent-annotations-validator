@@ -4,72 +4,48 @@
 [![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
-A lightweight, dynamic bridge between `System.ComponentModel.DataAnnotations` and FluentValidation.
-
-Supports localized error messages, DI registration, convention-based resolution, ASP.NET Core integration — and ships with full Source Link and step-through symbol support.
+A lightweight, dynamic bridge between `System.ComponentModel.DataAnnotations` and FluentValidation. Supports localized error messages, DI registration, convention-based resolution, ASP.NET Core integration — and ships with full Source Link and step-through symbol support.
 
 ---
 
 ## ✨ Purpose
 
-`FluentAnnotationsValidator` is a reflection-powered adapter that converts standard `[ValidationAttribute]` annotations into fluent validation rules at runtime. It supports localized error messaging, DI registration, performance caching, and debugging, making it a drop-in enhancement for any .NET API or ASP.NET Core backend.
+FluentAnnotationsValidator is a reflection-powered adapter that converts standard `[ValidationAttribute]` annotations into fluent validation rules at runtime. It handles localized messaging, performance caching, debug support, and DI registration — making it a seamless enhancement for any .NET API or ASP.NET Core backend.
 
 ---
 
 ## 🧠 Key Features
 
-- Converts `[Required]`, `[EmailAddress]`, `[MinLength]`, `[StringLength]`, `[Range]`, and more to FluentValidation rules
-- Resolves localized error messages from `.resx` or static resource classes
+- Converts `[Required]`, `[EmailAddress]`, `[Range]`, `[MinLength]`, `[StringLength]`, etc. into runtime FluentValidation rules
+- Localized error messages via `.resx` or static resource classes
 - Supports conventional message keys (`Property_Attribute`) and explicit `ErrorMessageResourceName`
-- Seamless registration via DI (`IValidator<T>`)
-- High-performance validation with caching and no boilerplate
-- Compatible with Minimal APIs, MVC, Blazor, and Web APIs
-- Includes Source Link metadata for step-through debugging
-- Published with deterministic builds and `.snupkg` symbols
+- Conditional rules with lambda-based validation and fallback messages
+- Culture-aware formatting for scalars and arrays (e.g., `{0}`, `{1}`)
+- DI integration (`IValidator<T>`) for use in endpoints and controllers
+- High-performance with metadata caching, no boilerplate
+- Fluent DSL configuration with discoverable chaining
+- Source Link + deterministic builds + `.snupkg` symbol publishing
 
 ---
 
 ## 📦 Installation
 
-Add via NuGet:
+Install via NuGet:
 
-| Package | Version | Install |
+| Package | Version | Command |
 |--------|---------|---------|
-| FluentAnnotationsValidator | 1.1.0 | `dotnet add package FluentAnnotationsValidator` |
+| FluentAnnotationsValidator | 1.2.1 | `dotnet add package FluentAnnotationsValidator` |
 
 ---
 
 ## 🚀 Quickstart
 
-### 1. Register validators
-
-```csharp
-using FluentAnnotationsValidator.Extensions;
-
-builder.Services.AddFluentAnnotationsValidators();
-```
-
-### Fluent Validation Configuration
-
-Define conditional rules per property, model, and context:
-
-```csharp
-services.UseFluentAnnotations()
-    .For<LoginDto>()
-        .WithValidationResource<ValidationMessages>()
-        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
-            .Localized("Password_Required")
-            .UseFallbackMessage("Mot de passe requis.")
-    .Build();
-```
-
-### 2. Annotate your DTO
+### 1. DTO Annotations
 
 ```csharp
 using FluentAnnotationsValidator.Metadata;
 
-[ValidationResource(typeof(ValidationMessages))]
+[ValidationResource(typeof(ValidationMessages))] // optional; can be set via .WithValidationResource<T>()
 public class RegistrationDto
 {
     [Required]
@@ -79,12 +55,10 @@ public class RegistrationDto
     [Required]
     [MinLength(6)]
     public string Password { get; set; } = default!;
-
-    public string? Role { get; set; }
 }
 ```
 
-### 3. Define localized messages
+### 2. Localized Messages (`.resx` or static class)
 
 ```csharp
 public static class ValidationMessages
@@ -96,13 +70,56 @@ public static class ValidationMessages
 }
 ```
 
-### 4. Validate in endpoint
+### 3. Configuration
+
+#### Basic Registration
+
+```csharp
+using FluentAnnotationsValidator.Extensions;
+using System.Globalization;
+
+// Initialization required to auto-discovery of [ValidationAttribute]
+services.AddFluentAnnotationsValidators();
+
+// or (for better performance, load only assemblies of targeted types):
+// services.AddFluentAnnotationsValidators(typeof(RegistrationDto));
+
+services.UseFluentAnnotations()
+    .For<RegistrationDto>()
+        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+        .WithValidationResource<ValidationMessages>()
+    .Build();
+```
+
+#### Conditional Fallback Logic
+
+```csharp
+services.UseFluentAnnotations()
+    .For<RegistrationDto>()
+        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+        .WithValidationResource<ValidationMessages>()
+        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
+            .Localized("Password_Required")
+            .UseFallbackMessage("Mot de passe requis.")
+    .Build();
+```
+
+#### Global Configuration (Coming soon)
+
+```csharp
+services.UseFluentAnnotations()
+    .ForAll() // Or .ForAll(typeof(DtoA), typeof(DtoB))
+        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+        .WithValidationResource<ValidationMessages>()
+    .Build();
+```
+
+### 4. Runtime Validation
 
 ```csharp
 app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto> validator) =>
 {
     var result = await validator.ValidateAsync(dto);
-
     if (!result.IsValid)
         return Results.BadRequest(result.Errors);
 
@@ -114,85 +131,57 @@ app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto>
 
 ## 🧪 Testing
 
-Included in `FluentAnnotationsValidator.Tests`:
+Inside `FluentAnnotationsValidator.Tests`:
 
-- Unit tests for all supported `ValidationAttribute` types
-- Localized error resolution using `.resx` and static resource classes
-- Edge cases like invalid formats, missing values, and multiple violations
-- Deterministic build verification and CI workflow coverage
+- ✅ Unit tests for all `[ValidationAttribute]` types
+- ✅ Resolution of localized strings via `.resx` and static resources
+- ✅ Edge cases like multiple violations and fallback messages
+- ✅ Deterministic build and workflow verification
 
 ---
 
 ## 🗂️ Solution Structure
 
-| Project | Description |
-|--------|-------------|
-| `FluentAnnotationsValidator` | Core library for fluent, annotation-driven validation |
-| `FluentAnnotationsValidator.Tests` | Unified test suite for all validation logic and fluent configuration |
+| Project | Purpose |
+|--------|---------|
+| `FluentAnnotationsValidator` | Core validation engine, DSL, and culture-aware formatting |
+| `FluentAnnotationsValidator.Tests` | Complete test suite covering configuration, resolution, formatting |
 
-### 📚 Project Layout
+### 📁 Project Layout
 
 ```
 src/
 ├── FluentAnnotationsValidator/
-│   ├── Abstractions/
-│   │   ├── IValidationConfigurator.cs
-│   │   ├── IValidationMessageResolver<T>.cs
-│   │   └── IValidationTypeConfigurator.cs
-│   ├── Configuration/
-│   │   ├── ValidationBehaviorOptions.cs
-│   │   └── ValidationTypeConfigurator<T>.cs
-│   ├── Extensions/
-│   │   ├── ValidationBehaviorOptionsExtensions.cs
-│   │   └── ValidatorServiceCollectionExtensions.cs
-│   ├── Internal/
-│   │   └── Reflection/
-│   │       ├── PropertyValidationInfo.cs
-│   │       └── ValidationMetadataCache.cs
-│   ├── Messages/
-│   │   └── ValidationMessageResolver.cs
-│   ├── Runtime/
-│   │   └── Validators/
-│   │       └── DataAnnotationsValidator<T>.cs
-│   └── Metadata/
-│       └── ValidationResourceAttribute.cs
+│   ├── Abstractions/       // Interfaces for config, resolvers
+│   ├── Configuration/      // DSL surface and options
+│   ├── Extensions/         // Service registration
+│   ├── Internal/Reflection // Metadata cache
+│   ├── Messages/           // Fallback + formatting logic
+│   ├── Runtime/Validators  // Validator factories
+│   └── Metadata/           // Resource marker attribute
 
 tests/
 ├── FluentAnnotationsValidator.Tests/
 │   ├── Assertions/
-│   │   └── ValidationAssertions.cs
 │   ├── Configuration/
-│   │   └── ValidationTypeConfiguratorTests.cs
 │   ├── Models/
-│   │   ├── TestLoginDto.cs
-│   │   └── TestRegistrationDto.cs
 │   ├── Resources/
-│   │   └── ValidationMessages.cs
 │   ├── Validators/
-│   │   └── RegistrationValidatorTests.cs
 │   ├── DIRegistrationTests.cs
-|   └── TestHelpers.cs
+│   └── TestHelpers.cs
 ```
 
 ---
 
 ## 📘 Documentation
 
-Detailed guides, examples, and diagrams are available in the [documentation folder](docs/index.md):
+Explore advanced flows in the [`docs`](docs/index.md):
 
-- [Architecture internals](docs/architecture.md)
-- [Localization strategies](docs/localization.md)
-- [Customization & Extensibility](docs/customization.md)
-- [Validation flow breakdown](docs/validation-flow.md)
-- [Fluent validation configuration](docs/configuration/fluent.md)
-
-Supports:
-- Strongly typed property access
-- Conditional logic via lambdas
-- Localized and custom error messages
-- Composable, discoverable, ergonomic configuration
-
-Full guide in [`docs/configuration/fluent.md`](docs/configuration/fluent.md)
+- [Architecture](docs/architecture.md)
+- [Localization](docs/localization.md)
+- [Extensibility](docs/customization.md)
+- [Validation flow](docs/validation-flow.md)
+- [Fluent DSL config](docs/configuration/fluent.md)
 
 ---
 
@@ -204,4 +193,4 @@ Licensed under the MIT License.
 
 ## 🤝 Contributing
 
-Have an idea for an extension point, message strategy, or improved experience? PRs and issues welcome. This validator is designed to be extensible, teachable, and fun to debug.
+Ideas welcome — from resource strategies to DSL ergonomics. Submit pull requests, file issues, and join the mission to make validation intuitive and multilingual.
