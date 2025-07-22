@@ -2,6 +2,7 @@
 using FluentAnnotationsValidator.Extensions;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -54,6 +55,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
         _resourceType = typeof(TResource);
+        AssignCultureTo(_resourceType);
         return this;
     }
 
@@ -61,6 +63,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
         _resourceType = resourceType;
+        if (_resourceType != null)
+            AssignCultureTo(_resourceType);
         return this;
     }
 
@@ -204,6 +208,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
             _pendingRules.Add(_currentRule);
             _currentRule = null;
         }
+    }
+
+    private void AssignCultureTo(Type type)
+    {
+        if (_culture is null) return;
+
+        var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+        prop?.SetValue(null, _culture);
     }
 
     private static Expression<Func<T, object>> CastToObjectExpression<TProp>(Expression<Func<T, TProp>> expr)
