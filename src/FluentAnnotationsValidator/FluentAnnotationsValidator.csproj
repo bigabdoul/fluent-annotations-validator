@@ -7,11 +7,11 @@
 
     <!-- NuGet metadata -->
     <PackageId>FluentAnnotationsValidator</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Authors>bigabdoul</Authors>
     <Company>2KS Solutions</Company>
     <Product>FluentAnnotationsValidator</Product>
-    <Description>A reflection-powered FluentValidation adapter that bridges System.ComponentModel.DataAnnotations to FluentValidation rules with full localization, caching, and DI support.</Description>
+    <Description>A type-safe, fluent validation library for .NET that dynamically translates [ValidationAttribute] annotations into runtime validation rules. Supports conditional logic, localized error messages, and ergonomic configuration via a developer-friendly DSL.</Description>
     <PackageTags>FluentValidation;DataAnnotations;Validation;.NET;.NETCore;NuGet;MinimalAPI</PackageTags>
     <PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
@@ -19,12 +19,10 @@
     <LicenseExpression>MIT</LicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageReleaseNotes>
-Initial release with:
-- Reflection-based validator builder
-- Convention-based message resolver
-- ASP.NET Core DI integration
-    </PackageReleaseNotes>
+	  <PackageReleaseNotes>
+	    Patch release: Improved culture-aware message formatting via FormatMessage(...) helper. Resource classes now auto-bind .Culture when WithCulture(...) is used. Added format extraction from common ValidationAttributes for localized error templates.
+	  </PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
