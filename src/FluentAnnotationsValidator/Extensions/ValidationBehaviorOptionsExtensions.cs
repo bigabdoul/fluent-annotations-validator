@@ -1,6 +1,7 @@
 using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Runtime.Validators;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Extensions;
@@ -21,6 +22,7 @@ public static class ValidationBehaviorOptionsExtensions
     /// <param name="key">An optional error key used for message resolution or logging.</param>
     /// <param name="resourceKey">An optional resource key used for localized error messages.</param>
     /// <param name="resourceType"></param>
+    /// <param name="culture">The culture-specific format provider to use.</param>
     /// <remarks>
     /// The condition will be stored and evaluated at runtime via <see cref="DataAnnotationsValidator{T}"/>. 
     /// Metadata such as <paramref name="message"/>, <paramref name="key"/>, and <paramref name="resourceKey"/> 
@@ -32,9 +34,13 @@ public static class ValidationBehaviorOptionsExtensions
         string? message = null,
         string? key = null,
         string? resourceKey = null,
-        Type? resourceType = null)
+        Type? resourceType = null,
+        CultureInfo? culture = null,
+        string? fallbackMessage = null,
+        bool useConventionalKeys = true)
     {
-        var rule = CreateValidationRule(propertyExpression, predicate, out var propertyName, message, key, resourceKey, resourceType);
+        var rule = CreateValidationRule(propertyExpression, predicate, out var propertyName, 
+            message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys);
         options.Set(typeof(TModel), propertyName, rule);
         return rule;
     }
@@ -46,10 +52,20 @@ public static class ValidationBehaviorOptionsExtensions
         string? message = null,
         string? key = null,
         string? resourceKey = null,
-        Type? resourceType = null)
+        Type? resourceType = null,
+        CultureInfo? culture = null,
+        string? fallbackMessage = null,
+        bool useConventionalKeys = true)
     {
         propertyName = GetPropertyName(propertyExpression);
-        var rule = new ConditionalValidationRule(model => predicate((TModel)model), message, key, resourceKey, resourceType);
+        var rule = new ConditionalValidationRule(model => predicate((TModel)model), 
+            message, 
+            key, 
+            resourceKey, 
+            resourceType, 
+            culture,
+            fallbackMessage,
+            useConventionalKeys);
         return rule;
     }
 

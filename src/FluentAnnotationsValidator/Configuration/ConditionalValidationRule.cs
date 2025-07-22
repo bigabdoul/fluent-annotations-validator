@@ -20,9 +20,15 @@
 /// <param name="ResourceType">
 /// An optional localization resource type to resolve the validation message.
 /// </param>
+/// <param name="Culture">An optional culture-specific format provider.</param>
+/// <param name="FallbackMessage">Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.</param>
+/// <param name="UseConventionalKeyFallback">Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).</param>
 public record ConditionalValidationRule(
     Func<object, bool> Predicate,
     string? Message = null,
     string? Key = null,
     string? ResourceKey = null,
-    Type? ResourceType = null);
+    Type? ResourceType = null,
+    System.Globalization.CultureInfo? Culture = null,
+    string? FallbackMessage = null,
+    bool UseConventionalKeyFallback = true);

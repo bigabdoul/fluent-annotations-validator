@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Globalization;
+using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Abstractions;
 
@@ -22,6 +23,13 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="resourceType">The validation resource type to use. Can be null.</param>
     /// <returns>The current configurator for further chaining.</returns>
     IValidationTypeConfigurator<T> WithValidationResource(Type? resourceType);
+
+    /// <summary>
+    /// Sets the culture used during error message resolution.
+    /// </summary>
+    /// <param name="culture">The culture information to set.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> WithCulture(CultureInfo culture);
 
     /// <summary>
     /// Adds a conditional validation rule for a given property.
@@ -78,6 +86,19 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="resourceKey">The key used to lookup localized text from a resource provider.</param>
     /// <returns>The current configurator for further chaining.</returns>
     IValidationTypeConfigurator<T> Localized(string resourceKey);
+
+    /// <summary>
+    /// Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).
+    /// </summary>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> DisableConventionalKeys();
+
+    /// <summary>
+    /// Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.
+    /// </summary>
+    /// <param name="fallbackMessage">The fallback message to use.</param>
+    /// <returns></returns>
+    IValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage);
 
     /// <summary>
     /// Transitions to configuring a different model type.

@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
@@ -33,6 +34,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
 
     private PendingRule? _currentRule;
     private Type? _resourceType;
+    private CultureInfo? _culture;
+    private bool _useConventionalKeys = true;
+    private string? _fallbackMessage;
 
     private record PendingRule(
         LambdaExpression Property,
@@ -40,7 +44,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         string? Message = null,
         string? Key = null,
         string? ResourceKey = null,
-        Type? ResourceType = null
+        Type? ResourceType = null,
+        CultureInfo? Culture = null,
+        string? FallbackMessage = null,
+        bool UseConventionalKeys = true
     );
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
@@ -57,14 +64,24 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         return this;
     }
 
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
+    public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
+    {
+        _culture = culture;
+        return this;
+    }
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
     public ValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
     {
         CommitCurrentRule();
         _currentRule = new PendingRule(
-            CastToObjectExpression(property),
-            model => condition(model),
-            ResourceType: _resourceType
+            Property: CastToObjectExpression(property),
+            Predicate: model => condition(model),
+            ResourceType: _resourceType,
+            Culture: _culture,
+            FallbackMessage: _fallbackMessage,
+            UseConventionalKeys: _useConventionalKeys
         );
         return this;
     }
@@ -85,7 +102,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Message = message, ResourceType = _resourceType };
+            _currentRule = _currentRule with
+            {
+                Message = message,
+                ResourceType = _resourceType,
+                Culture = _culture,
+                FallbackMessage = _fallbackMessage,
+                UseConventionalKeys = _useConventionalKeys,
+            };
         return this;
     }
 
@@ -93,7 +117,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithKey(string key)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Key = key, ResourceType = _resourceType };
+            _currentRule = _currentRule with
+            {
+                Key = key,
+                ResourceType = _resourceType,
+                Culture = _culture,
+                FallbackMessage = _fallbackMessage,
+                UseConventionalKeys = _useConventionalKeys,
+            };
         return this;
     }
 
@@ -101,7 +132,28 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> Localized(string resourceKey)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { ResourceKey = resourceKey, ResourceType = _resourceType };
+            _currentRule = _currentRule with
+            {
+                ResourceKey = resourceKey,
+                ResourceType = _resourceType,
+                Culture = _culture,
+                FallbackMessage = _fallbackMessage,
+                UseConventionalKeys = _useConventionalKeys,
+            };
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConventionalKeys"/>
+    public ValidationTypeConfigurator<T> DisableConventionalKeys()
+    {
+        _useConventionalKeys = false;
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.UseFallbackMessage(string)"/>
+    public ValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage)
+    {
+        _fallbackMessage = fallbackMessage;
         return this;
     }
 
@@ -133,7 +185,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
                     rule.Message,
                     rule.Key,
                     rule.ResourceKey,
-                    rule.ResourceType
+                    rule.ResourceType,
+                    rule.Culture,
+                    rule.FallbackMessage,
+                    rule.UseConventionalKeys
                 );
             });
         }
@@ -181,6 +236,15 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithValidationResource(Type? resourceType)
         => WithValidationResource(resourceType);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithCulture(CultureInfo culture)
+        => WithCulture(culture);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.DisableConventionalKeys()
+        => DisableConventionalKeys();
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.UseFallbackMessage(string fallbackMessage)
+        => UseFallbackMessage(fallbackMessage);
 
     #endregion
 }
