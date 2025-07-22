@@ -28,18 +28,9 @@ jobs:
         run: dotnet build FluentAnnotationsValidator.sln --configuration Release
 
       - name: Pack NuGet packages (with symbols, source, and deterministic metadata)
-        run: dotnet pack ./src/FluentAnnotationsValidator/FluentAnnotationsValidator.csproj \
-              --configuration Release \
-              --output ./nupkg \
-              --include-symbols \
-              --include-source \
-              --property:ContinuousIntegrationBuild=true
+        run: dotnet pack --configuration Release --output ./nupkg --include-symbols --include-source --property:ContinuousIntegrationBuild=true
 
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkg/*.nupkg \
-              --source https://api.nuget.org/v3/index.json \
-              --api-key ${{ secrets.NUGET_API_KEY }} \
-              --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-
