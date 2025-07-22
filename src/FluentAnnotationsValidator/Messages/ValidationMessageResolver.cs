@@ -90,19 +90,14 @@ public class ValidationMessageResolver : IValidationMessageResolver
         if (resourceType is null || string.IsNullOrWhiteSpace(resourceKey))
             return false;
 
-        var prop = resourceType.GetProperty(resourceKey,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-
-        var raw = prop?.GetValue(null)?.ToString();
+        var raw = GetResourceValue(resourceType, resourceKey);
         if (string.IsNullOrWhiteSpace(raw))
             return false;
 
         try
         {
             var formatter = culture ?? CultureInfo.CurrentCulture;
-            message = formatArg != null
-                ? string.Format(formatter, raw, formatArg)
-                : raw;
+            message = FormatMessage(formatter, raw, formatArg);
 
             return true;
         }
@@ -176,22 +171,86 @@ public class ValidationMessageResolver : IValidationMessageResolver
             : $"Invalid value for {propertyName}";
     }
 
-    private static string GetConventionalKey(string propertyName, ValidationAttribute attr)
+    /// <summary>
+    /// Retrieves the value of a localized resource key exposed as a static property or method 
+    /// from a resource class, typically generated from a .resx file.
+    /// </summary>
+    /// <param name="type">The resource type (e.g. <c>ValidationMessages</c>) containing the key.</param>
+    /// <param name="key">The name of the static member to retrieve (e.g. <c>"Email_Required"</c>).</param>
+    /// <returns>
+    /// The resolved localized string, or <c>null</c> if the key does not exist or retrieval fails.
+    /// </returns>
+    protected static string? GetResourceValue(Type type, string key)
     {
-        var shortName = attr.GetType().Name.Replace("Attribute", "");
-        return $"{propertyName}_{shortName}";
+        var member = type.GetMember(key,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault();
+
+        return member switch
+        {
+            PropertyInfo prop => prop.GetValue(null)?.ToString(),
+            MethodInfo method when method.GetParameters().Length == 0 =>
+                method.Invoke(null, null)?.ToString(),
+            _ => null
+        };
     }
 
-    private static object? GetFormatValue(ValidationAttribute attr)
+    /// <summary>
+    /// Extracts contextual formatting data from common <see cref="ValidationAttribute"/> types, 
+    /// which can be injected into error messages as format arguments (e.g. min/max lengths).
+    /// </summary>
+    /// <param name="attr">The validation attribute instance to inspect.</param>
+    /// <returns>
+    /// An object representing the format argument(s), such as an integer, array, or pattern string. 
+    /// Returns <c>null</c> if the attribute type is unsupported or lacks relevant data.
+    /// </returns>
+    protected static object? GetFormatValue(ValidationAttribute attr)
     {
         return attr switch
         {
             MinLengthAttribute m => m.Length,
             MaxLengthAttribute m => m.Length,
-            StringLengthAttribute s => s.MaximumLength,
-            RangeAttribute r => $"{r.Minimum}–{r.Maximum}",
+            StringLengthAttribute s => s.MinimumLength > 0
+                ? new[] { s.MinimumLength, s.MaximumLength }
+                : s.MaximumLength,
+            RangeAttribute r => new[] { r.Minimum, r.Maximum },
             RegularExpressionAttribute r => r.Pattern,
+            CompareAttribute c => c.OtherProperty, // for "must match {0}" style messages
+            CreditCardAttribute => "credit-card",   // semantic format type
+            EmailAddressAttribute => "email",         // useful for diagnostics or fallback tagging
+            PhoneAttribute => "phone",         // helps with custom formatting or error hints
+            UrlAttribute => "url",           // gives context to string-based formats
+            FileExtensionsAttribute f => f.Extensions,    // could return string.Join(", ", f.Extensions)
+            RequiredAttribute => "required",      // placeholder-friendly (e.g. "{0} is required")
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Formats a message string using the specified culture and format argument(s), with support 
+    /// for both scalar values and array-based inputs.
+    /// </summary>
+    /// <param name="culture">The culture used for formatting conventions.</param>
+    /// <param name="format">The composite format string (e.g. <c>"Value must be between {0} and {1}."</c>).</param>
+    /// <param name="args">
+    /// The value or values to inject into the format string. Can be a single object, 
+    /// an <c>object[]</c>, or a typed array like <c>int[]</c>.
+    /// </param>
+    /// <returns>The fully formatted and culture-aware message string.</returns>
+    protected static string FormatMessage(CultureInfo culture, string format, object? args)
+    {
+        // Dynamically unpack array-based formatArg for string.Format — supports object[], int[], etc.
+        // Falls back to single value formatting if not array
+        return args switch
+        {
+            object[] list => string.Format(culture, format, list),
+            Array arr => string.Format(culture, format, [.. arr.Cast<object>()]),
+            _ => string.Format(culture, format, args)
+        };
+    }
+
+    private static string GetConventionalKey(string propertyName, ValidationAttribute attr)
+    {
+        var shortName = attr.GetType().Name.Replace("Attribute", "");
+        return $"{propertyName}_{shortName}";
     }
 }
