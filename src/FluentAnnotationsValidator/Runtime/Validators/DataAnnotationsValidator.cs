@@ -19,16 +19,23 @@ public class DataAnnotationsValidator<T> : AbstractValidator<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="DataAnnotationsValidator{T}"/> class.
     /// </summary>
-    public DataAnnotationsValidator(IValidationMessageResolver resolver, IOptions<ValidationBehaviorOptions> options)
+    /// <param name="resolver"></param>
+    /// <param name="options"></param>
+    /// <param name="fallbackResolver"></param>
+    public DataAnnotationsValidator(IValidationMessageResolver resolver,
+        IOptions<ValidationBehaviorOptions> options,
+        IImplicitRuleResolver fallbackResolver
+    )
     {
         var metadata = ValidationMetadataCache.Get(typeof(T));
-        var config = options.Value;
+        var behaviorOptions = options.Value;
 
         foreach (var prop in metadata)
         {
             foreach (var attr in prop.Attributes)
             {
-                _ = config.TryGet(typeof(T), prop.Property.Name, out var rule);
+                //_ = behaviorOptions.TryGet(typeof(T), prop.Property.Name, out var rule);
+                var rule = fallbackResolver.Resolve(typeof(T), prop.Property, attr, behaviorOptions);
 
                 RuleFor(model => prop.Property.GetValue(model))
                     .Custom((value, ctx) =>

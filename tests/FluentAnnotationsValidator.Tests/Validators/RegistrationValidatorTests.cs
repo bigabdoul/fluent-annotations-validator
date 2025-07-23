@@ -9,9 +9,11 @@ namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
+    private static IOptions<ValidationBehaviorOptions> _options = CreateOptions();
+
     // Use a convention-based IValidator<TestRegistrationDto> by default
     private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = 
-        new(new ValidationMessageResolver(), CreateOptions());
+        new(new ValidationMessageResolver(), _options, new ImplicitRuleResolver(_options));
 
     private static IOptions<ValidationBehaviorOptions> CreateOptions()
         => Options.Create(new ValidationBehaviorOptions());

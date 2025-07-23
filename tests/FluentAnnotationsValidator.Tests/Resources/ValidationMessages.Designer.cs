@@ -61,20 +61,20 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The e-mail address is invalid (convention)..
+        /// </summary>
+        internal static string Email_EmailAddress {
+            get {
+                return ResourceManager.GetString("Email_EmailAddress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The e-mail address is required (convention)..
         /// </summary>
         internal static string Email_Required {
             get {
                 return ResourceManager.GetString("Email_Required", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The e-mail address is invalid..
-        /// </summary>
-        internal static string EmailEmailAddress {
-            get {
-                return ResourceManager.GetString("EmailEmailAddress", resourceCulture);
             }
         }
         

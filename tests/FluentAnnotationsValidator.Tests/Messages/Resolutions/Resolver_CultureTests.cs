@@ -1,8 +1,12 @@
 ﻿using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
@@ -34,5 +38,41 @@ public class Resolver_CultureTests
         var resolvedMessage = new ValidationMessageResolver().ResolveMessage(info, attr, rule);
 
         Assert.Equal(expectedMessage, resolvedMessage);
+    }
+
+    [Fact]
+    public void Inits_FLuentValidation_Using_Provided_Culture()
+    {
+        var services = TestHelpers.CreateServices();
+        var dto = new TestLoginDto("email@example.com", ""); // 1 error: password required
+
+        // Act
+
+        // TODO: Fix: This configuration has no conditions; so, how is message resolution happening?
+        services.UseFluentAnnotations()
+            .For<TestLoginDto>()
+                .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+                .WithValidationResource<ValidationMessages>()
+            .Build();
+
+        var provider = services.BuildServiceProvider();
+        var resolved = provider.GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
+        var validator = provider.GetRequiredService<IValidator<TestLoginDto>>();
+        var result = validator.Validate(dto);
+
+        // Assert
+        Assert.Multiple
+        (
+            () => Assert.False(result.IsValid),
+            () => Assert.Equal
+                (
+                    // error message must match localized version
+                    ValidationMessages.Password_Required,
+                    result.Errors.FirstOrDefault
+                    (
+                        e => e.PropertyName == nameof(TestLoginDto.Password)
+                    )?.ErrorMessage
+                )
+        );
     }
 }

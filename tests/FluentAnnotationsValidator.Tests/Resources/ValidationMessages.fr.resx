@@ -126,8 +126,8 @@
   <data name="PasswordMinLength" xml:space="preserve">
     <value>Le mot de passe doit avoir au minimum {0} caractères.</value>
   </data>
-  <data name="EmailEmailAddress" xml:space="preserve">
-    <value>L'adresse e-mail est invalide.</value>
+  <data name="Email_EmailAddress" xml:space="preserve">
+    <value>L'adresse e-mail est invalide (convention).</value>
   </data>
   <data name="Email_Required" xml:space="preserve">
     <value>L'adresse e-mail est requise (convention).</value>

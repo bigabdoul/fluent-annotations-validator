@@ -32,10 +32,9 @@ public class ValidationTypeConfiguratorTests
         var result = configurator.WithValidationResource<ValidationMessages>();
 
         // Assert
-        var field = typeof(ValidationTypeConfigurator<TestLoginDto>)
-            .GetField("_resourceType", BindingFlags.Instance | BindingFlags.NonPublic);
+        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
 
-        var value = field?.GetValue(configurator);
+        var value = property?.GetValue(configurator);
         Assert.Equal(typeof(ValidationMessages), value);
         Assert.Same(configurator, result); // fluent chaining
     }

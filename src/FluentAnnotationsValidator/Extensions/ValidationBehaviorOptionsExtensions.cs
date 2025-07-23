@@ -39,16 +39,19 @@ public static class ValidationBehaviorOptionsExtensions
         string? fallbackMessage = null,
         bool useConventionalKeys = true)
     {
-        var rule = CreateValidationRule(propertyExpression, predicate, out var propertyName, 
-            message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys);
-        options.Set(typeof(TModel), propertyName, rule);
+        var rule = CreateValidationRule(predicate, message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys);
+        options.Set(typeof(TModel), GetPropertyName(propertyExpression), rule);
         return rule;
     }
 
+    internal static void AddCondition<TModel>(this ValidationBehaviorOptions options,
+        string propertyName, ConditionalValidationRule rule)
+    {
+        options.Set(typeof(TModel), propertyName, rule);
+    }
+
     internal static ConditionalValidationRule CreateValidationRule<TModel>(
-        LambdaExpression propertyExpression,
         Func<TModel, bool> predicate,
-        out string propertyName,
         string? message = null,
         string? key = null,
         string? resourceKey = null,
@@ -57,7 +60,6 @@ public static class ValidationBehaviorOptionsExtensions
         string? fallbackMessage = null,
         bool useConventionalKeys = true)
     {
-        propertyName = GetPropertyName(propertyExpression);
         var rule = new ConditionalValidationRule(model => predicate((TModel)model), 
             message, 
             key, 

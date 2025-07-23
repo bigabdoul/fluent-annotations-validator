@@ -29,13 +29,11 @@ namespace FluentAnnotationsValidator.Configuration;
 ///     .Build();
 /// </code>
 /// </remarks>
-public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IValidationTypeConfigurator<T>
+public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
+    : ValidationTypeConfiguratorBase(typeof(T)), IValidationTypeConfigurator<T>
 {
     private readonly List<PendingRule> _pendingRules = [];
-
     private PendingRule? _currentRule;
-    private Type? _resourceType;
-    private CultureInfo? _culture;
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
 
@@ -54,24 +52,24 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
     public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
-        _resourceType = typeof(TResource);
-        AssignCultureTo(_resourceType);
+        ValidationResourceType = typeof(TResource);
+        AssignCultureTo(ValidationResourceType);
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
     public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
-        _resourceType = resourceType;
-        if (_resourceType != null)
-            AssignCultureTo(_resourceType);
+        ValidationResourceType = resourceType;
+        if (resourceType != null)
+            AssignCultureTo(resourceType);
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
     public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
     {
-        _culture = culture;
+        Culture = culture;
         return this;
     }
 
@@ -82,8 +80,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
         _currentRule = new PendingRule(
             Property: CastToObjectExpression(property),
             Predicate: model => condition(model),
-            ResourceType: _resourceType,
-            Culture: _culture,
+            ResourceType: ValidationResourceType,
+            Culture: Culture,
             FallbackMessage: _fallbackMessage,
             UseConventionalKeys: _useConventionalKeys
         );
@@ -106,14 +104,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with
-            {
-                Message = message,
-                ResourceType = _resourceType,
-                Culture = _culture,
-                FallbackMessage = _fallbackMessage,
-                UseConventionalKeys = _useConventionalKeys,
-            };
+            _currentRule = _currentRule with { Message = message };
         return this;
     }
 
@@ -121,14 +112,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> WithKey(string key)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with
-            {
-                Key = key,
-                ResourceType = _resourceType,
-                Culture = _culture,
-                FallbackMessage = _fallbackMessage,
-                UseConventionalKeys = _useConventionalKeys,
-            };
+            _currentRule = _currentRule with { Key = key };
         return this;
     }
 
@@ -136,14 +120,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<T> Localized(string resourceKey)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with
-            {
-                ResourceKey = resourceKey,
-                ResourceType = _resourceType,
-                Culture = _culture,
-                FallbackMessage = _fallbackMessage,
-                UseConventionalKeys = _useConventionalKeys,
-            };
+            _currentRule = _currentRule with { ResourceKey = resourceKey };
         return this;
     }
 
@@ -165,18 +142,23 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
     public ValidationTypeConfigurator<TNext> For<TNext>()
     {
         CommitCurrentRule();
+        ValidationConfiguratorStore.Instance.Register(typeof(T), this);
         return parent.For<TNext>();
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
-    /// <remarks>
-    /// The list is populated only when the <see cref="ValidationBehaviorOptions"/>
-    /// options is resolved, usually when an instance of <see cref="IServiceProvider"/>
-    /// calls provider.GetService(typeof(IOptions&lt;ValidationBehaviorOptions&gt;));
-    /// </remarks>
     public void Build()
     {
         CommitCurrentRule();
+
+        // apply the implicit rules first, so that the explicit ones may override them
+        foreach (var (propertyName, rule) in Rules)
+        {
+            parent.Register(options => options.AddCondition<T>(propertyName, rule));
+        }
+
+        // should we clear them?
+        //Rules.Clear();
 
         foreach (var rule in _pendingRules)
         {
@@ -212,10 +194,13 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent) : IVal
 
     private void AssignCultureTo(Type type)
     {
-        if (_culture is null) return;
+        if (Culture is null) return;
 
         var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        prop?.SetValue(null, _culture);
+        prop?.SetValue(null, Culture);
+
+        if (_currentRule != null) 
+            _currentRule = _currentRule with { Culture = Culture, ResourceType = type };
     }
 
     private static Expression<Func<T, object>> CastToObjectExpression<TProp>(Expression<Func<T, TProp>> expr)
