@@ -34,7 +34,15 @@ Install via NuGet:
 
 | Package | Version | Command |
 |--------|---------|---------|
-| FluentAnnotationsValidator | 1.2.1 | `dotnet add package FluentAnnotationsValidator` |
+| FluentAnnotationsValidator | 1.2.2 | `dotnet add package FluentAnnotationsValidator` |
+
+---
+
+> ⚠️ **Heads-up:** Current version supports one rule per property.
+>
+> If a property has multiple `[ValidationAttribute]`s, only the last error will be emitted.
+>
+> This will be resolved in the upcoming **v2.0.0** with full multi-message support.
 
 ---
 
