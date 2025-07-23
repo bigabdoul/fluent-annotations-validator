@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.2] - 2025-07-23
+
+### Fixes
+
+- Implicit rules are now generated for `[ValidationAttribute]`s when `.When(...)` is omitted
+- Culture and resource bindings are synthesized correctly using `WithCulture(...)` and `WithValidationResource(...)`
+
+### Architecture
+
+- Introduced `ValidationConfiguratorRegistry` and `ValidationTypeConfiguratorBase` to support centralized, contextual rule inference
+- `IImplicitRuleResolver` now orchestrates fallback metadata using fluent config
+- Improved clarity and discoverability in `DataAnnotationsValidator`
+
+### ⚠ Known Limitations
+
+> Multi-attribute validation is not yet supported.  
+> Only the last rule per property is processed — remaining attribute failures are ignored.  
+> This will be addressed in **v2.0.0** with full error aggregation.
+
+---
+
 ## [1.2.1] - Patch Release
 
 - Fixed array-based message formatting via FormatMessage(...)
