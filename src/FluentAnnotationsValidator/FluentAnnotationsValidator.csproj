@@ -21,12 +21,7 @@
 
     <!-- Release version and notes -->
     <Version>1.2.2</Version>
-    <PackageReleaseNotes>
-      - Fixes implicit rule generation when .When(...) is omitted
-      - Synthesizes culture and resource bindings during fallback resolution
-      - Adds ValidationConfiguratorRegistry for centralized metadata
-      - Multi-attribute support planned for v2.0.0 — only one rule per property for now
-    </PackageReleaseNotes>
+    <PackageReleaseNotes>$(ReleaseNotesText)</PackageReleaseNotes>
 
     <!-- Build and diagnostics -->
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -37,6 +32,12 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <Target Name="ReadReleaseNotes" BeforeTargets="Pack">
+    <ReadLinesFromFile File="RELEASE_NOTES.md">
+      <Output TaskParameter="Lines" PropertyName="ReleaseNotesText"/>
+    </ReadLinesFromFile>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.0.0" />
