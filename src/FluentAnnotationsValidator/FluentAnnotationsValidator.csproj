@@ -7,36 +7,29 @@
 
     <!-- NuGet metadata -->
     <PackageId>FluentAnnotationsValidator</PackageId>
-    <Version>1.2.1</Version>
     <Authors>bigabdoul</Authors>
     <Company>2KS Solutions</Company>
     <Product>FluentAnnotationsValidator</Product>
-    <Description>A type-safe, fluent validation library for .NET that dynamically translates [ValidationAttribute] annotations into runtime validation rules. Supports conditional logic, localized error messages, and ergonomic configuration via a developer-friendly DSL.</Description>
-    <PackageTags>FluentValidation;DataAnnotations;Validation;.NET;.NETCore;NuGet;MinimalAPI</PackageTags>
+    <Description>A fluent, culture-aware validation library for .NET. Automatically transforms [ValidationAttribute] annotations into runtime rules, with support for conditional logic, error localization, and developer-friendly configuration.</Description>
+    <PackageTags>FluentValidation;DataAnnotations;Validation;.NET;.NETCore;MinimalAPI</PackageTags>
     <PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
     <RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <LicenseExpression>MIT</LicenseExpression>
     <PackageIcon>icon.png</PackageIcon>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-	  <PackageReleaseNotes>
-	    Patch release: Improved culture-aware message formatting via FormatMessage(...) helper. Resource classes now auto-bind .Culture when WithCulture(...) is used. Added format extraction from common ValidationAttributes for localized error templates.
-	  </PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="12.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
-  </ItemGroup>
+    <!-- Release version and notes -->
+    <Version>1.2.2</Version>
+    <PackageReleaseNotes>
+      - Fixes implicit rule generation when .When(...) is omitted
+      - Synthesizes culture and resource bindings during fallback resolution
+      - Adds ValidationConfiguratorRegistry for centralized metadata
+      - Multi-attribute support planned for v2.0.0 — only one rule per property for now
+    </PackageReleaseNotes>
 
-  <ItemGroup>
-    <None Include="icon.png" Pack="true" PackagePath="\" />
-    <None Include="README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <PropertyGroup>
+    <!-- Build and diagnostics -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
@@ -44,5 +37,21 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+    <None Include="RELEASE_NOTES.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>
