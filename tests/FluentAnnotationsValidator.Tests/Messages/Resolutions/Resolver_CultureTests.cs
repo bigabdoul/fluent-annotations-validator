@@ -6,7 +6,6 @@ using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
@@ -28,14 +27,14 @@ public class Resolver_CultureTests
         var (min, max) = (6, 20);
         var attr = new RangeAttribute(min, max);
         var expectedMessage = string.Format(ValidationMessages.Password_Range, min, max);
-        var info = new PropertyValidationInfo
+        var info = new MemberValidationInfo
         {
-            Property = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
-            TargetModelType = typeof(TestLoginDto)
+            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
+            DeclaringType = typeof(TestLoginDto)
         };
 
         // Act
-        var resolvedMessage = new ValidationMessageResolver().ResolveMessage(info, attr, rule);
+        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
 
         Assert.Equal(expectedMessage, resolvedMessage);
     }
@@ -43,20 +42,29 @@ public class Resolver_CultureTests
     [Fact]
     public void Inits_FLuentValidation_Using_Provided_Culture()
     {
-        var services = TestHelpers.CreateServices();
+        var builder = TestHelpers.CreateBuilder(options =>
+        {
+            options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
+            options.CommonResourceType = typeof(ValidationMessages);
+
+            // optional for debugging purposes
+            options.CurrentTestName = nameof(Inits_FLuentValidation_Using_Provided_Culture);
+        });
+
+        var services = builder.Services;
+
         var dto = new TestLoginDto("email@example.com", ""); // 1 error: password required
 
         // Act
 
         // TODO: Fix: This configuration has no conditions; so, how is message resolution happening?
-        services.UseFluentAnnotations()
-            .For<TestLoginDto>()
-                .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-                .WithValidationResource<ValidationMessages>()
+        builder.UseFluentAnnotations()
+            //.For<TestLoginDto>()
+            //    .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+            //    .WithValidationResource<ValidationMessages>()
             .Build();
 
         var provider = services.BuildServiceProvider();
-        var resolved = provider.GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
         var validator = provider.GetRequiredService<IValidator<TestLoginDto>>();
         var result = validator.Validate(dto);
 

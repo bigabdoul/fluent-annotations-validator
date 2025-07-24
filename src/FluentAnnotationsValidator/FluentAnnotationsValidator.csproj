@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
 
     <!-- NuGet metadata -->
     <PackageId>FluentAnnotationsValidator</PackageId>
@@ -20,7 +21,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Release version and notes -->
-    <Version>1.2.2</Version>
+    <Version>2.0.0-preview1</Version>
     <PackageReleaseNotes>$(ReleaseNotesText)</PackageReleaseNotes>
 
     <!-- Build and diagnostics -->
@@ -32,10 +33,10 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
-
+  
   <Target Name="ReadReleaseNotes" BeforeTargets="Pack">
     <ReadLinesFromFile File="RELEASE_NOTES.md">
-      <Output TaskParameter="Lines" PropertyName="ReleaseNotesText"/>
+      <Output TaskParameter="Lines" PropertyName="ReleaseNotesText" />
     </ReadLinesFromFile>
   </Target>
 

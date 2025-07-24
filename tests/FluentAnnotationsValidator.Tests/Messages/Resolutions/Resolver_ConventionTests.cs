@@ -7,18 +7,20 @@ namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
 
 public class Resolver_ConventionTests
 {
+    const string EmailName = nameof(LoginDtoWithResource.Email);
+
     [Fact]
     public void Resolves_Using_Convention_When_Enabled()
     {
         var attr = new RequiredAttribute();
-        var info = new PropertyValidationInfo
+        var info = new MemberValidationInfo
         {
-            Property = typeof(LoginDtoWithResource).GetProperty(nameof(LoginDtoWithResource.Email))!,
-            TargetModelType = typeof(LoginDtoWithResource)
+            Member = typeof(LoginDtoWithResource).GetProperty(EmailName)!,
+            DeclaringType = typeof(LoginDtoWithResource)
         };
 
-        var resolver = new ValidationMessageResolver();
-        var msg = resolver.ResolveMessage(info, attr);
+        var resolver = new ValidationMessageResolver(new ValidationBehaviorOptions());
+        var msg = resolver.ResolveMessage(info.DeclaringType, EmailName, attr);
         Assert.Equal(ConventionValidationMessages.Email_Required, msg);
     }
 
@@ -31,15 +33,15 @@ public class Resolver_ConventionTests
             UseConventionalKeyFallback: false
         );
 
-        var info = new PropertyValidationInfo
+        var info = new MemberValidationInfo
         {
-            Property = typeof(LoginDtoWithResource).GetProperty(nameof(LoginDtoWithResource.Email))!,
-            TargetModelType = typeof(LoginDtoWithResource)
+            Member = typeof(LoginDtoWithResource).GetProperty(EmailName)!,
+            DeclaringType = typeof(LoginDtoWithResource)
         };
 
-        var resolver = new ValidationMessageResolver();
-        var msg = resolver.ResolveMessage(info, attr, rule);
+        var resolver = new ValidationMessageResolver(new ValidationBehaviorOptions());
+        var msg = resolver.ResolveMessage(info.DeclaringType, EmailName, attr, rule);
 
-        Assert.Equal($"Invalid value for {nameof(LoginDtoWithResource.Email)}", msg);
+        Assert.Equal($"Invalid value for {EmailName}", msg);
     }
 }

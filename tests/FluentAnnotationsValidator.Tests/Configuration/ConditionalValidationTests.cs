@@ -1,5 +1,5 @@
-using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
@@ -10,15 +10,15 @@ public class ConditionalValidationTests
     [Fact]
     public async Task Validation_Should_SkipProperty_WhenConditionIsFalse()
     {
-        var services = CreateServices();
-        services.UseFluentAnnotations()
+        var validator = GetValidator(builder => builder
             .For<TestLoginDto>()
                 .When(x => x.Email, model => model.Role == "Admin")
-            .Build();
+        );
 
-        var validator = services.BuildServiceProvider().GetValidator<TestLoginDto>();
+        // Email is null, but Role ≠ Admin
+        var dto = new TestLoginDto(Email: null!, Password: "PasswordHere", Role: "User");
 
-        var dto = new TestLoginDto(null!, "PasswordHere", Role: "User"); // Email is null, but Role ≠ Admin
+        // Act
         var result = await validator.ValidateAsync(dto);
 
         Assert.True(result.IsValid); // Email not validated
@@ -27,13 +27,21 @@ public class ConditionalValidationTests
     [Fact]
     public async Task Validation_Should_Apply_WhenNoConditionConfigured()
     {
-        var validator = GetValidator<TestLoginDto>();
+        var validator = CreateBuilder().Services
+            .BuildServiceProvider()
+            .GetRequiredService<IValidator<TestLoginDto>>();
 
-        var dto = new TestLoginDto(null!, string.Empty); // Email and Password still required
+        // Email and Password still required
+        var dto = new TestLoginDto(null!, string.Empty);
+
+        // Act
         var result = await validator.ValidateAsync(dto);
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Email));
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Password));
+        Assert.Multiple
+        (
+            () => Assert.False(result.IsValid),
+            () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Email)),
+            () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Password))
+        );
     }
 }

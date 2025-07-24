@@ -1,54 +1,55 @@
-using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Internals.Reflection;
+using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Results;
 using FluentValidation;
-using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
 using FluentValidation.Results;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
 
 /// <summary>
-/// A FluentValidation adapter that inspects <see cref="ValidationAttribute"/> metadata on model properties
-/// and dynamically applies equivalent FluentValidation rules at runtime.
-/// Supports error message resolution via FormatErrorMessage, resource keys, and localization.
+/// Validates an object using [ValidationAttribute] rules mapped via the rule registry.
 /// </summary>
-/// <typeparam name="T">The model type to validate.</typeparam>
-public class DataAnnotationsValidator<T> : AbstractValidator<T>
+/// <typeparam name="T">The model type.</typeparam>
+public sealed class DataAnnotationsValidator<T>(ValidationBehaviorOptions options, IValidationMessageResolver resolver) : IValidator<T>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DataAnnotationsValidator{T}"/> class.
-    /// </summary>
-    /// <param name="resolver"></param>
-    /// <param name="options"></param>
-    /// <param name="fallbackResolver"></param>
-    public DataAnnotationsValidator(IValidationMessageResolver resolver,
-        IOptions<ValidationBehaviorOptions> options,
-        IImplicitRuleResolver fallbackResolver
-    )
+    /// <inheritdoc cref="IValidator{T}.Validate(T)"/>
+    public ValidationResult Validate(T instance)
     {
-        var metadata = ValidationMetadataCache.Get(typeof(T));
-        var behaviorOptions = options.Value;
+        var failures = new List<ValidationFailure>();
 
-        foreach (var prop in metadata)
+        foreach (var (member, rules) in options.EnumerateRules<T>())
         {
-            foreach (var attr in prop.Attributes)
-            {
-                //_ = behaviorOptions.TryGet(typeof(T), prop.Property.Name, out var rule);
-                var rule = fallbackResolver.Resolve(typeof(T), prop.Property, attr, behaviorOptions);
+            var errors = ValidationResultAggregator.Evaluate(typeof(T), instance!, member, rules, resolver);
 
-                RuleFor(model => prop.Property.GetValue(model))
-                    .Custom((value, ctx) =>
-                    {
-                        if (!attr.IsValid(value))
-                        {
-                            var message = resolver.ResolveMessage(prop, attr, rule);
-                            var failure = new ValidationFailure(prop.Property.Name, message, value);
-                            ctx.AddFailure(failure);
-                        }
-                    })
-                    .When(model => model is not null && (rule?.Predicate(model) ?? true));
+            foreach (var error in errors)
+            {
+                failures.Add(new ValidationFailure(error.Member.Name, error.Message));
             }
         }
+
+        return new ValidationResult(failures);
     }
+
+    /// <inheritdoc cref="IValidator{T}.ValidateAsync(T, CancellationToken)"/>
+    public Task<ValidationResult> ValidateAsync(T instance, CancellationToken cancellation = default) =>
+            Task.FromResult(Validate(instance));
+
+    /// <inheritdoc cref="IValidator{T}.Validate(T)"/>
+    public ValidationResult Validate(IValidationContext context)
+    {
+        if (context is ValidationContext<T> typedContext)
+            return Validate(typedContext.InstanceToValidate);
+
+        throw new ArgumentException($"Invalid context type: {context.GetType().Name}", nameof(context));
+    }
+
+    /// <inheritdoc cref="IValidator.ValidateAsync(IValidationContext, CancellationToken)"/>
+    public Task<ValidationResult> ValidateAsync(IValidationContext context, CancellationToken cancellation = default) =>
+        Task.FromResult(Validate(context));
+
+    /// <inheritdoc cref="IValidator.CreateDescriptor"/>
+    public IValidatorDescriptor CreateDescriptor() => new FluentValidatorDescriptor();
+
+    /// <inheritdoc cref="IValidator.CanValidateInstancesOfType(Type)"/>
+    public bool CanValidateInstancesOfType(Type type) => typeof(T).IsAssignableFrom(type);
 }

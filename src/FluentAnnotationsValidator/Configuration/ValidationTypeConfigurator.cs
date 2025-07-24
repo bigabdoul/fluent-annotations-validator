@@ -38,7 +38,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     private string? _fallbackMessage;
 
     private record PendingRule(
-        LambdaExpression Property,
+        Expression Member,
         Func<T, bool> Predicate,
         string? Message = null,
         string? Key = null,
@@ -46,30 +46,29 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
         Type? ResourceType = null,
         CultureInfo? Culture = null,
         string? FallbackMessage = null,
-        bool UseConventionalKeys = true
+        bool? UseConventionalKeys = true
     );
+
+    public ValidationBehaviorOptions Options => parent.Options;
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
     public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
-        ValidationResourceType = typeof(TResource);
-        AssignCultureTo(ValidationResourceType);
+        AssignCultureTo(typeof(TResource));
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
     public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
-        ValidationResourceType = resourceType;
-        if (resourceType != null)
-            AssignCultureTo(resourceType);
+        AssignCultureTo(resourceType);
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
     public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
     {
-        Culture = culture;
+        parent.Options.CommonCulture = Culture = culture;
         return this;
     }
 
@@ -78,7 +77,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     {
         CommitCurrentRule();
         _currentRule = new PendingRule(
-            Property: CastToObjectExpression(property),
+            Member: property,
             Predicate: model => condition(model),
             ResourceType: ValidationResourceType,
             Culture: Culture,
@@ -127,7 +126,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConventionalKeys"/>
     public ValidationTypeConfigurator<T> DisableConventionalKeys()
     {
-        _useConventionalKeys = false;
+        parent.Options.UseConventionalKeys = _useConventionalKeys = false;
         return this;
     }
 
@@ -135,6 +134,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     public ValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage)
     {
         _fallbackMessage = fallbackMessage;
+        if (_currentRule is not null)
+            _currentRule = _currentRule with { FallbackMessage = _fallbackMessage };
         return this;
     }
 
@@ -142,7 +143,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     public ValidationTypeConfigurator<TNext> For<TNext>()
     {
         CommitCurrentRule();
-        ValidationConfiguratorStore.Instance.Register(typeof(T), this);
+        ValidationConfiguratorStore.Registry.Register(typeof(T), this);
         return parent.For<TNext>();
     }
 
@@ -151,30 +152,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     {
         CommitCurrentRule();
 
-        // apply the implicit rules first, so that the explicit ones may override them
-        foreach (var (propertyName, rule) in Rules)
-        {
-            parent.Register(options => options.AddCondition<T>(propertyName, rule));
-        }
-
-        // should we clear them?
-        //Rules.Clear();
-
         foreach (var rule in _pendingRules)
         {
             // registration action if deferred until ValidationBehaviorOptions is resolved
             parent.Register(opts =>
             {
-                opts.AddCondition(
-                    rule.Property,
+                opts.AddRule(
+                    rule.Member,
                     rule.Predicate,
                     rule.Message,
                     rule.Key,
                     rule.ResourceKey,
-                    rule.ResourceType,
-                    rule.Culture,
                     rule.FallbackMessage,
-                    rule.UseConventionalKeys
+                    rule.ResourceType ?? opts.CommonResourceType,
+                    rule.Culture ?? opts.CommonCulture,
+                    rule.UseConventionalKeys ?? opts.UseConventionalKeys
                 );
             });
         }
@@ -192,20 +184,22 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
         }
     }
 
-    private void AssignCultureTo(Type type)
+    private void AssignCultureTo(Type? type)
     {
-        if (Culture is null) return;
+        var oldType = ValidationResourceType;
+        ValidationResourceType = type;
 
-        var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-        prop?.SetValue(null, Culture);
+        type ??= oldType;
 
-        if (_currentRule != null) 
-            _currentRule = _currentRule with { Culture = Culture, ResourceType = type };
-    }
+        if (type != null)
+        {
+            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            prop?.SetValue(null, Culture);
+        }
 
-    private static Expression<Func<T, object>> CastToObjectExpression<TProp>(Expression<Func<T, TProp>> expr)
-    {
-        return Expression.Lambda<Func<T, object>>(Expression.Convert(expr.Body, typeof(object)), expr.Parameters);
+        var options = parent.Options;
+        options.CommonResourceType = ValidationResourceType;
+        options.CommonCulture = Culture;
     }
 
     #region IValidationTypeConfigurator<T>

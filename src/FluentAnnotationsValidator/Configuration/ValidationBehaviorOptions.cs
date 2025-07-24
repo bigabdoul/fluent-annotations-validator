@@ -1,124 +1,204 @@
 using FluentAnnotationsValidator.Extensions;
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Concurrent;
+using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Configuration;
-using static ValidationBehaviorOptionsExtensions;
 
 /// <summary>
-/// Represents a configurable container for conditional validation rules applied to specific model properties.
+/// Central configuration point for FluentAnnotationsValidator.
+/// Stores conditional validation rules mapped to each property or field.
+/// Supports multiple validation attributes per member.
+/// Thread-safe and optimized for concurrent testing environments.
 /// </summary>
-public class ValidationBehaviorOptions
+public sealed class ValidationBehaviorOptions
 {
-    /// <summary>
-    /// Internal dictionary mapping a combination of model type and property name
-    /// to a corresponding <see cref="ConditionalValidationRule"/>.
-    /// </summary>
-    private readonly Dictionary<(Type modelType, string propertyName), ConditionalValidationRule> PropertyConditions = [];
+    private static InvalidOperationException NoMatchingRule =>
+        new("Found no rule matching the specified expression.");
+
+    //public static ValidationBehaviorOptions Create() => new();
 
     /// <summary>
-    /// Associates a <see cref="ConditionalValidationRule"/> with the specified model type and property name.
-    /// If a rule already exists for the given key, it will be replaced.
+    /// Internal rule registry. Maps members to a bag of validation rules.
+    /// Thread-safe and supports multiple rules per member.
     /// </summary>
-    /// <param name="modelType">The type of the model.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <param name="rule">The conditional validation rule to associate.</param>
-    public virtual void Set(Type modelType, string propertyName, ConditionalValidationRule rule)
+    private ConcurrentDictionary<MemberInfo, ConcurrentBag<ConditionalValidationRule>> RuleRegistry { get; } = new();
+
+    /// <summary>
+    /// Optional common resource type used for localization.
+    /// </summary>
+    public Type? CommonResourceType { get; set; }
+
+    /// <summary>
+    /// Optional culture to use for error messages and formatting.
+    /// </summary>
+    public CultureInfo? CommonCulture { get; set; }
+
+    /// <summary>
+    /// When true, uses conventional resource key naming (e.g. MemberName_Attribute).
+    /// </summary>
+    public bool UseConventionalKeys { get; set; } = true;
+
+    /// <summary>
+    /// Used when running tests.
+    /// </summary>
+    public string? CurrentTestName { get; set; }
+
+    /// <summary>
+    /// Registers a conditional validation rule for the specified member.
+    /// Multiple rules can be associated with a single member.
+    /// </summary>
+    /// <param name="member">The target property or field.</param>
+    /// <param name="rule">The conditional validation rule to apply.</param>
+    public void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        PropertyConditions[(modelType, propertyName)] = rule;
+        var rules = RuleRegistry.GetOrAdd(member, _ => []);
+
+        // We need to make sure that a rule with an attached
+        // validation attribute is not added more than
+        // once for the same member and custom attribute.
+        //if (!rule.HasAttribute || !rules.Any(r => string.Equals(r.UniqueKey, rule.UniqueKey)))
+        {
+            rules.Add(rule);
+        }
+        //else
+        {
+            //System.Diagnostics.Debug.WriteLine($"{Instance.CurrentTestName}: Rule already exists for member {member.Name} and attribute {rule.Attribute!.GetType().Name}.");
+        }
+    }
+
+    internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
+    {
+        _ = RuleRegistry.GetOrAdd(member, _ => [.. rules]);
     }
 
     /// <summary>
-    /// Associates a <see cref="ConditionalValidationRule"/> with the specified property,
-    /// identified via a strongly typed lambda expression. If a rule already exists for 
-    /// the given key, it will be replaced.
+    /// Retrieves all rules defined for the specified member.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="property"></param>
-    /// <param name="rule"></param>
-    public virtual void Set<T>(Expression<Func<T, string?>> property, ConditionalValidationRule rule)
-        => Set(typeof(T), GetPropertyName(property), rule);
+    /// <param name="member">The property or field to inspect.</param>
+    /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
+    public IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
+        => RuleRegistry.TryGetValue(member, out var rules)
+            ? rules.ToList()
+            : [];
 
     /// <summary>
-    /// Retrieves the <see cref="ConditionalValidationRule"/> associated with the specified model type and property name.
+    /// Retrieves rules associated with the property referenced by the given lambda expression.
+    /// Throws if no rules match.
     /// </summary>
-    /// <param name="modelType">The type of the model.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <returns>The associated <see cref="ConditionalValidationRule"/>.</returns>
-    /// <exception cref="KeyNotFoundException">
-    /// Thrown if no rule is found for the given type and property name.
-    /// </exception>
-    public virtual ConditionalValidationRule Get(Type modelType, string propertyName)
-    {
-        if (PropertyConditions.TryGetValue((modelType, propertyName), out var rule))
-            return rule;
+    /// <typeparam name="T">Declaring type of the property.</typeparam>
+    /// <param name="expression">Expression referencing the property.</param>
+    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <returns>A read-only list of matching rules.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if no rule matches the expression.</exception>
+    public IReadOnlyList<ConditionalValidationRule> GetRules<T>(
+        Expression<Func<T, string?>> expression,
+        Func<ConditionalValidationRule, bool>? predicate = null)
+        => FindRules(expression, predicate) ?? throw NoMatchingRule;
 
-        throw new KeyNotFoundException($"No key found matching the specified type and property name.");
+    /// <summary>
+    /// Attempts to retrieve rules for the given expression.
+    /// Returns false if no match is found or an error occurs.
+    /// </summary>
+    /// <typeparam name="T">Declaring type of the property.</typeparam>
+    /// <param name="expression">Expression referencing the property.</param>
+    /// <param name="rules">The resulting rule list (empty if none).</param>
+    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <returns>True if matching rules were found, false otherwise.</returns>
+    public bool TryGetRules<T>(
+        Expression<Func<T, string?>> expression,
+        out IReadOnlyList<ConditionalValidationRule> rules,
+        Func<ConditionalValidationRule, bool>? predicate = null)
+    {
+        try
+        {
+            rules = FindRules(expression, predicate);
+            return true;
+        }
+        catch
+        {
+            rules = [];
+            return false;
+        }
     }
 
     /// <summary>
-    /// Retrieves a <see cref="ConditionalValidationRule"/> associated with the specified property,
-    /// identified via a strongly typed lambda expression.
+    /// Determines if any rule exists for the given expression.
     /// </summary>
-    /// <typeparam name="T">The type of the model.</typeparam>
-    /// <param name="property">
-    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
-    /// </param>
-    /// <returns>The associated <see cref="ConditionalValidationRule"/>.</returns>
-    /// <exception cref="KeyNotFoundException">
-    /// Thrown if no rule is found for the given type and property name.
-    /// </exception>
-    public virtual ConditionalValidationRule Get<T>(Expression<Func<T, string?>> property)
-        => Get(typeof(T), GetPropertyName(property));
-
-    /// <summary>
-    /// Attempts to retrieve a <see cref="ConditionalValidationRule"/> associated with the specified model type and property name.
-    /// </summary>
-    /// <param name="modelType">The type of the model.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <param name="rule">
-    /// When this method returns, contains the associated rule if found and non-null; otherwise, <c>null</c>.
-    /// </param>
-    /// <returns><see langword="true"/> if a non-null rule was found; otherwise, <see langword="false"/>.</returns>
-    public virtual bool TryGet(Type modelType, string propertyName, [NotNullWhen(true)] out ConditionalValidationRule? rule)
+    /// <typeparam name="T">Declaring type of the property.</typeparam>
+    /// <param name="expression">Expression referencing the property.</param>
+    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <returns>True if at least one matching rule exists, false otherwise.</returns>
+    public bool Contains<T>(
+        Expression<Func<T, string?>> expression,
+        Func<ConditionalValidationRule, bool>? predicate = null)
     {
-        return PropertyConditions.TryGetValue((modelType, propertyName), out rule) && rule != null;
+        try
+        {
+            return FindRules(expression, predicate).Count > 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
-    /// Attempts to retrieve a <see cref="ConditionalValidationRule"/> associated with the specified property,
-    /// identified via a strongly typed lambda expression.
+    /// Finds all rules for a given member access expression.
     /// </summary>
-    /// <typeparam name="T">The type of the model.</typeparam>
-    /// <param name="property">
-    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
-    /// </param>
-    /// <param name="rule">
-    /// When this method returns, contains the associated rule if found and non-null; otherwise, <c>null</c>.
-    /// </param>
-    /// <returns><see langword="true"/> if a non-null rule was found; otherwise, <see langword="false"/>.</returns>
-    public virtual bool TryGet<T>(Expression<Func<T, string?>> property, [NotNullWhen(true)] out ConditionalValidationRule? rule)
-        => TryGet(typeof(T), GetPropertyName(property), out rule);
+    /// <typeparam name="T">Declaring type of the property.</typeparam>
+    /// <param name="expression">Expression referencing the property.</param>
+    /// <param name="predicate">Optional rule filter.</param>
+    /// <returns>A read-only list of matching rules.</returns>
+    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+        Expression<Func<T, string?>> expression,
+        Func<ConditionalValidationRule, bool>? predicate = null)
+        => FindRules<T>(expression.GetMemberInfo(), predicate);
 
     /// <summary>
-    /// Determines whether a rule exists for the specified model type and property name.
+    /// Finds all rules for a given <see cref="MemberInfo"/> and optional filter.
     /// </summary>
-    /// <param name="modelType">The type of the model.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <returns><see langword="true"/> if a rule exists; otherwise, <see langword="false"/>.</returns>
-    public virtual bool ContainsKey(Type modelType, string propertyName)
-        => PropertyConditions.ContainsKey((modelType, propertyName));
+    /// <typeparam name="T">Declaring type of the member.</typeparam>
+    /// <param name="member">The member to look up.</param>
+    /// <param name="predicate">Optional rule filter.</param>
+    /// <returns>A read-only list of matching rules.</returns>
+    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+        MemberInfo member,
+        Func<ConditionalValidationRule, bool>? predicate = null)
+    {
+        var rules = GetRules(member);
+
+        return [.. rules.Where(r =>
+                r.Member.DeclaringType == typeof(T) &&
+                r.Member.Name == member.Name &&
+                (predicate?.Invoke(r) ?? true))
+        ];
+    }
 
     /// <summary>
-    /// Determines whether a rule exists for the specified property,
-    /// identified via a strongly typed lambda expression.
+    /// Returns all rules associated with members declared in the specified type <typeparamref name="T"/>.
+    /// This is useful for introspection and diagnostics.
     /// </summary>
-    /// <typeparam name="T">The type of the model.</typeparam>
-    /// <typeparam name="TProp">The type of the property.</typeparam>
-    /// <param name="property">
-    /// A lambda expression pointing to the property on <typeparamref name="T"/> to inspect.
-    /// </param>
-    /// <returns><see langword="true"/> if a rule exists; otherwise, <see langword="false"/>.</returns>
-    public virtual bool ContainsKey<T>(Expression<Func<T, string?>> property)
-        => ContainsKey(typeof(T), GetPropertyName(property));
+    /// <typeparam name="T">The declaring type to filter by.</typeparam>
+    /// <returns>A list of tuples (MemberInfo, Rule List) for each matched member.</returns>
+    public List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
+    {
+        var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
+
+        foreach (var (member, bag) in RuleRegistry)
+        {
+            if (member.DeclaringType == typeof(T))
+            {
+                result.Add((member, bag.ToList()));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Removes all rules from the registry.
+    /// </summary>
+    public void Clear() => RuleRegistry.Clear();
 }

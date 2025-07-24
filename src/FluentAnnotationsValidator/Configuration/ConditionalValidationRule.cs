@@ -1,4 +1,7 @@
-﻿namespace FluentAnnotationsValidator.Configuration;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+
+namespace FluentAnnotationsValidator.Configuration;
 
 /// <summary>
 /// Represents a conditional validation rule that applies a predicate function 
@@ -31,4 +34,23 @@ public record ConditionalValidationRule(
     Type? ResourceType = null,
     System.Globalization.CultureInfo? Culture = null,
     string? FallbackMessage = null,
-    bool UseConventionalKeyFallback = true);
+    bool UseConventionalKeyFallback = true)
+{
+    /// <summary>
+    /// The validation attribute associated to the rule.
+    /// If it is <see cref="null"/>, it may have been added
+    /// through fluent configuration.
+    /// </summary>
+    public ValidationAttribute? Attribute { get; set; }
+    public MemberInfo Member { get; set; } = default!;
+    public bool ShouldApply(object targetInstance) => Predicate(targetInstance);
+
+    /// <summary>
+    /// Indicates whether the <see cref="Attribute"/> property is not <see langword="null"/>.
+    /// If the return value is <see langword="true"/>, it likely has been added
+    /// via fluent configuration.
+    /// </summary>
+    public bool HasAttribute => Attribute != null;
+
+    public string UniqueKey { get; set; } = Guid.NewGuid().ToString();
+}

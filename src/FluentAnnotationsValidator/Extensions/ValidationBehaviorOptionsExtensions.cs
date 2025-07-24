@@ -16,7 +16,7 @@ public static class ValidationBehaviorOptionsExtensions
     /// </summary>
     /// <typeparam name="TModel">The DTO or model type the condition applies to.</typeparam>
     /// <param name="options">The <see cref="ValidationBehaviorOptions"/> instance to configure.</param>
-    /// <param name="propertyExpression">An expression identifying the property to which the condition applies.</param>
+    /// <param name="memberExpression">An expression identifying the property, field, or method to which the condition applies.</param>
     /// <param name="predicate">A delegate that determines whether validation should be executed for the specified property.</param>
     /// <param name="message">An optional custom error message to override the default.</param>
     /// <param name="key">An optional error key used for message resolution or logging.</param>
@@ -28,57 +28,32 @@ public static class ValidationBehaviorOptionsExtensions
     /// Metadata such as <paramref name="message"/>, <paramref name="key"/>, and <paramref name="resourceKey"/> 
     /// are forwarded to the configured <see cref="IValidationMessageResolver"/>.
     /// </remarks>
-    public static ConditionalValidationRule AddCondition<TModel>(this ValidationBehaviorOptions options,
-        LambdaExpression propertyExpression,
+    public static ConditionalValidationRule AddRule<TModel>(this ValidationBehaviorOptions options,
+        Expression memberExpression,
         Func<TModel, bool> predicate,
         string? message = null,
         string? key = null,
         string? resourceKey = null,
+        string? fallbackMessage = null,
         Type? resourceType = null,
         CultureInfo? culture = null,
-        string? fallbackMessage = null,
         bool useConventionalKeys = true)
     {
-        var rule = CreateValidationRule(predicate, message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys);
-        options.Set(typeof(TModel), GetPropertyName(propertyExpression), rule);
-        return rule;
-    }
+        var member = memberExpression.GetMemberInfo();
 
-    internal static void AddCondition<TModel>(this ValidationBehaviorOptions options,
-        string propertyName, ConditionalValidationRule rule)
-    {
-        options.Set(typeof(TModel), propertyName, rule);
-    }
-
-    internal static ConditionalValidationRule CreateValidationRule<TModel>(
-        Func<TModel, bool> predicate,
-        string? message = null,
-        string? key = null,
-        string? resourceKey = null,
-        Type? resourceType = null,
-        CultureInfo? culture = null,
-        string? fallbackMessage = null,
-        bool useConventionalKeys = true)
-    {
-        var rule = new ConditionalValidationRule(model => predicate((TModel)model), 
-            message, 
-            key, 
-            resourceKey, 
-            resourceType, 
+        var rule = new ConditionalValidationRule(model => predicate((TModel)model),
+            message,
+            key,
+            resourceKey,
+            resourceType,
             culture,
             fallbackMessage,
-            useConventionalKeys);
-        return rule;
-    }
+            useConventionalKeys)
+        {
+            Member = member,
+        };
 
-    internal static string GetPropertyName(LambdaExpression propertyExpression)
-    {
-        var expr = (propertyExpression.Body as UnaryExpression)?.Operand;
-        if (expr is MemberExpression me)
-            return me.Member.Name;
-        if (propertyExpression.Body is MemberExpression memberExpr)
-            return memberExpr.Member.Name;
-        throw new ArgumentException(
-            $"{nameof(propertyExpression)}.Body is not a {nameof(MemberExpression)}.", nameof(propertyExpression));
+        options.AddRule(member, rule);
+        return rule;
     }
 }

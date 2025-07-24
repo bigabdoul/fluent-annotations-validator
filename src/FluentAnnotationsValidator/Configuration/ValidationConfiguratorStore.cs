@@ -2,5 +2,5 @@
 
 internal static class ValidationConfiguratorStore
 {
-    internal static ValidationConfiguratorRegistry Instance { get; } = new();
+    internal static ValidationConfiguratorRegistry Registry { get; } = new();
 }

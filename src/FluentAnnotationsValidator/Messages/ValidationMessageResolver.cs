@@ -1,6 +1,5 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
@@ -13,36 +12,14 @@ namespace FluentAnnotationsValidator.Messages;
 /// Provides mechanisms for resolving localized error messages associated with <see cref="ValidationAttribute"/> instances.
 /// Supports conventional lookup, explicit resource naming, and fallback formatting strategies.
 /// </summary>
-public class ValidationMessageResolver : IValidationMessageResolver
+public class ValidationMessageResolver(ValidationBehaviorOptions options) : IValidationMessageResolver
 {
-    /// <summary>
-    /// Resolves a validation error message for a given <see cref="ValidationAttribute"/>, using one of the following:
-    /// <list type="number">
-    ///   <item>
-    ///     <description>Explicit <c>ErrorMessageResourceType</c> and <c>ErrorMessageResourceName</c> on the attribute</description>
-    ///   </item>
-    ///   <item>
-    ///     <description><c>[ValidationResource]</c> on the model type, plus convention: <c>Property_Attribute</c></description>
-    ///   </item>
-    ///   <item>
-    ///     <description>Inline <c>ErrorMessage</c> or default fallback message via <see cref="ValidationAttribute.FormatErrorMessage"/></description>
-    ///   </item>
-    /// </list>
-    /// </summary>
-    /// <param name="propertyInfo">The name of the property to which the attribute is applied.</param>
-    /// <param name="attr">The <see cref="ValidationAttribute"/> being evaluated.</param>
-    /// <returns>A formatted error message suitable for display or logging.</returns>
-    public virtual string ResolveMessage(PropertyValidationInfo propertyInfo, ValidationAttribute attr)
-    {
-        return ResolveMessageInternal(propertyInfo, attr, rule: null)!;
-    }
-
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
     /// </summary>
-    /// <param name="propertyInfo">
-    /// The metadata container for the property being validated, including its <see cref="PropertyInfo"/> and target model type.
+    /// <param name="declaringType">
+    /// The metadata container for the property, field, or parameter being validated, including its <see cref="PropertyInfo"/> and target model type.
     /// </param>
     /// <param name="attr">
     /// The <see cref="ValidationAttribute"/> instance describing the validation logic and message configuration.
@@ -55,9 +32,59 @@ public class ValidationMessageResolver : IValidationMessageResolver
     /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
     /// Returns <c>null</c> if no message can be resolved.
     /// </returns>
-    public virtual string? ResolveMessage(PropertyValidationInfo propertyInfo, ValidationAttribute attr, ConditionalValidationRule? rule)
+    public virtual string? ResolveMessage(Type declaringType, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
     {
-        return ResolveMessageInternal(propertyInfo, attr, rule);
+        // 1️ Rule-based explicit message override
+        if (rule is not null && !string.IsNullOrWhiteSpace(rule.Message))
+        {
+            return rule.Message;
+        }
+
+        var formatArg = GetFormatValue(attr);
+        var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentCulture;
+        var resourceType = rule?.ResourceType ?? options.CommonResourceType;
+
+        // 2️ Rule-based resource lookup
+        if (rule is not null &&
+            !string.IsNullOrWhiteSpace(rule.ResourceKey) &&
+            resourceType is not null &&
+            TryResolveFromResource(resourceType, rule.ResourceKey!, culture, formatArg, out var resolvedFromRule))
+        {
+            return resolvedFromRule;
+        }
+
+        // 3️ Attribute-based explicit resource key
+        if (!string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
+        {
+            var explicitType = attr.ErrorMessageResourceType
+                ?? declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
+
+            if (explicitType is not null &&
+                TryResolveFromResource(explicitType, attr.ErrorMessageResourceName!, culture, formatArg, out var resolvedFromAttr))
+            {
+                return resolvedFromAttr;
+            }
+        }
+
+        // 4️ Convention fallback via [ValidationResource]
+        var fallbackType = declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
+
+        if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? options.UseConventionalKeys))
+        {
+            var key = rule?.ResourceKey ?? GetConventionalKey(memberName, attr);
+
+            if (TryResolveFromResource(fallbackType, key, culture, formatArg, out var resolvedFromConvention))
+                return resolvedFromConvention;
+        }
+
+        // 5️ Rule-level fallback message
+        if (rule is not null && !string.IsNullOrWhiteSpace(rule.FallbackMessage))
+            return rule.FallbackMessage;
+
+        // 6️ Inline message or final fallback
+        return !string.IsNullOrWhiteSpace(attr.ErrorMessage)
+            ? attr.FormatErrorMessage(memberName)
+            : $"Invalid value for {memberName}";
     }
 
     /// <summary>
@@ -110,68 +137,6 @@ public class ValidationMessageResolver : IValidationMessageResolver
     }
 
     /// <summary>
-    /// Internal logic to resolve validation messages from conditional rules, resource attributes, or inline strings.
-    /// </summary>
-    /// <param name="propertyInfo">The property metadata.</param>
-    /// <param name="attr">The validation attribute.</param>
-    /// <param name="rule">Optional conditional rule metadata.</param>
-    /// <returns>Resolved error message string or null.</returns>
-    protected virtual string? ResolveMessageInternal(PropertyValidationInfo propertyInfo, ValidationAttribute attr, ConditionalValidationRule? rule)
-    {
-        var modelType = propertyInfo.TargetModelType;
-        var propertyName = propertyInfo.Property.Name;
-
-        // 1️ Rule-based explicit message override
-        if (rule is not null && !string.IsNullOrWhiteSpace(rule.Message))
-            return rule.Message;
-
-        var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? CultureInfo.CurrentCulture;
-
-        // 2️ Rule-based resource lookup
-        if (rule is not null &&
-            !string.IsNullOrWhiteSpace(rule.ResourceKey) &&
-            rule.ResourceType is not null &&
-            TryResolveFromResource(rule.ResourceType, rule.ResourceKey!, culture, formatArg, out var resolvedFromRule))
-        {
-            return resolvedFromRule;
-        }
-
-        // 3️ Attribute-based explicit resource key
-        if (!string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
-        {
-            var explicitType = attr.ErrorMessageResourceType
-                ?? modelType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
-
-            if (explicitType is not null &&
-                TryResolveFromResource(explicitType, attr.ErrorMessageResourceName!, culture, formatArg, out var resolvedFromAttr))
-            {
-                return resolvedFromAttr;
-            }
-        }
-
-        // 4️ Convention fallback via [ValidationResource]
-        var fallbackType = modelType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
-
-        if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? true))
-        {
-            var key = GetConventionalKey(propertyName, attr);
-
-            if (TryResolveFromResource(fallbackType, key, culture, formatArg, out var resolvedFromConvention))
-                return resolvedFromConvention;
-        }
-
-        // 5️ Rule-level fallback message
-        if (rule is not null && !string.IsNullOrWhiteSpace(rule.FallbackMessage))
-            return rule.FallbackMessage;
-
-        // 6️ Inline message or final fallback
-        return !string.IsNullOrWhiteSpace(attr.ErrorMessage)
-            ? attr.FormatErrorMessage(propertyName)
-            : $"Invalid value for {propertyName}";
-    }
-
-    /// <summary>
     /// Retrieves the value of a localized resource key exposed as a static property or method 
     /// from a resource class, typically generated from a .resx file.
     /// </summary>
@@ -188,6 +153,7 @@ public class ValidationMessageResolver : IValidationMessageResolver
         return member switch
         {
             PropertyInfo prop => prop.GetValue(null)?.ToString(),
+            FieldInfo field => field.GetValue(null)?.ToString(),
             MethodInfo method when method.GetParameters().Length == 0 =>
                 method.Invoke(null, null)?.ToString(),
             _ => null
@@ -248,9 +214,9 @@ public class ValidationMessageResolver : IValidationMessageResolver
         };
     }
 
-    private static string GetConventionalKey(string propertyName, ValidationAttribute attr)
+    internal static string GetConventionalKey(string memberName, ValidationAttribute attr)
     {
         var shortName = attr.GetType().Name.Replace("Attribute", "");
-        return $"{propertyName}_{shortName}";
+        return $"{memberName}_{shortName}";
     }
 }

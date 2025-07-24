@@ -1,5 +1,5 @@
-using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using FluentValidation;
@@ -27,7 +27,7 @@ public static class ValidatorServiceCollectionExtensions
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) => 
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) =>
         services.AddFluentAnnotationsValidators(configure: null, targetAssembliesTypes);
 
     /// <summary>
@@ -71,57 +71,67 @@ public static class ValidatorServiceCollectionExtensions
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddFluentAnnotationsValidators(this IServiceCollection services,
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
         Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes)
     {
-        var validatorType = typeof(IValidator<>);
         var assemblies = targetAssembliesTypes.Length > 0
             ? [.. targetAssembliesTypes.Select(t => t.Assembly)]
             : AppDomain.CurrentDomain.GetAssemblies();
 
-        foreach (var asm in assemblies)
-        {
-            // retrieve all classes having at least one property
-            // decorated with ValidationAttribute custom attribute
-            IList<Type> propertiesWithValidationAttributes = [..asm.GetTypes().Where(type =>
-                type.IsClass &&
-                type.GetProperties().Any(property => property.GetCustomAttributes<ValidationAttribute>(true).Any())
-            )];
+        // Scan all model types in application assembly
+        var modelTypes = assemblies
+            .SelectMany(a => a.GetTypes())
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .Where(t =>
+                t.GetProperties().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
+                t.GetFields().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
 
-            foreach (var type in propertiesWithValidationAttributes)
+                // records may have attribute-decorated members in the constructor:
+                // public record LoginDto([Required, EmailAddress] string Email, [Required, MinLength(6)] string Password);
+                t.GetConstructors().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0)
+            );
+
+        var behaviorOptions = new ValidationBehaviorOptions();
+        var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
+
+        configure?.Invoke(behaviorOptions);
+
+        foreach (var declaringType in modelTypes)
+        {
+            // Dynamically create validator for each type
+            var validatorType = typeof(DataAnnotationsValidator<>).MakeGenericType(declaringType);
+            services.AddScoped(typeof(IValidator<>).MakeGenericType(declaringType), validatorType);
+
+            // Register validation rules upfront (optional)
+            var members = declaringType.GetMembers(BindingFlags.Instance | BindingFlags.Public)
+                .Where(m => m is PropertyInfo or FieldInfo or ConstructorInfo /*or MethodInfo*/);
+
+            foreach (var member in members)
             {
-                var validatorImpl = typeof(DataAnnotationsValidator<>).MakeGenericType(type);
-                var validatorInterface = validatorType.MakeGenericType(type);
-                services.AddTransient(validatorInterface, validatorImpl);
+                var rules = ValidationAttributeAdapter.ParseRules(declaringType, member);
+                behaviorOptions.AddRules(member, rules);
             }
         }
+
+        services.AddTransient(_ => behaviorOptions);
 
         // Try to add a default validation message resolver.
         // This has no effect if a custom resolver has been previously added.
         services.TryAddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
 
-        services.AddScoped<IImplicitRuleResolver, ImplicitRuleResolver>();
-
-        // required to initialize IOptions<ValidationBehaviorOptions>
-        services.Configure<ValidationBehaviorOptions>(options => configure?.Invoke(options));
-
-        return services;
+        return builder;
     }
 
     /// <summary>
     /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
     /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add FluentAnnotations services to.</param>
+    /// <param name="builder">A fluent configuration builder used instantiate a <see cref="ValidationConfigurator"/>.</param>
     /// <returns>
     /// A <see cref="ValidationConfigurator"/> instance that allows for fluent configuration of conditional validation rules.
     /// </returns>
-    /// <remarks>
-    /// This method also sets up a default configuration for <see cref="ValidationBehaviorOptions"/> as a fallback.
-    /// </remarks>
-    public static ValidationConfigurator UseFluentAnnotations(this IServiceCollection services)
+    public static ValidationConfigurator UseFluentAnnotations(this FluentAnnotationsBuilder builder)
     {
-        var configurator = new ValidationConfigurator(services);
-        services.Configure<ValidationBehaviorOptions>(_ => { }); // Default fallback
+        var configurator = new ValidationConfigurator(builder.Options);
         return configurator;
     }
 }

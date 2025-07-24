@@ -8,12 +8,10 @@ namespace FluentAnnotationsValidator.Configuration;
 /// </summary>
 public abstract class ValidationTypeConfiguratorBase
 {
-    protected internal Dictionary<string, ConditionalValidationRule> Rules { get; } = [];
-
     protected ValidationTypeConfiguratorBase(Type targetType)
     {
         TargetType = targetType;
-        ValidationConfiguratorStore.Instance.Register(targetType, this);
+        ValidationConfiguratorStore.Registry.Register(targetType, this);
     }
 
     /// <summary>

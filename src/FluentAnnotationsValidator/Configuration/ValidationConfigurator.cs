@@ -7,21 +7,16 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Provides a fluent API for registering conditional validation rules and behaviors
 /// into the application’s service collection.
 /// </summary>
-public class ValidationConfigurator : IValidationConfigurator
+/// <remarks>
+/// Initializes a new instance of the <see cref="ValidationConfigurator"/> class
+/// with the specified service collection.
+/// </remarks>
+/// <param name="services">The DI <see cref="IServiceCollection"/> used for registration.</param>
+public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
-    private readonly IServiceCollection _services;
     private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ValidationConfigurator"/> class
-    /// with the specified service collection.
-    /// </summary>
-    /// <param name="services">The DI <see cref="IServiceCollection"/> used for registration.</param>
-    public ValidationConfigurator(IServiceCollection services)
-    {
-        _services = services;
-        _services.Configure<ValidationBehaviorOptions>(_ => { }); // Default fallback
-    }
+    public ValidationBehaviorOptions Options => options;
 
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.
@@ -44,8 +39,8 @@ public class ValidationConfigurator : IValidationConfigurator
     /// </summary>
     public void Build()
     {
-        foreach (var config in _registrations)
-            _services.Configure(config);
+        foreach (var action in _registrations)
+            action(options);
     }
 
     /// <summary>

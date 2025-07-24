@@ -1,23 +1,17 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Runtime.Validators;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
-using Microsoft.Extensions.Options;
+using FluentValidation;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
-    private static IOptions<ValidationBehaviorOptions> _options = CreateOptions();
-
     // Use a convention-based IValidator<TestRegistrationDto> by default
-    private readonly DataAnnotationsValidator<TestRegistrationDto> _validator = 
-        new(new ValidationMessageResolver(), _options, new ImplicitRuleResolver(_options));
+    private static IValidator<TestRegistrationDto> GetValidator()
+    {
+        return TestHelpers.GetValidator<TestRegistrationDto>();
+    }
 
-    private static IOptions<ValidationBehaviorOptions> CreateOptions()
-        => Options.Create(new ValidationBehaviorOptions());
-    
     [Fact]
     public void ValidDto_ShouldPass()
     {
@@ -27,7 +21,7 @@ public class RegistrationValidatorTests
             Password = "secure123"
         };
 
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         Assert.True(result.IsValid);
     }
@@ -41,7 +35,7 @@ public class RegistrationValidatorTests
             Password = "secure123"
         };
 
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -58,7 +52,7 @@ public class RegistrationValidatorTests
             Password = "secure123"
         };
 
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -75,7 +69,7 @@ public class RegistrationValidatorTests
             Password = ""
         };
 
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -94,7 +88,7 @@ public class RegistrationValidatorTests
         };
 
         // Act
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         // Assert
         Assert.False(result.IsValid);
@@ -112,7 +106,7 @@ public class RegistrationValidatorTests
             Password = "12" // 1 error: too short
         };
 
-        var result = _validator.Validate(dto);
+        var result = GetValidator().Validate(dto);
 
         Assert.False(result.IsValid);
         Assert.Equal(3, result.Errors.Count);

@@ -23,4 +23,11 @@ public static class ValidatorExpressionExtensions
 
         throw new ArgumentException("Expression must be a simple property access like x => x.Property");
     }
+
+    public static MemberInfo GetMemberInfo(this Expression expression)
+    {
+        if (expression is LambdaExpression { Body: MemberExpression expr } && expr.Member is MemberInfo info)
+            return info;
+        throw new ArgumentException("Expression must be a simple member access like x => x.Member");
+    }
 }
