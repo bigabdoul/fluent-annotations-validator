@@ -98,9 +98,14 @@ public static class ValidatorServiceCollectionExtensions
 
         foreach (var declaringType in modelTypes)
         {
+            var genericIValidator = typeof(IValidator<>).MakeGenericType(declaringType);
+
+            if (services.Any(sd => sd.ServiceType == genericIValidator))
+                continue; // Skip redundant registration
+
             // Dynamically create validator for each type
             var validatorType = typeof(DataAnnotationsValidator<>).MakeGenericType(declaringType);
-            services.AddScoped(typeof(IValidator<>).MakeGenericType(declaringType), validatorType);
+            services.AddScoped(genericIValidator, validatorType);
 
             // Register validation rules upfront (optional)
             var members = declaringType.GetMembers(BindingFlags.Instance | BindingFlags.Public)
