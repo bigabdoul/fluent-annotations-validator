@@ -72,7 +72,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
     public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
     {
-        options.CommonCulture = Culture = culture;
+        Culture = culture;
         return this;
     }
 
@@ -130,7 +130,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConventionalKeys"/>
     public ValidationTypeConfigurator<T> DisableConventionalKeys()
     {
-        options.UseConventionalKeys = _useConventionalKeys = false;
+        _useConventionalKeys = false;
         return this;
     }
 
@@ -175,7 +175,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         }
 
         _pendingRules.Clear();
-        parent.Build(); // finalize
+        parent.Build();
     }
 
     private void CommitCurrentRule()
@@ -199,9 +199,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
             prop?.SetValue(null, Culture);
         }
-
-        options.CommonResourceType = ValidationResourceType;
-        options.CommonCulture = Culture;
     }
 
     #region IValidationTypeConfigurator<T>
