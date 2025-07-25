@@ -42,30 +42,22 @@ public class Resolver_CultureTests
     [Fact]
     public void Inits_FLuentValidation_Using_Provided_Culture()
     {
-        var builder = TestHelpers.CreateBuilder(options =>
-        {
-            options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
-            options.CommonResourceType = typeof(ValidationMessages);
-
-            // optional for debugging purposes
-            options.CurrentTestName = nameof(Inits_FLuentValidation_Using_Provided_Culture);
-        });
-
-        var services = builder.Services;
+        var services = new ServiceCollection();
 
         var dto = new TestLoginDto("email@example.com", ""); // 1 error: password required
 
         // Act
-
-        // TODO: Fix: This configuration has no conditions; so, how is message resolution happening?
-        builder.UseFluentAnnotations()
-            //.For<TestLoginDto>()
-            //    .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-            //    .WithValidationResource<ValidationMessages>()
-            .Build();
+        services.AddFluentAnnotations(
+            configureBehavior: options =>
+            {
+                options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
+                options.CommonResourceType = typeof(ValidationMessages);
+            }
+        );
 
         var provider = services.BuildServiceProvider();
         var validator = provider.GetRequiredService<IValidator<TestLoginDto>>();
+
         var result = validator.Validate(dto);
 
         // Assert
