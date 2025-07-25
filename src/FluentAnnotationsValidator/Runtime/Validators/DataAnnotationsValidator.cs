@@ -2,14 +2,18 @@ using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Results;
 using FluentValidation;
+using FluentValidation.Internal;
 using FluentValidation.Results;
+using FluentValidation.Validators;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
 
 /// <summary>
-/// Validates an object using [ValidationAttribute] rules mapped via the rule registry.
+/// Validates an object using rules mapped via the rule registry.
 /// </summary>
 /// <typeparam name="T">The model type.</typeparam>
+/// <param name="options"></param>
+/// <param name="resolver"></param>
 public sealed class DataAnnotationsValidator<T>(ValidationBehaviorOptions options, IValidationMessageResolver resolver) : IValidator<T>
 {
     /// <inheritdoc cref="IValidator{T}.Validate(T)"/>
@@ -19,7 +23,7 @@ public sealed class DataAnnotationsValidator<T>(ValidationBehaviorOptions option
 
         foreach (var (member, rules) in options.EnumerateRules<T>())
         {
-            var errors = ValidationResultAggregator.Evaluate(typeof(T), instance!, member, rules, resolver);
+            var errors = rules.Validate(typeof(T), instance!, member, resolver);
 
             foreach (var error in errors)
             {
@@ -52,4 +56,22 @@ public sealed class DataAnnotationsValidator<T>(ValidationBehaviorOptions option
 
     /// <inheritdoc cref="IValidator.CanValidateInstancesOfType(Type)"/>
     public bool CanValidateInstancesOfType(Type type) => typeof(T).IsAssignableFrom(type);
+
+    #region FluentValidatorDescriptor
+
+    private sealed class FluentValidatorDescriptor : IValidatorDescriptor
+    {
+        public IEnumerable<IValidationRule> Rules => [];
+
+        public string GetName(string property) => property;
+
+        public ILookup<string, (IPropertyValidator Validator, IRuleComponent Options)> GetMembersWithValidators() =>
+            Enumerable.Empty<(IPropertyValidator, IRuleComponent)>().ToLookup(_ => string.Empty);
+
+        public IEnumerable<(IPropertyValidator Validator, IRuleComponent Options)> GetValidatorsForMember(string name) => [];
+
+        public IEnumerable<IValidationRule> GetRulesForMember(string name) => [];
+    }
+
+    #endregion
 }

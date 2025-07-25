@@ -10,20 +10,15 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Central configuration point for FluentAnnotationsValidator.
 /// Stores conditional validation rules mapped to each property or field.
 /// Supports multiple validation attributes per member.
-/// Thread-safe and optimized for concurrent testing environments.
 /// </summary>
 public sealed class ValidationBehaviorOptions
 {
     private static InvalidOperationException NoMatchingRule =>
         new("Found no rule matching the specified expression.");
 
-    //public static ValidationBehaviorOptions Create() => new();
-
-    /// <summary>
-    /// Internal rule registry. Maps members to a bag of validation rules.
-    /// Thread-safe and supports multiple rules per member.
-    /// </summary>
     private ConcurrentDictionary<MemberInfo, ConcurrentBag<ConditionalValidationRule>> RuleRegistry { get; } = new();
+
+    #region properties
 
     /// <summary>
     /// Optional common resource type used for localization.
@@ -45,6 +40,13 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     public string? CurrentTestName { get; set; }
 
+    #endregion
+
+    internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
+    {
+        _ = RuleRegistry.GetOrAdd(member, _ => [.. rules]);
+    }
+
     /// <summary>
     /// Registers a conditional validation rule for the specified member.
     /// Multiple rules can be associated with a single member.
@@ -53,24 +55,9 @@ public sealed class ValidationBehaviorOptions
     /// <param name="rule">The conditional validation rule to apply.</param>
     public void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        var rules = RuleRegistry.GetOrAdd(member, _ => []);
-
-        // We need to make sure that a rule with an attached
-        // validation attribute is not added more than
-        // once for the same member and custom attribute.
-        //if (!rule.HasAttribute || !rules.Any(r => string.Equals(r.UniqueKey, rule.UniqueKey)))
-        {
-            rules.Add(rule);
-        }
-        //else
-        {
-            //System.Diagnostics.Debug.WriteLine($"{Instance.CurrentTestName}: Rule already exists for member {member.Name} and attribute {rule.Attribute!.GetType().Name}.");
-        }
-    }
-
-    internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
-    {
-        _ = RuleRegistry.GetOrAdd(member, _ => [.. rules]);
+        RuleRegistry
+            .GetOrAdd(member, _ => [])
+            .Add(rule);
     }
 
     /// <summary>
@@ -196,9 +183,4 @@ public sealed class ValidationBehaviorOptions
 
         return result;
     }
-
-    /// <summary>
-    /// Removes all rules from the registry.
-    /// </summary>
-    public void Clear() => RuleRegistry.Clear();
 }

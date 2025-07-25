@@ -11,6 +11,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// on a specific model type using <see cref="ValidationBehaviorOptions"/>.
 /// </summary>
 /// <typeparam name="T">The model or DTO type being configured.</typeparam>
+/// <param name="parent">The parent validation configurator.</param>
 /// <remarks>
 /// This configurator allows chaining multiple conditions and metadata overrides such as custom messages,
 /// resource keys, and validation keys. All configured rules are buffered and registered during the final
@@ -29,7 +30,7 @@ namespace FluentAnnotationsValidator.Configuration;
 ///     .Build();
 /// </code>
 /// </remarks>
-public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
+public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, ValidationBehaviorOptions options)
     : ValidationTypeConfiguratorBase(typeof(T)), IValidationTypeConfigurator<T>
 {
     private readonly List<PendingRule> _pendingRules = [];
@@ -49,7 +50,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
         bool? UseConventionalKeys = true
     );
 
-    public ValidationBehaviorOptions Options => parent.Options;
+    /// <summary>
+    /// Gets the validation behavior options.
+    /// </summary>
+    public ValidationBehaviorOptions Options => options;
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
     public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
@@ -68,7 +72,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
     public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
     {
-        parent.Options.CommonCulture = Culture = culture;
+        options.CommonCulture = Culture = culture;
         return this;
     }
 
@@ -126,7 +130,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConventionalKeys"/>
     public ValidationTypeConfigurator<T> DisableConventionalKeys()
     {
-        parent.Options.UseConventionalKeys = _useConventionalKeys = false;
+        options.UseConventionalKeys = _useConventionalKeys = false;
         return this;
     }
 
@@ -154,10 +158,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
 
         foreach (var rule in _pendingRules)
         {
-            // registration action if deferred until ValidationBehaviorOptions is resolved
             parent.Register(opts =>
             {
-                opts.AddRule(
+                AddRule(opts,
                     rule.Member,
                     rule.Predicate,
                     rule.Message,
@@ -197,7 +200,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
             prop?.SetValue(null, Culture);
         }
 
-        var options = parent.Options;
         options.CommonResourceType = ValidationResourceType;
         options.CommonCulture = Culture;
     }
@@ -236,6 +238,38 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent)
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.UseFallbackMessage(string fallbackMessage)
         => UseFallbackMessage(fallbackMessage);
+
+    #endregion
+
+    #region helper
+
+    static void AddRule<TModel>(ValidationBehaviorOptions options,
+        Expression memberExpression,
+        Func<TModel, bool> predicate,
+        string? message = null,
+        string? key = null,
+        string? resourceKey = null,
+        string? fallbackMessage = null,
+        Type? resourceType = null,
+        CultureInfo? culture = null,
+        bool useConventionalKeys = true)
+    {
+        var member = memberExpression.GetMemberInfo();
+
+        var rule = new ConditionalValidationRule(model => predicate((TModel)model),
+            message,
+            key,
+            resourceKey,
+            resourceType,
+            culture,
+            fallbackMessage,
+            useConventionalKeys)
+        {
+            Member = member,
+        };
+
+        options.AddRule(member, rule);
+    }
 
     #endregion
 }

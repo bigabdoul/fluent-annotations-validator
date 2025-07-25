@@ -145,7 +145,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// <returns>
     /// The resolved localized string, or <c>null</c> if the key does not exist or retrieval fails.
     /// </returns>
-    protected static string? GetResourceValue(Type type, string key)
+    protected internal static string? GetResourceValue(Type type, string key)
     {
         var member = type.GetMember(key,
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault();

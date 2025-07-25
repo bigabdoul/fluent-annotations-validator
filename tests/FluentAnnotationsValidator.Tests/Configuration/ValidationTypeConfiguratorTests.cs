@@ -7,8 +7,12 @@ using System.Linq.Expressions;
 namespace FluentAnnotationsValidator.Tests.Configuration;
 public class ValidationTypeConfiguratorTests
 {
-    private static ValidationTypeConfigurator<TestLoginDto> GetConfigurator() => 
-        new(new(new ValidationBehaviorOptions()));
+    private static ValidationTypeConfigurator<TestLoginDto> GetConfigurator()
+    {
+        var options = new ValidationBehaviorOptions();
+        var validationConfigurator = new ValidationConfigurator(options);
+        return new(validationConfigurator, options);
+    }
 
     [Fact]
     public void WithValidationResource_SetsResourceTypeCorrectly()

@@ -11,12 +11,10 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Initializes a new instance of the <see cref="ValidationConfigurator"/> class
 /// with the specified service collection.
 /// </remarks>
-/// <param name="services">The DI <see cref="IServiceCollection"/> used for registration.</param>
+/// <param name="options">The validation behavior options used during <see cref="Build"/>.</param>
 public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
     private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
-
-    public ValidationBehaviorOptions Options => options;
 
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.
@@ -24,7 +22,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>A <see cref="ValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
     public ValidationTypeConfigurator<T> For<T>()
-        => new(this);
+        => new(this, options);
 
     /// <summary>
     /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.

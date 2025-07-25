@@ -13,16 +13,15 @@ public static class ValidationResultAggregator
     /// <summary>
     /// Validates all rules for a given member and returns error results.
     /// </summary>
+    /// <param name="rules">The conditional rules to evaluate.</param>
     /// <param name="type">The declaring type.</param>
     /// <param name="instance">An instance of the declaring <paramref name="type"/>.</param>
     /// <param name="member">The property or field of the declaring <paramref name="type"/>.</param>
-    /// <param name="rules">The conditional rules to evaluate.</param>
+    /// <param name="resolver">An object used for validation message resolution.</param>
     /// <returns>A list of errors if any rules failed; empty otherwise.</returns>
-    public static List<ValidationErrorResult> Evaluate(
-        Type type,
-        object instance,
-        MemberInfo member,
-        IEnumerable<ConditionalValidationRule> rules,
+    public static List<ValidationErrorResult> Validate(
+        this IEnumerable<ConditionalValidationRule> rules,
+        Type type, object instance, MemberInfo member,
         IValidationMessageResolver resolver)
     {
         // Determine if fluent rule applies for this member (i.e., any condition returns true)
