@@ -145,16 +145,18 @@ public static class ValidatorServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationConfigurator"/>.</param>
+    /// <param name="configureBehavior">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
     /// <param name="targetAssembliesTypes">
     /// One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, 
-        Action<ValidationConfigurator>? configure = null, 
+        Action<ValidationConfigurator>? configure = null,
+        Action<ValidationBehaviorOptions>? configureBehavior = null,
         params Type[] targetAssembliesTypes)
     {
-        var builder = services.AddFluentAnnotationsValidators(null, targetAssembliesTypes);
+        var builder = services.AddFluentAnnotationsValidators(configureBehavior, targetAssembliesTypes);
         var configurator = builder.UseFluentAnnotations();
 
         configure?.Invoke(configurator);
