@@ -1,18 +1,16 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Internals.Reflection;
-using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+using static TestHelpers;
 
 public class Resolver_PriorityTests
 {
-    private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions());
-
     private static class WrongMessages
     {
         public static string WrongKey => "Wrong!";
@@ -29,7 +27,7 @@ public class Resolver_PriorityTests
         var attr = new RequiredAttribute();
         var info = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var msg = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
         Assert.Equal("Override wins", msg);
     }
 
@@ -45,7 +43,7 @@ public class Resolver_PriorityTests
         var attr = new RequiredAttribute { ErrorMessageResourceName = nameof(WrongMessages.WrongKey), ErrorMessageResourceType = typeof(WrongMessages) };
         var info = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var msg = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
         Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
@@ -59,7 +57,10 @@ public class Resolver_PriorityTests
         };
 
         var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
-        var msg = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+
+        // Act
+        var msg = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+
         Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
@@ -69,7 +70,7 @@ public class Resolver_PriorityTests
         var attr = new RequiredAttribute();
         var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+        var msg = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
 
         Assert.Equal(ConventionValidationMessages.Email_Required, msg); // uses conventional key
     }
@@ -87,7 +88,7 @@ public class Resolver_PriorityTests
         var attr = new RequiredAttribute();
         var info = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var msg = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
         Assert.Equal("Use this instead", msg);
     }
 

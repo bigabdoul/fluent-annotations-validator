@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Extensions;
@@ -29,6 +30,27 @@ public static class ValidatorServiceCollectionExtensions
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) =>
         services.AddFluentAnnotationsValidators(configure: null, targetAssembliesTypes);
+
+    /// <summary>
+    /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
+    /// at least one property decorated with a <see cref="ValidationAttribute"/>.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="targetAssembliesTypes">
+    /// Optional: One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
+        Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes)
+    {
+        return services.AddFluentAnnotationsValidators(
+            culture: null, 
+            resourceType: null, 
+            configure, 
+            targetAssembliesTypes);
+    }
 
     /// <summary>
     /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
@@ -65,6 +87,8 @@ public static class ValidatorServiceCollectionExtensions
     /// </para>
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="culture">The common UI culture information to use.</param>
+    /// <param name="resourceType">The common localized resource type to use.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
     /// <param name="targetAssembliesTypes">
     /// Optional: One or more types used to infer target assemblies to scan.
@@ -72,7 +96,7 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
-        Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes)
+        CultureInfo? culture, Type? resourceType, Action<ValidationBehaviorOptions>? configure, params Type[] targetAssembliesTypes)
     {
         var assemblies = targetAssembliesTypes.Length > 0
             ? [.. targetAssembliesTypes.Select(t => t.Assembly)]
@@ -91,7 +115,12 @@ public static class ValidatorServiceCollectionExtensions
                 t.GetConstructors().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0)
             );
 
-        var behaviorOptions = new ValidationBehaviorOptions();
+        var behaviorOptions = new ValidationBehaviorOptions()
+        {
+            CommonCulture = culture,
+            CommonResourceType = resourceType
+        };
+
         configure?.Invoke(behaviorOptions);
 
         var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
@@ -113,7 +142,7 @@ public static class ValidatorServiceCollectionExtensions
 
             foreach (var member in members)
             {
-                var rules = ValidationAttributeAdapter.ParseRules(declaringType, member);
+                var rules = ValidationAttributeAdapter.ParseRules(declaringType, member, behaviorOptions);
                 behaviorOptions.AddRules(member, rules);
             }
         }
@@ -152,13 +181,31 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, 
-        Action<ValidationConfigurator>? configure = null,
-        Action<ValidationBehaviorOptions>? configureBehavior = null,
+        Action<ValidationConfigurator>? configure = null, Action<ValidationBehaviorOptions>? configureBehavior = null,
         params Type[] targetAssembliesTypes)
     {
-        var builder = services.AddFluentAnnotationsValidators(configureBehavior, targetAssembliesTypes);
-        var configurator = builder.UseFluentAnnotations();
+        return services.AddFluentAnnotations(culture: null, resourceType: null, configure, configureBehavior, targetAssembliesTypes);
+    }
 
+    /// <summary>
+    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="culture">The common UI culture information to use.</param>
+    /// <param name="resourceType">The common localized resource type to use.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationConfigurator"/>.</param>
+    /// <param name="configureBehavior">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="targetAssembliesTypes">
+    /// One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, CultureInfo? culture, Type? resourceType,
+        Action<ValidationConfigurator>? configure = null, Action<ValidationBehaviorOptions>? configureBehavior = null,
+        params Type[] targetAssembliesTypes)
+    {
+        var builder = services.AddFluentAnnotationsValidators(culture, resourceType, configureBehavior, targetAssembliesTypes);
+        var configurator = builder.UseFluentAnnotations();
         configure?.Invoke(configurator);
         return services;
     }

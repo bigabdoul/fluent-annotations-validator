@@ -1,7 +1,5 @@
-﻿using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Results;
 using static TestHelpers;
@@ -12,11 +10,7 @@ public class ValidationResultAggregatorTests
     [Fact]
     public void Should_Run_WhenFluentConditionIsMet()
     {
-        new ServiceCollection().AddFluentAnnotationsValidators()
-            .UseFluentAnnotations()
-                .For<TestLoginDto>()
-            .Build();
-
+        // init DTO with a missing email
         var dto = new TestLoginDto(Email: null!, Password: "Pass123", Role: "Admin");
 
         var validator = GetValidator(builder =>
@@ -24,17 +18,23 @@ public class ValidationResultAggregatorTests
 
         var result = validator.Validate(dto);
 
-        Assert.False(result.IsValid);
+        Assert.False(result.IsValid); // the email is required
         Assert.Contains(result.Errors, e => e.PropertyName == "Email");
     }
 
     [Fact]
     public void Should_SkipMember_WhenConditionFails()
     {
+        // Missing email address
         var dto = new TestLoginDto(Email: null!, Password: "Pass123", Role: "User");
 
         var validator = GetValidator(builder =>
-            builder.For<TestLoginDto>().When(x => x.Email, model => model.Role == "Admin"));
+            builder.For<TestLoginDto>()
+                // validation happens only if role is "Admin";
+                // since the DTO has a "User" role, email
+                // validation is skipped and the result is valid
+                .When(x => x.Email, model => model.Role == "Admin")
+        );
 
         var result = validator.Validate(dto);
 

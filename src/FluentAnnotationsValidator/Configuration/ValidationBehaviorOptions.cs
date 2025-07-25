@@ -1,5 +1,6 @@
 using FluentAnnotationsValidator.Extensions;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -33,7 +34,7 @@ public sealed class ValidationBehaviorOptions
     /// <summary>
     /// When true, uses conventional resource key naming (e.g. MemberName_Attribute).
     /// </summary>
-    public bool UseConventionalKeys { get; set; } = true;
+    public bool UseConventionalKeyFallback { get; set; } = true;
 
     /// <summary>
     /// Used when running tests.
@@ -161,6 +162,27 @@ public sealed class ValidationBehaviorOptions
                 r.Member.Name == member.Name &&
                 (predicate?.Invoke(r) ?? true))
         ];
+    }
+
+    public ConditionalValidationRule FindRule<T, TAttribute>(Expression<Func<T, string?>> expression)
+    {
+        var rule = FindRules(expression, rule => rule.HasAttribute && rule.Attribute!.GetType() == typeof(TAttribute))[0];
+        return rule;
+    }
+
+    public bool TryFindRule<T, TAttribute>(Expression<Func<T, string?>> expression, 
+        [NotNullWhen(true)] out ConditionalValidationRule? rule)
+    {
+        try
+        {
+            rule = FindRule<T, TAttribute>(expression);
+            return true;
+        }
+        catch
+        {
+            rule = null;
+            return false;
+        }
     }
 
     /// <summary>

@@ -6,10 +6,14 @@ namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
-    // Use a convention-based IValidator<TestRegistrationDto> by default
     private static IValidator<TestRegistrationDto> GetValidator()
     {
         return TestHelpers.GetValidator<TestRegistrationDto>();
+    }
+
+    public RegistrationValidatorTests()
+    {
+        ValidationMessages.Culture = Thread.CurrentThread.CurrentUICulture;
     }
 
     [Fact]

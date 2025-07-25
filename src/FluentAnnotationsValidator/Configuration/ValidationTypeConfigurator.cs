@@ -2,7 +2,6 @@
 using FluentAnnotationsValidator.Extensions;
 using System.Globalization;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -38,8 +37,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
 
+    /// <summary>
+    /// Common culture information that will serve all model configurations
+    /// unless <see cref="WithCulture(CultureInfo)"/> overrides it.
+    /// </summary>
+    public CultureInfo? CommonCulture { get; set; }
+
+    /// <summary>
+    /// Common resource type that will serve all model configurations 
+    /// unless any of <see cref="WithValidationResource(Type?)"/> and
+    /// <see cref="WithValidationResource{TResource}()"/> overrides it.
+    /// </summary>
+    public Type? CommonResourceType { get; set; }
+
     private record PendingRule(
-        Expression Member,
+        Expression MemberExpression,
         Func<T, bool> Predicate,
         string? Message = null,
         string? Key = null,
@@ -58,19 +70,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
     public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
-        AssignCultureTo(typeof(TResource));
+        ValidationResourceType = typeof(TResource);
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
     public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
-        AssignCultureTo(resourceType);
+        ValidationResourceType = resourceType;
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
-    public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
+    public ValidationTypeConfigurator<T> WithCulture(CultureInfo? culture)
     {
         Culture = culture;
         return this;
@@ -81,7 +93,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         CommitCurrentRule();
         _currentRule = new PendingRule(
-            Member: property,
+            MemberExpression: property,
             Predicate: model => condition(model),
             ResourceType: ValidationResourceType,
             Culture: Culture,
@@ -161,15 +173,15 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             parent.Register(opts =>
             {
                 AddRule(opts,
-                    rule.Member,
+                    rule.MemberExpression,
                     rule.Predicate,
                     rule.Message,
                     rule.Key,
                     rule.ResourceKey,
                     rule.FallbackMessage,
-                    rule.ResourceType ?? opts.CommonResourceType,
-                    rule.Culture ?? opts.CommonCulture,
-                    rule.UseConventionalKeys ?? opts.UseConventionalKeys
+                    rule.ResourceType ?? CommonResourceType ?? opts.CommonResourceType,
+                    rule.Culture ?? CommonCulture ?? opts.CommonCulture,
+                    rule.UseConventionalKeys ?? opts.UseConventionalKeyFallback
                 );
             });
         }
@@ -182,22 +194,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         if (_currentRule is not null)
         {
+            _currentRule = _currentRule with { Culture = Culture, ResourceType = ValidationResourceType };
             _pendingRules.Add(_currentRule);
             _currentRule = null;
-        }
-    }
-
-    private void AssignCultureTo(Type? type)
-    {
-        var oldType = ValidationResourceType;
-        ValidationResourceType = type;
-
-        type ??= oldType;
-
-        if (type != null)
-        {
-            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            prop?.SetValue(null, Culture);
         }
     }
 
@@ -227,7 +226,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithValidationResource(Type? resourceType)
         => WithValidationResource(resourceType);
 
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithCulture(CultureInfo culture)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithCulture(CultureInfo? culture)
         => WithCulture(culture);
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.DisableConventionalKeys()

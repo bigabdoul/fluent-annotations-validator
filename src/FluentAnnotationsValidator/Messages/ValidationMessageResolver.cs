@@ -1,10 +1,12 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Metadata;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
+using System.Resources;
 
 namespace FluentAnnotationsValidator.Messages;
 
@@ -14,6 +16,10 @@ namespace FluentAnnotationsValidator.Messages;
 /// </summary>
 public class ValidationMessageResolver(ValidationBehaviorOptions options) : IValidationMessageResolver
 {
+    private const BindingFlags StaticPublicNonPublicFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+    private static readonly ConcurrentDictionary<Type, ResourceManager?> _resourceManagerCache = new();
+    private static readonly ConcurrentDictionary<(Type, string, string), string?> _localizedStringCache = new();
+
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
@@ -41,7 +47,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
         }
 
         var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentCulture;
+        var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentUICulture;
         var resourceType = rule?.ResourceType ?? options.CommonResourceType;
 
         // 2️ Rule-based resource lookup
@@ -69,7 +75,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
         // 4️ Convention fallback via [ValidationResource]
         var fallbackType = declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
 
-        if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? options.UseConventionalKeys))
+        if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? options.UseConventionalKeyFallback))
         {
             var key = rule?.ResourceKey ?? GetConventionalKey(memberName, attr);
 
@@ -117,14 +123,17 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
         if (resourceType is null || string.IsNullOrWhiteSpace(resourceKey))
             return false;
 
-        var raw = GetResourceValue(resourceType, resourceKey);
+        culture ??= CultureInfo.CurrentUICulture;
+
+        // try to retrieve a localized message from string resources
+        var raw = GetResourceValue(resourceType, resourceKey, culture);
+
         if (string.IsNullOrWhiteSpace(raw))
             return false;
 
         try
         {
-            var formatter = culture ?? CultureInfo.CurrentCulture;
-            message = FormatMessage(formatter, raw, formatArg);
+            message = FormatMessage(culture, raw, formatArg);
 
             return true;
         }
@@ -142,22 +151,52 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// </summary>
     /// <param name="type">The resource type (e.g. <c>ValidationMessages</c>) containing the key.</param>
     /// <param name="key">The name of the static member to retrieve (e.g. <c>"Email_Required"</c>).</param>
+    /// <param name="culture">The UI culture to use.</param>
     /// <returns>
     /// The resolved localized string, or <c>null</c> if the key does not exist or retrieval fails.
     /// </returns>
-    protected internal static string? GetResourceValue(Type type, string key)
+    /// <remarks>
+    /// Optimized for performance using two caches: one for resolved localized strings, 
+    /// and the other for an internal <see cref="ResourceManager"/> if available.
+    /// </remarks>
+    public static string? GetResourceValue(Type type, string key, CultureInfo? culture = null)
     {
-        var member = type.GetMember(key,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault();
+        var cultureName = (culture ?? CultureInfo.CurrentUICulture).Name;
 
-        return member switch
+        // Check string-level cache first
+        var stringKey = (type, key, cultureName);
+        if (_localizedStringCache.TryGetValue(stringKey, out var cachedValue))
+            return cachedValue;
+
+        var rm = _resourceManagerCache.GetOrAdd(type, t =>
         {
-            PropertyInfo prop => prop.GetValue(null)?.ToString(),
-            FieldInfo field => field.GetValue(null)?.ToString(),
-            MethodInfo method when method.GetParameters().Length == 0 =>
-                method.Invoke(null, null)?.ToString(),
-            _ => null
-        };
+            var prop = t.GetProperty("ResourceManager", StaticPublicNonPublicFlags);
+            return prop?.GetValue(null) as ResourceManager;
+        });
+
+        string? value = null;
+
+        if (rm != null)
+        {
+            value = rm.GetString(key, culture ?? CultureInfo.CurrentCulture);
+        }
+        else
+        {
+            // Fallback to static member (field, property, method)
+            var member = type.GetMember(key, StaticPublicNonPublicFlags).FirstOrDefault();
+
+            value = member switch
+            {
+                PropertyInfo prop => prop.GetValue(null)?.ToString(),
+                FieldInfo field => field.GetValue(null)?.ToString(),
+                MethodInfo method when method.GetParameters().Length == 0 =>
+                    method.Invoke(null, null)?.ToString(),
+                _ => null
+            };
+        }
+
+        _localizedStringCache[stringKey] = value; // Cache resolved value
+        return value;
     }
 
     /// <summary>

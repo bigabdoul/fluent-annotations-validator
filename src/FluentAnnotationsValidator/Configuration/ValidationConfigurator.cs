@@ -1,5 +1,5 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -15,6 +15,29 @@ namespace FluentAnnotationsValidator.Configuration;
 public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
     private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
+    private Type? _commonResourceType;
+    private CultureInfo? _commonCulture;
+
+    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource{TResource}()"/>
+    public ValidationConfigurator WithValidationResource<TResource>()
+    {
+        _commonResourceType = typeof(TResource);
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource(Type?)"/>
+    public ValidationConfigurator WithValidationResource(Type? resourceType)
+    {
+        _commonResourceType = resourceType;
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationConfigurator.WithCulture(CultureInfo)"/>
+    public ValidationConfigurator WithCulture(CultureInfo? culture)
+    {
+        _commonCulture = culture;
+        return this;
+    }
 
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.
@@ -22,7 +45,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>A <see cref="ValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
     public ValidationTypeConfigurator<T> For<T>()
-        => new(this, options);
+        => new(this, options) { CommonCulture = _commonCulture, CommonResourceType = _commonResourceType };
 
     /// <summary>
     /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.
@@ -49,6 +72,17 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <returns>An <see cref="IValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
     IValidationTypeConfigurator<T> IValidationConfigurator.For<T>() 
         => For<T>();
+
+    IValidationConfigurator IValidationConfigurator.WithValidationResource<TResource>()
+        => WithValidationResource<TResource>();
+
+    IValidationConfigurator IValidationConfigurator.WithValidationResource(Type? resourceType)
+        => WithValidationResource(resourceType);
+
+    IValidationConfigurator IValidationConfigurator.WithCulture(CultureInfo? culture)
+        => WithCulture(culture);
+
+    void IValidationConfigurator.Build() => Build();
 }
 
 

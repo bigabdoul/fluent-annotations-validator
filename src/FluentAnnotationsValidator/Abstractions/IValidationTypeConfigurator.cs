@@ -29,7 +29,7 @@ public interface IValidationTypeConfigurator<T>
     /// </summary>
     /// <param name="culture">The culture information to set.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> WithCulture(CultureInfo culture);
+    IValidationTypeConfigurator<T> WithCulture(CultureInfo? culture);
 
     /// <summary>
     /// Adds a conditional validation rule for a given property.

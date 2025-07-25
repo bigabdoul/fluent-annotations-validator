@@ -1,15 +1,18 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Internals.Reflection;
-using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Messages;
+using static TestHelpers;
 
 public class ValidationMessageResolverTests
 {
-    private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions());
+    public ValidationMessageResolverTests()
+    {
+        ValidationMessages.Culture = Thread.CurrentThread.CurrentUICulture;
+    }
 
     [Fact]
     public void ResolveMessage_Inline_ReturnsFormattedMessage()
@@ -23,7 +26,7 @@ public class ValidationMessageResolverTests
         };
 
         // Act
-        var message = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+        var message = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
 
         // Assert
         Assert.Equal("Field Email is required", message);
@@ -44,7 +47,7 @@ public class ValidationMessageResolverTests
             DeclaringType = typeof(TestLoginDto)
         };
 
-        var message = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+        var message = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
         Assert.Equal(ValidationMessages.EmailRequired, message);
     }
 
@@ -60,7 +63,7 @@ public class ValidationMessageResolverTests
 
         var rule = new ConditionalValidationRule(Predicate: null!, Message: "Overridden message");
 
-        var message = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var message = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
         Assert.Equal("Overridden message", message);
     }
 
@@ -76,9 +79,10 @@ public class ValidationMessageResolverTests
 
         var rule = new ConditionalValidationRule(Predicate: null!, 
             ResourceKey: nameof(ValidationMessages.PasswordRequired), 
-            ResourceType: typeof(ValidationMessages));
+            ResourceType: typeof(ValidationMessages)
+        );
 
-        var message = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var message = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
         Assert.Equal(ValidationMessages.PasswordRequired, message);
     }
 
@@ -92,7 +96,7 @@ public class ValidationMessageResolverTests
             DeclaringType = typeof(TestLoginDtoWithResource)
         };
 
-        var message = GetResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
+        var message = GetMessageResolver().ResolveMessage(info.DeclaringType, info.Member.Name, attr);
         Assert.Equal(ConventionValidationMessages.Email_Required, message);
     }
 }

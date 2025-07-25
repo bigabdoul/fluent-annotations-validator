@@ -18,8 +18,9 @@ public static class ValidationAttributeAdapter
     /// </summary>
     /// <param name="declaringType">The target model type.</param>
     /// <param name="member">The property or field to inspect belonging to <paramref name="declaringType"/>.</param>
+    /// <param name="options">The validation behavior options used to apply common configuration to parsed rules.</param>
     /// <returns>A list of conditional validation rules for the member.</returns>
-    public static List<ConditionalValidationRule> ParseRules(Type declaringType, MemberInfo member)
+    public static List<ConditionalValidationRule> ParseRules(Type declaringType, MemberInfo member, ValidationBehaviorOptions? options = null)
     {
         ValidationAttribute[] attributes = [..member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
@@ -42,6 +43,9 @@ public static class ValidationAttributeAdapter
                 Member = member,
                 Attribute = attr,
                 UniqueKey = uniqueKey,
+                Culture = options?.CommonCulture,
+                ResourceType = options?.CommonResourceType,
+                UseConventionalKeyFallback = options?.UseConventionalKeyFallback ?? true,
                 ResourceKey = ValidationMessageResolver.GetConventionalKey(member.Name, attr),
             };
             rules.Add(rule);

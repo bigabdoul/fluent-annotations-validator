@@ -1,4 +1,6 @@
-﻿namespace FluentAnnotationsValidator.Abstractions;
+﻿using System.Globalization;
+
+namespace FluentAnnotationsValidator.Abstractions;
 
 /// <summary>
 /// Defines the contract for configuring conditional validation rules
@@ -6,6 +8,30 @@
 /// </summary>
 public interface IValidationConfigurator
 {
+    /// <summary>
+    /// Sets the common resource type for message resolutions that will 
+    /// be applied to all models to configure via <see cref="For{T}"/>.
+    /// </summary>
+    /// <typeparam name="TResource">The type of the localized resource to use.</typeparam>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationConfigurator WithValidationResource<TResource>();
+
+    /// <summary>
+    /// Sets the common resource type for message resolutions that will 
+    /// be replied to all models to configure via <see cref="For{T}"/>.
+    /// </summary>
+    /// <param name="resourceType">The type of the localized resource to use. Can be null.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationConfigurator WithValidationResource(Type? resourceType);
+
+    /// <summary>
+    /// Sets the common culture information for message resolutions that will
+    /// be applied to all models to configure via <see cref="For{T}"/>.
+    /// </summary>
+    /// <param name="culture">The culture to apply. Can be null.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationConfigurator WithCulture(CultureInfo? culture);
+
     /// <summary>
     /// Begins configuring validation rules for the specified model type.
     /// </summary>
