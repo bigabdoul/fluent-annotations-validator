@@ -92,9 +92,9 @@ public static class ValidatorServiceCollectionExtensions
             );
 
         var behaviorOptions = new ValidationBehaviorOptions();
-        var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
-
         configure?.Invoke(behaviorOptions);
+
+        var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
 
         foreach (var declaringType in modelTypes)
         {
