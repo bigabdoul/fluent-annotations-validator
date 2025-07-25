@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [v2.0.0-preview1] - 2025-07-25
+
+> ⚠️ This is a **preview** release. API surface and behavior may evolve in later stable builds.
+
+### Features
+
+- **Multi-attribute validation support**
+  - Processes all `[ValidationAttribute]`s per property with conditional overrides
+- **Fluent DSL configurator**
+  - Introduced `ValidationConfigurator` for chaining conditional logic, culture, and resource bindings
+- **Localized messaging engine**
+  - Lookup via `.resx`, static resource classes, and fallback text
+- **Convention-based discovery**
+  - Auto-registers DTOs and message mappings using assembly scanning
+- **Pluggable `IValidationMessageResolver`**
+  - Allows custom lookup strategies or fallback policies
+
+### Architectural Overhaul
+
+- Removed all legacy APIs (single-rule registry)
+- Restructured rule registry for multi-message hydration
+- Separated configuration DSL from validation evaluation pipeline
+
+### Internal Improvements
+
+- Enhanced diagnostics for missing message keys
+- Fully deterministic builds with Source Link + `.snupkg` symbols
+
+---
+
+## [1.2.2] - 2024-10-15
+
+- Patch for `.Build()` fallback behavior
+- Warning on multi-attribute limitation
+- Culture-scoped resource fallback improvements
+
 ## [v1.2.2] - 2025-07-23
 
 ### Fixes

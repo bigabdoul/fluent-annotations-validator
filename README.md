@@ -38,14 +38,6 @@ Install via NuGet:
 
 ---
 
-> ⚠️ **Heads-up:** Current version supports one rule per property.
->
-> If a property has multiple `[ValidationAttribute]`s, only the last error will be emitted.
->
-> This will be resolved in the upcoming **v2.0.0** with full multi-message support.
-
----
-
 ## 🚀 Quickstart
 
 ### 1. DTO Annotations
@@ -80,46 +72,62 @@ public static class ValidationMessages
 
 ### 3. Configuration
 
-#### Basic Registration
+#### Basic Setup
+
+Using `AddFluentAnnotations()`:
 
 ```csharp
 using FluentAnnotationsValidator.Extensions;
-using System.Globalization;
 
-// Initialization required to auto-discovery of [ValidationAttribute]
-services.AddFluentAnnotationsValidators();
+services.AddFluentAnnotations();
+```
 
-// or (for better performance, load only assemblies of targeted types):
-// services.AddFluentAnnotationsValidators(typeof(RegistrationDto));
+#### Advanced Setup
 
-services.UseFluentAnnotations()
-    .For<RegistrationDto>()
+Using either:
+
+1. `AddFluentAnnotationsValidators(...)`:
+
+```csharp
+services.AddFluentAnnotationsValidators(typeof(LoginDto))
+    .UseFluentAnnotations()
+    .For<LoginDto>()
         .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
         .WithValidationResource<ValidationMessages>()
     .Build();
 ```
 
-#### Conditional Fallback Logic
+2. `AddFluentAnnotations(...)` with common behavior options configuration:
 
 ```csharp
-services.UseFluentAnnotations()
-    .For<RegistrationDto>()
-        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-        .WithValidationResource<ValidationMessages>()
-        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
-            .Localized("Password_Required")
-            .UseFallbackMessage("Mot de passe requis.")
-    .Build();
+services.AddFluentAnnotations(
+    configureBehavior: options =>
+    {
+        // common culture and resource type for all validation attributes
+        options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
+        options.CommonResourceType = typeof(ValidationMessages);
+    }
+);
 ```
 
-#### Global Configuration (Coming soon)
-
+3. `AddFluentAnnotations(...)` with scoped and common culture and resource types:
 ```csharp
-services.UseFluentAnnotations()
-    .ForAll() // Or .ForAll(typeof(DtoA), typeof(DtoB))
-        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-        .WithValidationResource<ValidationMessages>()
-    .Build();
+services.AddFluentAnnotations(
+    builder =>
+        // Conditional Localization rule for German 
+        // culture and resource type scoped to LoginDto
+        builder.For<LoginDto>()
+            .When(x => x.LangCode == 'DE')
+            .WithCulture(CultureInfo.GetCultureInfo("de-DE"))
+            .WithValidationResource<AuthenticationMessages>()
+        .Build(),
+    configureBehavior: options =>
+    {
+        // common French culture and resource type for all validation rules
+        options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
+        options.CommonResourceType = typeof(ValidationMessages);
+    }
+);
 ```
 
 ### 4. Runtime Validation
@@ -144,6 +152,7 @@ Inside `FluentAnnotationsValidator.Tests`:
 - ✅ Unit tests for all `[ValidationAttribute]` types
 - ✅ Resolution of localized strings via `.resx` and static resources
 - ✅ Edge cases like multiple violations and fallback messages
+- ✅ All legacy use-case tests are passing
 - ✅ Deterministic build and workflow verification
 
 ---
@@ -163,17 +172,21 @@ src/
 │   ├── Abstractions/       // Interfaces for config, resolvers
 │   ├── Configuration/      // DSL surface and options
 │   ├── Extensions/         // Service registration
-│   ├── Internal/Reflection // Metadata cache
+│   ├── Internals/Reflection // Metadata cache
 │   ├── Messages/           // Fallback + formatting logic
-│   ├── Runtime/Validators  // Validator factories
-│   └── Metadata/           // Resource marker attribute
+│   ├── Metadata/           // Resource marker attribute
+│   ├── Results/            // Validation results
+│   └── Runtime/Validators  // Validator factories
 
 tests/
 ├── FluentAnnotationsValidator.Tests/
 │   ├── Assertions/
 │   ├── Configuration/
+│   ├── Messages/
+│   ├   └── Resolutions/
 │   ├── Models/
 │   ├── Resources/
+│   ├── Results/
 │   ├── Validators/
 │   ├── DIRegistrationTests.cs
 │   └── TestHelpers.cs
