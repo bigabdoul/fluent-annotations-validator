@@ -1,5 +1,6 @@
 using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Abstractions;
 
@@ -9,9 +10,20 @@ namespace FluentAnnotationsValidator.Abstractions;
 public interface IValidationMessageResolver
 {
     /// <summary>
-    /// Resolves the error message for a given validation attribute, property, and rule context.
+    /// Resolves the error message for a given validation attribute, member, and rule context.
     /// </summary>
-    /// <param name="propertyInfo">Property and attribute metadata</param>
+    /// <typeparam name="T">The type on which the member is declared.</typeparam>
+    /// <param name="expression">A lambda expression used to extract the declaring type and member info.</param>
+    /// <param name="attr">The validation attribute being processed</param>
+    /// <param name="rule">An optional conditional validation rule to use.</param>
+    /// <returns>Localized error message or null</returns>
+    string? ResolveMessage<T>(Expression<Func<T, string?>> expression, ValidationAttribute attr, ConditionalValidationRule? rule = null);
+
+    /// <summary>
+    /// Resolves the error message for a given validation attribute, member, and rule context.
+    /// </summary>
+    /// <param name="declaringType">The type on which the member is declared.</param>
+    /// <param name="memberName">The property or field name to which the attribute is attached.</param>
     /// <param name="attr">The validation attribute being processed</param>
     /// <param name="rule">An optional conditional validation rule to use.</param>
     /// <returns>Localized error message or null</returns>

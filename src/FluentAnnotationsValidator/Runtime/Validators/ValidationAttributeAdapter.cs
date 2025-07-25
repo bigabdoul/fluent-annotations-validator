@@ -1,5 +1,4 @@
 ﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -27,13 +26,6 @@ public static class ValidationAttributeAdapter
         if (attributes.Length == 0) return [];
 
         var rules = new List<ConditionalValidationRule>();
-
-        var validationInfo = new MemberValidationInfo()
-        {
-            DeclaringType = declaringType,
-            Member = member,
-            Attributes = attributes,
-        };
 
         foreach (var attr in attributes)
         {

@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0-preview2] - 2025-07-25
+
+### Added
+- Introduced resource-scoped fluent DSL for localized validation
+- Added support for culture isolation and contextual message flow
+- Fallback generation for attributes lacking explicit conditions
+
+### Changed
+- Removed legacy DI extensions and consolidated test infrastructure
+- Unified test project under `FluentAnnotationsValidator.Tests` with clearer structure and naming
+- Refactored `TestHelpers.cs` and resource utilities for isolated validation environments
+
+### Fixed
+- Improved conditional rule gating using `.When(...)` and `.And(...)` semantics
+- Validated multi-attribute evaluation in complex edge cases
+- Ensured deterministic behavior and culture-aware validation across pipeline stages
+
+
 ## [v2.0.0-preview1] - 2025-07-25
 
 > ⚠️ This is a **preview** release. API surface and behavior may evolve in later stable builds.

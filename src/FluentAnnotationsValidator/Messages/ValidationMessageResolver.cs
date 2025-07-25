@@ -1,10 +1,12 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Resources;
 
@@ -20,12 +22,17 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     private static readonly ConcurrentDictionary<Type, ResourceManager?> _resourceManagerCache = new();
     private static readonly ConcurrentDictionary<(Type, string, string), string?> _localizedStringCache = new();
 
+    /// <inheritdoc cref="IValidationMessageResolver.ResolveMessage{T}(Expression{Func{T, string?}}, ValidationAttribute, ConditionalValidationRule?)"/>
+    public string? ResolveMessage<T>(Expression<Func<T, string?>> expression, ValidationAttribute attr, ConditionalValidationRule? rule = null)
+        => ResolveMessage(typeof(T), expression.GetMemberInfo().Name, attr, rule);
+
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
     /// </summary>
     /// <param name="declaringType">
-    /// The metadata container for the property, field, or parameter being validated, including its <see cref="PropertyInfo"/> and target model type.
+    /// The metadata container for the property, or field being validated, 
+    /// including its <see cref="MemberInfo"/> and target model type.
     /// </param>
     /// <param name="attr">
     /// The <see cref="ValidationAttribute"/> instance describing the validation logic and message configuration.
@@ -36,7 +43,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// </param>
     /// <returns>
     /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
-    /// Returns <c>null</c> if no message can be resolved.
+    /// Returns <see langword="null" /> if no message can be resolved.
     /// </returns>
     public virtual string? ResolveMessage(Type declaringType, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
     {
@@ -54,7 +61,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
         if (rule is not null &&
             !string.IsNullOrWhiteSpace(rule.ResourceKey) &&
             resourceType is not null &&
-            TryResolveFromResource(resourceType, rule.ResourceKey!, culture, formatArg, out var resolvedFromRule))
+            TryResolveFromResource(resourceType, rule.ResourceKey, culture, formatArg, out var resolvedFromRule))
         {
             return resolvedFromRule;
         }
@@ -100,23 +107,19 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// <param name="resourceKey">The property name to retrieve.</param>
     /// <param name="culture">
     /// Optional: A specific <see cref="CultureInfo"/> to format the resolved message.
-    /// If <c>null</c>, defaults to <see cref="CultureInfo.CurrentCulture"/>.
+    /// If <see langword="null" />, defaults to <see cref="CultureInfo.CurrentCulture"/>.
     /// </param>
     /// <param name="formatArg">Optional: An argument used to format the resolved message string.</param>
     /// <param name="message">
     /// When this method returns, contains the resolved and formatted message if found;
-    /// otherwise, <c>null</c>.
+    /// otherwise, <see langword="null" />.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if resolution succeeded and a non-null message was returned;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    public virtual bool TryResolveFromResource(
-        Type resourceType,
-        string resourceKey,
-        CultureInfo? culture,
-        object? formatArg,
-        [NotNullWhen(true)] out string? message)
+    public virtual bool TryResolveFromResource(Type resourceType, string resourceKey, CultureInfo? culture,
+        object? formatArg, [NotNullWhen(true)] out string? message)
     {
         message = null;
 
@@ -153,7 +156,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// <param name="key">The name of the static member to retrieve (e.g. <c>"Email_Required"</c>).</param>
     /// <param name="culture">The UI culture to use.</param>
     /// <returns>
-    /// The resolved localized string, or <c>null</c> if the key does not exist or retrieval fails.
+    /// The resolved localized string, or <see langword="null" /> if the key does not exist or retrieval fails.
     /// </returns>
     /// <remarks>
     /// Optimized for performance using two caches: one for resolved localized strings, 
@@ -206,7 +209,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     /// <param name="attr">The validation attribute instance to inspect.</param>
     /// <returns>
     /// An object representing the format argument(s), such as an integer, array, or pattern string. 
-    /// Returns <c>null</c> if the attribute type is unsupported or lacks relevant data.
+    /// Returns <see langword="null" /> if the attribute type is unsupported or lacks relevant data.
     /// </returns>
     protected static object? GetFormatValue(ValidationAttribute attr)
     {

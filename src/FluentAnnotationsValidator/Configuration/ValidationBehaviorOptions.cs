@@ -22,12 +22,12 @@ public sealed class ValidationBehaviorOptions
     #region properties
 
     /// <summary>
-    /// Optional common resource type used for localization.
+    /// Optional common or fallback resource type used for localization.
     /// </summary>
     public Type? CommonResourceType { get; set; }
 
     /// <summary>
-    /// Optional culture to use for error messages and formatting.
+    /// Optional common or fallback culture to use for error messages and formatting.
     /// </summary>
     public CultureInfo? CommonCulture { get; set; }
 
