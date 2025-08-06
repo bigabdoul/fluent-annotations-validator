@@ -11,7 +11,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Stores conditional validation rules mapped to each property or field.
 /// Supports multiple validation attributes per member.
 /// </summary>
-public sealed class ValidationBehaviorOptions
+public class ValidationBehaviorOptions
 {
     private static InvalidOperationException NoMatchingRule =>
         new("Found no rule matching the specified expression.");
@@ -53,7 +53,7 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The target property or field.</param>
     /// <param name="rule">The conditional validation rule to apply.</param>
-    public void AddRule(MemberInfo member, ConditionalValidationRule rule)
+    public virtual void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
         RuleRegistry
             .GetOrAdd(member, _ => [])
@@ -65,7 +65,7 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The property or field to inspect.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
-    public IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
+    public virtual IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
         => RuleRegistry.TryGetValue(member, out var rules)
             ? rules.ToList()
             : [];
@@ -79,7 +79,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>A read-only list of matching rules.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no rule matches the expression.</exception>
-    public IReadOnlyList<ConditionalValidationRule> GetRules<T>(
+    public virtual IReadOnlyList<ConditionalValidationRule> GetRules<T>(
         Expression<Func<T, string?>> expression,
         Func<ConditionalValidationRule, bool>? predicate = null)
         => FindRules(expression, predicate) ?? throw NoMatchingRule;
@@ -93,7 +93,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="rules">The resulting rule list (empty if none).</param>
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>True if matching rules were found, false otherwise.</returns>
-    public bool TryGetRules<T>(
+    public virtual bool TryGetRules<T>(
         Expression<Func<T, string?>> expression,
         out IReadOnlyList<ConditionalValidationRule> rules,
         Func<ConditionalValidationRule, bool>? predicate = null)
@@ -117,7 +117,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>True if at least one matching rule exists, false otherwise.</returns>
-    public bool Contains<T>(
+    public virtual bool Contains<T>(
         Expression<Func<T, string?>> expression,
         Func<ConditionalValidationRule, bool>? predicate = null)
     {
@@ -138,7 +138,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+    public virtual IReadOnlyList<ConditionalValidationRule> FindRules<T>(
         Expression<Func<T, string?>> expression,
         Func<ConditionalValidationRule, bool>? predicate = null)
         => FindRules<T>(expression.GetMemberInfo(), predicate);
@@ -150,7 +150,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="member">The member to look up.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+    public virtual IReadOnlyList<ConditionalValidationRule> FindRules<T>(
         MemberInfo member,
         Func<ConditionalValidationRule, bool>? predicate = null)
     {
@@ -169,7 +169,7 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <typeparam name="T">The declaring type to filter by.</typeparam>
     /// <returns>A list of tuples (MemberInfo, Rule List) for each matched member.</returns>
-    public List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
+    public virtual List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
     {
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
 
