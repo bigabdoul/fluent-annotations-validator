@@ -16,7 +16,9 @@ public class ValidationBehaviorOptions
     private static InvalidOperationException NoMatchingRule =>
         new("Found no rule matching the specified expression.");
 
-    private ConcurrentDictionary<MemberInfo, ConcurrentBag<ConditionalValidationRule>> RuleRegistry { get; } = new();
+    private readonly object _lock = new();
+    private readonly ConcurrentDictionary<MemberInfo, object> MemberLocks = new();
+    private readonly ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> RuleRegistry = new();
 
     #region properties
 
@@ -44,7 +46,10 @@ public class ValidationBehaviorOptions
 
     internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
-        _ = RuleRegistry.GetOrAdd(member, _ => [.. rules]);
+        lock (MemberLocks.GetOrAdd(member, _ => new object()))
+        {
+            RuleRegistry[member] = [.. rules];
+        }
     }
 
     /// <summary>
@@ -55,9 +60,27 @@ public class ValidationBehaviorOptions
     /// <param name="rule">The conditional validation rule to apply.</param>
     public virtual void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        RuleRegistry
-            .GetOrAdd(member, _ => [])
-            .Add(rule);
+        lock (MemberLocks.GetOrAdd(member, _ => new object()))
+        {
+            //if (overrideExisting && RuleRegistry.TryGetValue(member, out var ruleList) && ruleList.Count > 0)
+            //{
+            //    // find previous matching rules: declaring type, member name, attribute type
+            //    var existingRules = FindRules(member.DeclaringType!, member, 
+            //        r => r.Attribute?.GetType() == rule.Attribute?.GetType()
+            //    );
+            //    foreach (var existing in existingRules)
+            //    {
+            //        var index = ruleList.FindIndex(r => Equals(r, existing));
+            //        if (index != -1)
+            //        {
+            //            ruleList.RemoveAt(index);
+            //        }
+            //    }
+            //}
+
+            var rules = RuleRegistry.GetOrAdd(member, _ => []);
+            rules.Add(rule);
+        }
     }
 
     /// <summary>
@@ -138,7 +161,7 @@ public class ValidationBehaviorOptions
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public virtual IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
         Expression<Func<T, string?>> expression,
         Func<ConditionalValidationRule, bool>? predicate = null)
         => FindRules<T>(expression.GetMemberInfo(), predicate);
@@ -150,14 +173,18 @@ public class ValidationBehaviorOptions
     /// <param name="member">The member to look up.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public virtual IReadOnlyList<ConditionalValidationRule> FindRules<T>(
+    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
         MemberInfo member,
         Func<ConditionalValidationRule, bool>? predicate = null)
+        => FindRules(typeof(T), member, predicate);
+
+    public virtual IReadOnlyList<ConditionalValidationRule> FindRules(Type type,
+        MemberInfo member, Func<ConditionalValidationRule, bool>? predicate = null)
     {
         var rules = GetRules(member);
 
         return [.. rules.Where(r =>
-                r.Member.DeclaringType == typeof(T) &&
+                r.Member.DeclaringType == type &&
                 r.Member.Name == member.Name &&
                 (predicate?.Invoke(r) ?? true))
         ];
@@ -183,4 +210,7 @@ public class ValidationBehaviorOptions
 
         return result;
     }
+
+    public bool RemoveAll(MemberInfo member)
+        => RuleRegistry.Remove(member, out var _);
 }

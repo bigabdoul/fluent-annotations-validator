@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Configuration;
@@ -26,7 +27,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// <param name="Culture">An optional culture-specific format provider.</param>
 /// <param name="FallbackMessage">Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.</param>
 /// <param name="UseConventionalKeyFallback">Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).</param>
-public record ConditionalValidationRule(
+public sealed class ConditionalValidationRule(
     Func<object, bool> Predicate,
     string? Message = null,
     string? Key = null,
@@ -36,13 +37,22 @@ public record ConditionalValidationRule(
     string? FallbackMessage = null,
     bool UseConventionalKeyFallback = true)
 {
+    public Func<object, bool> Predicate { get; set; } = Predicate;
+    public string? Message { get; set; } = Message;
+    public string? Key { get; set; } = Key;
+    public string? ResourceKey { get; set; } = ResourceKey;
+    public Type? ResourceType { get; set; } = ResourceType;
+    public CultureInfo? Culture { get; set; } = Culture;
+    public string? FallbackMessage { get; set; } = FallbackMessage;
+    public bool UseConventionalKeyFallback { get; set; } = UseConventionalKeyFallback;
+
     /// <summary>
     /// The validation attribute associated to the rule.
     /// If it is <see cref="null"/>, it may have been added
     /// through fluent configuration.
     /// </summary>
     public ValidationAttribute? Attribute { get; set; }
-    public MemberInfo Member { get; set; } = default!;
+    public MemberInfo Member { get; init; } = default!;
     public bool ShouldApply(object targetInstance) => Predicate(targetInstance);
 
     /// <summary>
@@ -53,4 +63,16 @@ public record ConditionalValidationRule(
     public bool HasAttribute => Attribute != null;
 
     public string UniqueKey { get; set; } = Guid.NewGuid().ToString();
+
+    public override bool Equals(object? obj)
+        => obj is ConditionalValidationRule other && Equals(other);
+
+    public bool Equals(ConditionalValidationRule? other)
+        => other is not null &&
+           Member.Name == other.Member.Name &&
+           Member.DeclaringType == other.Member.DeclaringType &&
+           Attribute?.GetType() == other.Attribute?.GetType();
+
+    public override int GetHashCode()
+        => HashCode.Combine(Member.Name, Member.DeclaringType, Attribute?.GetType());
 }

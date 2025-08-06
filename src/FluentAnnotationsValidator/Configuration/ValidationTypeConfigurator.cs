@@ -1,5 +1,7 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -33,22 +35,10 @@ namespace FluentAnnotationsValidator.Configuration;
 public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, ValidationBehaviorOptions options)
     : ValidationTypeConfiguratorBase(typeof(T)), IValidationTypeConfigurator<T>
 {
-    private readonly List<PendingRule> _pendingRules = [];
-    private PendingRule? _currentRule;
+    private readonly HashSet<PendingRule<T>> _pendingRules = [];
+    private PendingRule<T>? _currentRule;
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
-
-    private record PendingRule(
-        Expression Member,
-        Func<T, bool> Predicate,
-        string? Message = null,
-        string? Key = null,
-        string? ResourceKey = null,
-        Type? ResourceType = null,
-        CultureInfo? Culture = null,
-        string? FallbackMessage = null,
-        bool? UseConventionalKeys = true
-    );
 
     /// <summary>
     /// Gets the validation behavior options.
@@ -76,18 +66,57 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property)
+    {
+        CommitCurrentRule();
+
+        var member = property.GetMemberInfo();
+
+        var removed = Options.RemoveAll(member);
+
+        // clear any previous rule
+        var count = _pendingRules.RemoveWhere(r =>
+        {
+            var mi = r.Member.GetMemberInfo();
+            return mi.Name == member.Name && mi.DeclaringType == member.DeclaringType;
+        });
+
+        Debug.WriteLine("Removed from ValidationBehaviorOptions: {0}\nRemoved from pending rules: {1}", removed, count);
+
+        _currentRule = new PendingRule<T>(
+            member: property,
+            predicate: _ => true, // Always validate unless overridden by .When(...)
+            resourceType: ValidationResourceType,
+            culture: Culture,
+            fallbackMessage: _fallbackMessage,
+            useConventionalKeys: _useConventionalKeys
+        );
+
+        return this;
+    }
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
     public ValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
     {
-        CommitCurrentRule();
-        _currentRule = new PendingRule(
-            Member: property,
-            Predicate: model => condition(model),
-            ResourceType: ValidationResourceType,
-            Culture: Culture,
-            FallbackMessage: _fallbackMessage,
-            UseConventionalKeys: _useConventionalKeys
-        );
+        // Should only commit and create a new rule if the current rule is NOT one initiated with Rule<TProp>(...);
+        // in this case, the PendingRule.Attributes should have at least one attribute
+        if (ShouldOverrideCurrentRule(property))
+        {
+            // continue configuration of the current rule
+            _currentRule!.Predicate = condition; // override the predicate
+        }
+        else
+        {
+            CommitCurrentRule();
+            _currentRule = new PendingRule<T>(
+                member: property,
+                predicate: model => condition(model),
+                resourceType: ValidationResourceType,
+                culture: Culture,
+                fallbackMessage: _fallbackMessage,
+                useConventionalKeys: _useConventionalKeys
+            );
+        }
         return this;
     }
 
@@ -107,7 +136,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     public ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Message = message };
+            _currentRule.Message = message;
         return this;
     }
 
@@ -115,7 +144,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     public ValidationTypeConfigurator<T> WithKey(string key)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { Key = key };
+            _currentRule.Key = key;
         return this;
     }
 
@@ -123,7 +152,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     public ValidationTypeConfigurator<T> Localized(string resourceKey)
     {
         if (_currentRule is not null)
-            _currentRule = _currentRule with { ResourceKey = resourceKey };
+            _currentRule.ResourceKey = resourceKey;
         return this;
     }
 
@@ -139,7 +168,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         _fallbackMessage = fallbackMessage;
         if (_currentRule is not null)
-            _currentRule = _currentRule with { FallbackMessage = _fallbackMessage };
+            _currentRule.FallbackMessage = _fallbackMessage;
         return this;
     }
 
@@ -156,8 +185,47 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         CommitCurrentRule();
 
+        // Emit fluent attributes from pending rules
         foreach (var rule in _pendingRules)
         {
+            if (rule.Attributes.Count == 0)
+                continue;
+
+            var added = false;
+
+            foreach (var attr in rule.Attributes)
+            {
+                AttachAttribute(rule.Member, attr);
+                added = true;
+            }
+
+            if (added)
+            {
+                _overriddenMembers.Add(rule.GetHashCode().ToString());
+            }
+        }
+
+        // Emit runtime rules from attached attributes
+        foreach (var (memberName, attributes) in _emittedAttributes)
+        {
+            var member = typeof(T).GetMember(memberName).FirstOrDefault();
+            if (member == null) continue;
+
+            foreach (var attr in attributes)
+            {
+                RegisterAttributeRule(member, attr);
+            }
+        }
+
+        // Register fallback rules
+        foreach (var rule in _pendingRules)
+        {
+            var member = rule.Member.GetMemberInfo();
+            var hashCode = rule.GetHashCode().ToString();
+
+            if (_overriddenMembers.Contains(hashCode))
+                continue;
+
             parent.Register(opts =>
             {
                 AddRule(opts,
@@ -238,7 +306,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #endregion
 
-    #region helper
+    #region helpers
+
+    private readonly Dictionary<string, List<ValidationAttribute>> _emittedAttributes = [];
+    private readonly HashSet<string> _overriddenMembers = [];
 
     static void AddRule<TModel>(ValidationBehaviorOptions options,
         Expression memberExpression,
@@ -266,6 +337,72 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         };
 
         options.AddRule(member, rule);
+    }
+
+    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute)
+    {
+        if (_currentRule is null)
+            throw new InvalidOperationException("No pending rule to attach attribute to.");
+
+        _currentRule.Attributes.Add(attribute);
+        return this;
+    }
+
+    internal void AttachAttribute(Expression memberExpr, ValidationAttribute attribute)
+    {
+        var name = memberExpr.GetMemberInfo().Name;
+
+        if (!_emittedAttributes.TryGetValue(name, out var list))
+            _emittedAttributes[name] = list = [];
+
+        list.Add(attribute);
+    }
+
+    private void RegisterAttributeRule(MemberInfo member, ValidationAttribute attr)
+    {
+        var rule = new ConditionalValidationRule(
+            Predicate: model =>
+            {
+                var context = new ValidationContext(model) { MemberName = member.Name };
+
+                var value = member is PropertyInfo pi ? pi.GetValue(model)
+                          : member is FieldInfo fi ? fi.GetValue(model)
+                          : null;
+
+                var result = attr.GetValidationResult(value, context);
+                return ReferenceEquals(result, ValidationResult.Success);
+            },
+            Message: null,
+            Key: null,
+            ResourceKey: null,
+            ResourceType: ValidationResourceType,
+            Culture: Culture,
+            FallbackMessage: _fallbackMessage,
+            UseConventionalKeyFallback: _useConventionalKeys
+        )
+        {
+            Member = member,
+            Attribute = attr,
+        };
+
+        Options.AddRule(member, rule);
+    }
+
+    protected virtual bool ShouldOverrideCurrentRule<TProp>(Expression<Func<T, TProp>> property)
+    {
+        if (_currentRule != null && _currentRule.Attributes.Count > 0)
+        {
+            var currentMember = _currentRule.Member.GetMemberInfo();
+            var propertyMember = property.GetMemberInfo();
+
+            var same =
+                currentMember.Name == propertyMember.Name &&
+                currentMember.DeclaringType == propertyMember.DeclaringType;
+
+            return same;
+        }
+
+        return false;
     }
 
     #endregion
