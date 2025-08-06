@@ -21,21 +21,21 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// </summary>
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>A <see cref="ValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
-    public ValidationTypeConfigurator<T> For<T>()
+    public virtual ValidationTypeConfigurator<T> For<T>()
         => new(this, options);
 
     /// <summary>
     /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.
     /// </summary>
     /// <param name="config">The configuration action to apply.</param>
-    public void Register(Action<ValidationBehaviorOptions> config)
+    public virtual void Register(Action<ValidationBehaviorOptions> config)
         => _registrations.Add(config);
 
     /// <summary>
     /// Applies all registered validation configurations to the service collection.
     /// Should be called after all rules have been configured.
     /// </summary>
-    public void Build()
+    public virtual void Build()
     {
         foreach (var action in _registrations)
             action(options);
