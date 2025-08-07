@@ -26,6 +26,10 @@ internal sealed class PendingRule<T>(
     public CultureInfo? Culture { get; set; } = culture;
     public string? FallbackMessage { get; set; } = fallbackMessage;
     public bool? UseConventionalKeys { get; set; } = useConventionalKeys;
+
+    /// <summary>
+    /// Gets the list of dynamically added attributes via fluent rules.
+    /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
     public override int GetHashCode()
@@ -45,7 +49,6 @@ internal sealed class PendingRule<T>(
         var member2 = other.Member.GetMemberInfo();
 
         return
-            other != null &&
             member1.Name == member2.Name &&
             member1.DeclaringType == member2.DeclaringType;
     }

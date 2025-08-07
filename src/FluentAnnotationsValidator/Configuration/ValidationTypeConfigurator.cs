@@ -36,6 +36,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     : ValidationTypeConfiguratorBase(typeof(T)), IValidationTypeConfigurator<T>
 {
     private readonly HashSet<PendingRule<T>> _pendingRules = [];
+    private readonly Dictionary<string, List<ValidationAttribute>> _emittedAttributes = [];
     private PendingRule<T>? _currentRule;
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
@@ -185,61 +186,33 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         CommitCurrentRule();
 
-        // Emit fluent attributes from pending rules
-        foreach (var rule in _pendingRules)
-        {
-            if (rule.Attributes.Count == 0)
-                continue;
-
-            var added = false;
-
-            foreach (var attr in rule.Attributes)
-            {
-                AttachAttribute(rule.Member, attr);
-                added = true;
-            }
-
-            if (added)
-            {
-                _overriddenMembers.Add(rule.GetHashCode().ToString());
-            }
-        }
-
-        // Emit runtime rules from attached attributes
-        foreach (var (memberName, attributes) in _emittedAttributes)
-        {
-            var member = typeof(T).GetMember(memberName).FirstOrDefault();
-            if (member == null) continue;
-
-            foreach (var attr in attributes)
-            {
-                RegisterAttributeRule(member, attr);
-            }
-        }
-
-        // Register fallback rules
         foreach (var rule in _pendingRules)
         {
             var member = rule.Member.GetMemberInfo();
-            var hashCode = rule.GetHashCode().ToString();
-
-            if (_overriddenMembers.Contains(hashCode))
-                continue;
-
-            parent.Register(opts =>
+            if (rule.Attributes.Count > 0)
             {
-                AddRule(opts,
-                    rule.Member,
-                    rule.Predicate,
-                    rule.Message,
-                    rule.Key,
-                    rule.ResourceKey,
-                    rule.FallbackMessage,
-                    rule.ResourceType ?? opts.CommonResourceType,
-                    rule.Culture ?? opts.CommonCulture,
-                    rule.UseConventionalKeys ?? opts.UseConventionalKeys
-                );
-            });
+                foreach (var attr in rule.Attributes)
+                {
+                    RegisterAttributeRule(member, attr);
+                }
+            }
+            else
+            {
+                parent.Register(opts =>
+                {
+                    AddRule(opts,
+                        rule.Member,
+                        rule.Predicate,
+                        rule.Message,
+                        rule.Key,
+                        rule.ResourceKey,
+                        rule.FallbackMessage,
+                        rule.ResourceType ?? opts.CommonResourceType,
+                        rule.Culture ?? opts.CommonCulture,
+                        rule.UseConventionalKeys ?? opts.UseConventionalKeys
+                    );
+                });
+            }
         }
 
         _pendingRules.Clear();
@@ -308,9 +281,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #region helpers
 
-    private readonly Dictionary<string, List<ValidationAttribute>> _emittedAttributes = [];
-    private readonly HashSet<string> _overriddenMembers = [];
-
     static void AddRule<TModel>(ValidationBehaviorOptions options,
         Expression memberExpression,
         Func<TModel, bool> predicate,
@@ -346,16 +316,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         _currentRule.Attributes.Add(attribute);
         return this;
-    }
-
-    internal void AttachAttribute(Expression memberExpr, ValidationAttribute attribute)
-    {
-        var name = memberExpr.GetMemberInfo().Name;
-
-        if (!_emittedAttributes.TryGetValue(name, out var list))
-            _emittedAttributes[name] = list = [];
-
-        list.Add(attribute);
     }
 
     private void RegisterAttributeRule(MemberInfo member, ValidationAttribute attr)

@@ -13,12 +13,10 @@ namespace FluentAnnotationsValidator.Configuration;
 /// </summary>
 public class ValidationBehaviorOptions
 {
-    private static InvalidOperationException NoMatchingRule =>
+    private static readonly InvalidOperationException NoMatchingRule =
         new("Found no rule matching the specified expression.");
 
-    private readonly object _lock = new();
-    private readonly ConcurrentDictionary<MemberInfo, object> MemberLocks = new();
-    private readonly ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> RuleRegistry = new();
+    private readonly ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> _ruleRegistry = new();
 
     #region properties
 
@@ -46,10 +44,7 @@ public class ValidationBehaviorOptions
 
     internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
-        lock (MemberLocks.GetOrAdd(member, _ => new object()))
-        {
-            RuleRegistry[member] = [.. rules];
-        }
+        _ruleRegistry.AddOrUpdate(member, rules, (_, _) => rules);
     }
 
     /// <summary>
@@ -60,27 +55,15 @@ public class ValidationBehaviorOptions
     /// <param name="rule">The conditional validation rule to apply.</param>
     public virtual void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        lock (MemberLocks.GetOrAdd(member, _ => new object()))
-        {
-            //if (overrideExisting && RuleRegistry.TryGetValue(member, out var ruleList) && ruleList.Count > 0)
-            //{
-            //    // find previous matching rules: declaring type, member name, attribute type
-            //    var existingRules = FindRules(member.DeclaringType!, member, 
-            //        r => r.Attribute?.GetType() == rule.Attribute?.GetType()
-            //    );
-            //    foreach (var existing in existingRules)
-            //    {
-            //        var index = ruleList.FindIndex(r => Equals(r, existing));
-            //        if (index != -1)
-            //        {
-            //            ruleList.RemoveAt(index);
-            //        }
-            //    }
-            //}
-
-            var rules = RuleRegistry.GetOrAdd(member, _ => []);
-            rules.Add(rule);
-        }
+        _ruleRegistry.AddOrUpdate(
+            member,
+            _ => [rule],
+            (_, rules) =>
+            {
+                rules.Add(rule);
+                return rules;
+            }
+        );
     }
 
     /// <summary>
@@ -89,7 +72,7 @@ public class ValidationBehaviorOptions
     /// <param name="member">The property or field to inspect.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
     public virtual IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
-        => RuleRegistry.TryGetValue(member, out var rules)
+        => _ruleRegistry.TryGetValue(member, out var rules)
             ? rules.ToList()
             : [];
 
@@ -124,7 +107,7 @@ public class ValidationBehaviorOptions
         try
         {
             rules = FindRules(expression, predicate);
-            return true;
+            return rules?.Count > 0;
         }
         catch
         {
@@ -200,17 +183,21 @@ public class ValidationBehaviorOptions
     {
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
 
-        foreach (var (member, bag) in RuleRegistry)
+        foreach (var (member, rules) in _ruleRegistry)
         {
             if (member.DeclaringType == typeof(T))
             {
-                result.Add((member, bag.ToList()));
+                result.Add((member, rules.ToList()));
             }
         }
 
         return result;
     }
 
-    public bool RemoveAll(MemberInfo member)
-        => RuleRegistry.Remove(member, out var _);
+    /// <summary>
+    /// Removes all rules registered for the specified member.
+    /// </summary>
+    /// <param name="member">The member whose rules should be removed.</param>
+    /// <returns>True if any rules were removed, false otherwise.</returns>
+    public bool RemoveAll(MemberInfo member) => _ruleRegistry.Remove(member, out var _);
 }

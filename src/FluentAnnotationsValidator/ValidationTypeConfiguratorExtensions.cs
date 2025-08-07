@@ -8,27 +8,6 @@ using FluentLength = Internals.Annotations.LengthCountAttribute;
 
 public static class ValidationTypeConfiguratorExtensions
 {
-    public static ValidationTypeConfigurator<T> Empty<T, TProp>(this ValidationTypeConfigurator<T> configurator, Expression<Func<T, TProp>> property)
-    {
-        configurator.AttachAttribute(property, new EmptyAttribute());
-        return configurator;
-    }
-
-    /// <summary>
-    /// Attach a new rule to a specific property; use for direct attachment.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <typeparam name="TProp"></typeparam>
-    /// <param name="configurator"></param>
-    /// <param name="property"></param>
-    /// <returns></returns>
-    public static ValidationTypeConfigurator<T> NotEmpty<T, TProp>(this ValidationTypeConfigurator<T> configurator,
-        Expression<Func<T, TProp>> property)
-    {
-        configurator.AttachAttribute(property, new NotEmptyAttribute());
-        return configurator;
-    }
-
     /// <summary>
     /// Attach rule to most recent .Rule(...) call; use for fluent chaining.
     /// </summary>
@@ -64,7 +43,7 @@ public static class ValidationTypeConfiguratorExtensions
         Expression<Func<T, TProp>> property, TProp expected, IEqualityComparer<TProp>? equalityComparer = null)
     {
         var attr = new EqualAttribute<TProp>(expected, equalityComparer);
-        configurator.AttachAttribute(property, attr);
+        configurator.AttachAttribute(attr);
         return configurator;
     }
 
@@ -75,7 +54,7 @@ public static class ValidationTypeConfiguratorExtensions
         Expression<Func<T, TProp>> property, TProp disallowed, IEqualityComparer<TProp>? equalityComparer = null)
     {
         var attr = new NotEqualAttribute<TProp>(disallowed, equalityComparer);
-        configurator.AttachAttribute(property, attr);
+        configurator.AttachAttribute(attr);
         return configurator;
     }
 }
