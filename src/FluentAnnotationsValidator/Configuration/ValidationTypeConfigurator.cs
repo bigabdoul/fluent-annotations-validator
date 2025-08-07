@@ -190,27 +190,26 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         foreach (var rule in _pendingRules)
         {
             var member = rule.Member.GetMemberInfo();
+
+            rule.ResourceType ??= Options.CommonResourceType;
+            rule.Culture ??= Options.CommonCulture;
+            rule.UseConventionalKeys ??= Options.UseConventionalKeys;
+
             if (rule.Attributes.Count > 0)
             {
                 foreach (var attr in rule.Attributes)
                 {
-                    RegisterAttributeRule(member, attr);
+                    // each attribute has its own rule
+                    var newRule = CreateRuleFromPending(rule, member, attr);
+                    Options.AddRule(member, newRule);
                 }
             }
             else
             {
                 parent.Register(opts =>
                 {
-                    AddRule(rule.Member,
-                        rule.Predicate,
-                        rule.Message,
-                        rule.Key,
-                        rule.ResourceKey,
-                        rule.FallbackMessage,
-                        rule.ResourceType ?? opts.CommonResourceType,
-                        rule.Culture ?? opts.CommonCulture,
-                        rule.UseConventionalKeys ?? opts.UseConventionalKeys
-                    );
+                    var newRule = CreateRuleFromPending(rule, member);
+                    Options.AddRule(member, newRule);
                 });
             }
         }
@@ -273,6 +272,15 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #endregion
 
+    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute)
+    {
+        if (_currentRule is null)
+            throw new InvalidOperationException("No pending rule to attach attribute to.");
+
+        _currentRule.Attributes.Add(attribute);
+        return this;
+    }
+
     #region helpers
 
     private void CommitCurrentRule()
@@ -298,70 +306,35 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         }
     }
 
-    private void AddRule<TModel>(Expression memberExpression,
-        Func<TModel, bool> predicate,
-        string? message = null,
-        string? key = null,
-        string? resourceKey = null,
-        string? fallbackMessage = null,
-        Type? resourceType = null,
-        CultureInfo? culture = null,
-        bool useConventionalKeys = true)
+    private static ConditionalValidationRule CreateRuleFromPending(PendingRule<T> rule, MemberInfo member, ValidationAttribute? attribute = null)
     {
-        var member = memberExpression.GetMemberInfo();
-
-        var rule = new ConditionalValidationRule(model => predicate((TModel)model),
-            message,
-            key,
-            resourceKey,
-            resourceType,
-            culture,
-            fallbackMessage,
-            useConventionalKeys)
+        /*
+        Func<object, bool> predicate = model =>
+        {
+            var context = new ValidationContext(model) { MemberName = member.Name };
+        
+            var value = member is PropertyInfo pi ? pi.GetValue(model)
+                      : member is FieldInfo fi ? fi.GetValue(model)
+                      : null;
+        
+            var result = attr.GetValidationResult(value, context);
+            return ReferenceEquals(result, ValidationResult.Success);
+        };
+        */
+        var conditionalRule = new ConditionalValidationRule(model => rule.Predicate((T)model),
+            rule.Message,
+            rule.Key,
+            rule.ResourceKey,
+            rule.ResourceType,
+            rule.Culture,
+            rule.FallbackMessage,
+            rule.UseConventionalKeys ?? true)
         {
             Member = member,
+            Attribute = attribute,
         };
 
-        Options.AddRule(member, rule);
-    }
-
-    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute)
-    {
-        if (_currentRule is null)
-            throw new InvalidOperationException("No pending rule to attach attribute to.");
-
-        _currentRule.Attributes.Add(attribute);
-        return this;
-    }
-
-    private void RegisterAttributeRule(MemberInfo member, ValidationAttribute attr)
-    {
-        var rule = new ConditionalValidationRule(
-            Predicate: model =>
-            {
-                var context = new ValidationContext(model) { MemberName = member.Name };
-
-                var value = member is PropertyInfo pi ? pi.GetValue(model)
-                          : member is FieldInfo fi ? fi.GetValue(model)
-                          : null;
-
-                var result = attr.GetValidationResult(value, context);
-                return ReferenceEquals(result, ValidationResult.Success);
-            },
-            Message: null,
-            Key: null,
-            ResourceKey: null,
-            ResourceType: ValidationResourceType,
-            Culture: Culture,
-            FallbackMessage: _fallbackMessage,
-            UseConventionalKeyFallback: _useConventionalKeys
-        )
-        {
-            Member = member,
-            Attribute = attr,
-        };
-
-        Options.AddRule(member, rule);
+        return conditionalRule;
     }
 
     #endregion
