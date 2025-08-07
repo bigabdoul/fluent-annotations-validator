@@ -108,6 +108,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         }
         else
         {
+            // AssertHasAttribute(property);
             CommitCurrentRule();
             _currentRule = new PendingRule<T>(
                 member: property,
@@ -200,8 +201,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             {
                 parent.Register(opts =>
                 {
-                    AddRule(opts,
-                        rule.Member,
+                    AddRule(rule.Member,
                         rule.Predicate,
                         rule.Message,
                         rule.Key,
@@ -219,27 +219,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         parent.Build();
     }
 
-    private void CommitCurrentRule()
+    protected virtual bool ShouldOverrideCurrentRule<TProp>(Expression<Func<T, TProp>> property)
     {
-        if (_currentRule is not null)
+        if (_currentRule != null && _currentRule.Attributes.Count > 0)
         {
-            _pendingRules.Add(_currentRule);
-            _currentRule = null;
+            var currentMember = _currentRule.Member.GetMemberInfo();
+            var propertyMember = property.GetMemberInfo();
+
+            var same =
+                currentMember.Name == propertyMember.Name &&
+                currentMember.DeclaringType == propertyMember.DeclaringType;
+
+            return same;
         }
-    }
 
-    private void AssignCultureTo(Type? type)
-    {
-        var oldType = ValidationResourceType;
-        ValidationResourceType = type;
-
-        type ??= oldType;
-
-        if (type != null)
-        {
-            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            prop?.SetValue(null, Culture);
-        }
+        return false;
     }
 
     #region IValidationTypeConfigurator<T>
@@ -281,8 +275,30 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #region helpers
 
-    static void AddRule<TModel>(ValidationBehaviorOptions options,
-        Expression memberExpression,
+    private void CommitCurrentRule()
+    {
+        if (_currentRule is not null)
+        {
+            _pendingRules.Add(_currentRule);
+            _currentRule = null;
+        }
+    }
+
+    private void AssignCultureTo(Type? type)
+    {
+        var oldType = ValidationResourceType;
+        ValidationResourceType = type;
+
+        type ??= oldType;
+
+        if (type != null)
+        {
+            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            prop?.SetValue(null, Culture);
+        }
+    }
+
+    private void AddRule<TModel>(Expression memberExpression,
         Func<TModel, bool> predicate,
         string? message = null,
         string? key = null,
@@ -306,7 +322,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             Member = member,
         };
 
-        options.AddRule(member, rule);
+        Options.AddRule(member, rule);
     }
 
     internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute)
@@ -346,23 +362,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         };
 
         Options.AddRule(member, rule);
-    }
-
-    protected virtual bool ShouldOverrideCurrentRule<TProp>(Expression<Func<T, TProp>> property)
-    {
-        if (_currentRule != null && _currentRule.Attributes.Count > 0)
-        {
-            var currentMember = _currentRule.Member.GetMemberInfo();
-            var propertyMember = property.GetMemberInfo();
-
-            var same =
-                currentMember.Name == propertyMember.Name &&
-                currentMember.DeclaringType == propertyMember.DeclaringType;
-
-            return same;
-        }
-
-        return false;
     }
 
     #endregion
