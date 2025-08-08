@@ -1,7 +1,7 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using System.ComponentModel.DataAnnotations;
 
-namespace FluentAnnotationsValidator.Runtime.Validators;
+namespace FluentAnnotationsValidator.Metadata;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
 public abstract class FluentValidationAttribute : ValidationAttribute
@@ -21,7 +21,7 @@ public abstract class FluentValidationAttribute : ValidationAttribute
 
         var message = MessageResolver?.ResolveMessage(
             validationContext.ObjectInstance.GetType(),
-            validationContext.MemberName ?? string.Empty,
+            validationContext.MemberName ?? validationContext.DisplayName ?? fieldName,
             this) ?? FormatErrorMessage(fieldName);
 
         return new ValidationResult(message, [fieldName]);
