@@ -2,9 +2,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator.Internals.Annotations;
+namespace FluentAnnotationsValidator.Metadata;
 
-public class CompareAttribute(string otherProperty, ComparisonOperator @operator) 
+public class Compare2Attribute(string otherProperty, ComparisonOperator @operator) 
     : FluentValidationAttribute("The field '{0}' must satisfy the comparison with '{1}'.")
 {
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
@@ -31,14 +31,7 @@ public class CompareAttribute(string otherProperty, ComparisonOperator @operator
                 _ => throw new InvalidOperationException("Unsupported comparison operator.")
             };
 
-            if (isValid) return ValidationResult.Success;
-
-            var message = MessageResolver?.ResolveMessage(
-                validationContext.ObjectInstance.GetType(),
-                validationContext.MemberName ?? validationContext.DisplayName ?? "field",
-                this) ?? FormatErrorMessage(validationContext.DisplayName ?? validationContext.MemberName ?? "field");
-
-            return new ValidationResult($"{message}\nCompared to: {otherProperty}\nOperator: {@operator}\nLeft: {value}\nRight: {otherValue}");
+            return isValid ? ValidationResult.Success : GetFailedValidationResult(value, validationContext);
         }
 
         return new ValidationResult("Both values must implement IComparable.");

@@ -1,7 +1,7 @@
 ﻿using FluentAnnotationsValidator.Runtime.Validators;
 using System.ComponentModel.DataAnnotations;
 
-namespace FluentAnnotationsValidator.Internals.Annotations;
+namespace FluentAnnotationsValidator.Metadata;
 
 public class NotEqualAttribute<TProperty>(TProperty unexpectedValue, IEqualityComparer<TProperty>? equalityComparer = null) 
     : FluentValidationAttribute("The field '{0}' must not equal the unexpected value.")

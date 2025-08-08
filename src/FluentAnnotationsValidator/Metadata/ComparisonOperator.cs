@@ -1,4 +1,4 @@
-﻿namespace FluentAnnotationsValidator.Internals.Annotations;
+﻿namespace FluentAnnotationsValidator.Metadata;
 
 public enum ComparisonOperator
 {

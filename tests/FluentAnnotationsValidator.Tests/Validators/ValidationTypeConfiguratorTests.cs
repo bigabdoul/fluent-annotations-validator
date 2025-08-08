@@ -1,6 +1,6 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Internals.Annotations;
+using FluentAnnotationsValidator.Metadata;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,7 +47,7 @@ public class ValidationTypeConfiguratorTests
 
         // Act
         // This call to 'Rule' should commit the NotEmpty rule for Name and start a new rule for Email.
-        configurator.Rule(x => x.Email).Required();
+        configurator.Rule(x => x.Email).Required(when: m => m.Age > 10);//.When(m => m.Age > 10);
 
         // Build to process the rules. The 'Build' method will call CommitCurrentRule for the final rule.
         configurator.Build();
@@ -81,7 +81,7 @@ public class ValidationTypeConfiguratorTests
 
         ruleForEmail = _mockOptions.AddedRules.Last(r => r.Member.Name == "Email").Rule;
         ruleForEmail.Attribute.Should().NotBeNull();
-        ruleForEmail.Attribute.GetType().Should().Be(typeof(Internals.Annotations.LengthCountAttribute));
+        ruleForEmail.Attribute.GetType().Should().Be(typeof(LengthCountAttribute));
     }
 
 

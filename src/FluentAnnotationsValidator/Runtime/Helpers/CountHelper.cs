@@ -1,4 +1,4 @@
-﻿using FluentAnnotationsValidator.Internals.Annotations;
+﻿using FluentAnnotationsValidator.Metadata;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;

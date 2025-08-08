@@ -3,7 +3,7 @@ using FluentAnnotationsValidator.Runtime.Validators;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
-namespace FluentAnnotationsValidator.Internals.Annotations;
+namespace FluentAnnotationsValidator.Metadata;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
 public class LengthCountAttribute : FluentValidationAttribute
