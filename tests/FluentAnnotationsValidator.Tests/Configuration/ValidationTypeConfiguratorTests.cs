@@ -2,6 +2,7 @@
 using FluentAnnotationsValidator.Tests.Assertions;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
@@ -19,16 +20,20 @@ public class ValidationTypeConfiguratorTests
     {
         // Arrange
         var configurator = GetConfigurator();
+        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
 
         // Act
         var result = configurator.WithValidationResource<ValidationMessages>();
 
         // Assert
-        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
+        property.Should().NotBeNull();
 
-        var value = property?.GetValue(configurator);
-        Assert.Equal(typeof(ValidationMessages), value);
-        Assert.Same(configurator, result); // fluent chaining
+        var propertyValue = property.GetValue(configurator);
+
+        propertyValue.Should().NotBeNull();
+        propertyValue.Should().BeEquivalentTo(typeof(ValidationMessages));
+
+        configurator.Should().BeSameAs(result);
     }
 
     [Fact]
@@ -45,10 +50,8 @@ public class ValidationTypeConfiguratorTests
         _ = configurator.Options.TryGetRules<TestLoginDto>(x => x.Email, out var rules);
 
         // Assert
-        Assert.Multiple
-        (
-            () => Assert.NotEmpty(rules),
-            () => Assert.Contains(rules, r => r.ResourceType == typeof(ValidationMessages)));
+        rules.Should().NotBeEmpty();
+        rules.Should().Contain(r => r.ResourceType == typeof(ValidationMessages));
     }
 
     [Fact]
@@ -57,7 +60,10 @@ public class ValidationTypeConfiguratorTests
         var configurator = GetConfigurator();
         configurator.When(x => x.Email, dto => dto.Role == "Admin").Build();
 
-        Assert.True(configurator.Options.Contains<TestLoginDto>(x => x.Email));
+        configurator.Options
+            .Contains<TestLoginDto>(x => x.Email)
+            .Should()
+            .BeTrue();
     }
 
     [Fact]
@@ -66,7 +72,11 @@ public class ValidationTypeConfiguratorTests
         var configurator = GetConfigurator();
         configurator.And(x => x.Password, dto => dto.Role != "Guest").Build();
 
-        Assert.True(configurator.Options.Contains<TestLoginDto>(x => x.Password));
+        // Assert
+        configurator.Options
+            .Contains<TestLoginDto>(x => x.Password)
+            .Should()
+            .BeTrue();
     }
 
     [Fact]
@@ -76,7 +86,9 @@ public class ValidationTypeConfiguratorTests
         configurator.AlwaysValidate(x => x.Password).Build();
         var rule = GetRule(x => x.Password, configurator.Options);
 
-        rule.ShouldMatch(predicateArg: new TestLoginDto("a", "b", "c"));
+        rule.Predicate.Should().NotBeNull();
+        rule.Predicate.Target.Should().NotBeNull();
+        rule.Predicate.Invoke(new TestLoginDto("a", "b", "c")).Should().BeTrue();
     }
 
     [Fact]
