@@ -71,7 +71,7 @@ public static class ValidationResultAggregator
         return errors;
     }
 
-    private static object? GetValue(MemberInfo member, object instance)
+    internal static object? GetValue(MemberInfo member, object instance)
     {
         return member switch
         {
