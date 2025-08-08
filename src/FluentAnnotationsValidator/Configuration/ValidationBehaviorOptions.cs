@@ -199,5 +199,17 @@ public class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The member whose rules should be removed.</param>
     /// <returns>True if any rules were removed, false otherwise.</returns>
-    public bool RemoveAll(MemberInfo member) => _ruleRegistry.Remove(member, out var _);
+    public bool RemoveAll(MemberInfo member) => _ruleRegistry.Remove(member, out _);
+
+    public void RemoveAllForType(Type type)
+    {
+        List<MemberInfo> members = [.. _ruleRegistry.Keys];
+        foreach (var member in members)
+        {
+            if (member.DeclaringType == type)
+            {
+                _ruleRegistry.TryRemove(member, out _);
+            }
+        }
+    }   
 }
