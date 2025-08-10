@@ -162,4 +162,13 @@ public static class ValidatorServiceCollectionExtensions
         configure?.Invoke(configurator);
         return services;
     }
+
+    /// <summary>
+    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="targetAssembliesTypes">One or more types used to infer target assemblies to scan.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, params Type[] targetAssembliesTypes)
+        => services.AddFluentAnnotations(configure: null, targetAssembliesTypes: targetAssembliesTypes);
 }
