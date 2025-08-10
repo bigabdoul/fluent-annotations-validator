@@ -10,4 +10,6 @@ public class ValidationTypeConfiguratorTestModel
     public string? Email { get; set; }
 
     public int Age { get; set; }
+    public bool IsPhysicalProduct { get; internal set; }
+    public string ShippingAddress { get; internal set; } = string.Empty;
 }

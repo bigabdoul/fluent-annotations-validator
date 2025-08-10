@@ -27,16 +27,18 @@ namespace FluentAnnotationsValidator.Configuration;
 /// <param name="Culture">An optional culture-specific format provider.</param>
 /// <param name="FallbackMessage">Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.</param>
 /// <param name="UseConventionalKeyFallback">Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).</param>
-public sealed class ConditionalValidationRule(
+public class ConditionalValidationRule(
     Func<object, bool> Predicate,
     string? Message = null,
     string? Key = null,
     string? ResourceKey = null,
     Type? ResourceType = null,
-    System.Globalization.CultureInfo? Culture = null,
+    CultureInfo? Culture = null,
     string? FallbackMessage = null,
     bool UseConventionalKeyFallback = true)
 {
+    private Func<object, bool>? _shouldApplyEvaluator;
+
     public Func<object, bool> Predicate { get; set; } = Predicate;
     public string? Message { get; set; } = Message;
     public string? Key { get; set; } = Key;
@@ -53,7 +55,13 @@ public sealed class ConditionalValidationRule(
     /// </summary>
     public ValidationAttribute? Attribute { get; set; }
     public MemberInfo Member { get; init; } = default!;
-    public bool ShouldApply(object targetInstance) => Predicate(targetInstance);
+    public virtual bool ShouldApply(object targetInstance) => 
+        (_shouldApplyEvaluator ?? Predicate)(targetInstance);
+
+    public void SetShouldApply(Func<object, bool> predicate)
+    {
+        _shouldApplyEvaluator = predicate;
+    }
 
     /// <summary>
     /// Indicates whether the <see cref="Attribute"/> property is not <see langword="null"/>.

@@ -20,4 +20,16 @@ public static class ValidatorExpressionExtensions
             return info;
         throw new ArgumentException("Expression must be a simple member access like x => x.Member");
     }
+
+    public static object? GetMemberValue(this Expression expression, object instance)
+    {
+        return expression.GetMemberInfo() switch
+        {
+            PropertyInfo prop => prop.GetValue(instance),
+            FieldInfo field => field.GetValue(instance),
+            MethodInfo method when method.GetParameters().Length == 0 =>
+                method.Invoke(instance, null),
+            _ => null
+        };
+    }
 }

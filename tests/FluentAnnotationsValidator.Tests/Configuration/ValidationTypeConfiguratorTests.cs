@@ -101,7 +101,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Custom error");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Custom error");
     }
 
     [Fact]
@@ -114,7 +115,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedKey: "Email.AdminRequired");
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.AdminRequired");
     }
 
     [Fact]
@@ -127,7 +129,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedResource: "Admin_Email_Required");
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Admin_Email_Required");
     }
 
     [Fact]
@@ -150,8 +153,14 @@ public class ValidationTypeConfiguratorTests
         var emailr = GetRule(x => x.Email, configurator.Options);
         var passwr = GetRule(x => x.Password, configurator.Options);
 
-        emailr.ShouldMatch(expectedMessage: "Must validate email");
-        passwr.ShouldMatch(expectedMessage: "Must validate password");
+        emailr.Message.Should().NotBeNull();
+        emailr.Message.Should().Match("Must validate email");
+
+        passwr.Message.Should().NotBeNull();
+        passwr.Message.Should().Match("Must validate password");
+
+        //emailr.ShouldMatch(expectedMessage: "Must validate email");
+        //passwr.ShouldMatch(expectedMessage: "Must validate password");
     }
 
     [Fact]
@@ -166,9 +175,14 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Required",
-            expectedKey: "Email.Required",
-            expectedResource: "Email_Required_Localized");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Required");
+
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.Required");
+
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Email_Required_Localized");
     }
 
     [Fact]
@@ -182,7 +196,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Email required");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Email required");
     }
 
     [Fact]
@@ -198,9 +213,14 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Custom message",
-            expectedKey: "Email.Required",
-            expectedResource: "Email_Required");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Custom message");
+
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.Required");
+
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Email_Required");
     }
 
     private static ConditionalValidationRule GetRule(Expression<Func<TestLoginDto, string?>> property, ValidationBehaviorOptions options)

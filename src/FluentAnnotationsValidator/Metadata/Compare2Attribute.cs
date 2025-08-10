@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace FluentAnnotationsValidator.Metadata;
 
-public class Compare2Attribute(string otherProperty, ComparisonOperator @operator) 
+public class Compare2Attribute(string otherProperty, ComparisonOperator @operator = ComparisonOperator.Equal) 
     : FluentValidationAttribute("The field '{0}' must satisfy the comparison with '{1}'.")
 {
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)

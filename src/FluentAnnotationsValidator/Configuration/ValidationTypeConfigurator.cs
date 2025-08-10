@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Globalization;
@@ -14,6 +15,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// </summary>
 /// <typeparam name="T">The model or DTO type being configured.</typeparam>
 /// <param name="parent">The parent validation configurator.</param>
+/// <param name="options">An object used to configure fluent validations behavior.</param>
 /// <remarks>
 /// This configurator allows chaining multiple conditions and metadata overrides such as custom messages,
 /// resource keys, and validation keys. All configured rules are buffered and registered during the final
@@ -35,8 +37,12 @@ namespace FluentAnnotationsValidator.Configuration;
 public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, ValidationBehaviorOptions options)
     : ValidationTypeConfiguratorBase(typeof(T)), IValidationTypeConfigurator<T>
 {
+    private static readonly Func<T, bool> TruePredicate = _ => true;
+    private static readonly Func<T, bool> DefaultAttributePredicate = _ => true;
+
     private readonly HashSet<PendingRule<T>> _pendingRules = [];
-    private readonly Dictionary<string, List<ValidationAttribute>> _emittedAttributes = [];
+    private readonly List<IValidationRuleBuilder> _validationRuleBuilders = [];
+
     private PendingRule<T>? _currentRule;
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
@@ -67,31 +73,74 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.For{TNext}"/>
+    public ValidationTypeConfigurator<TNext> For<TNext>()
+    {
+        CommitCurrentRule();
+        ValidationConfiguratorStore.Registry.Register(typeof(T), this);
+        return parent.For<TNext>();
+    }
+
     public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property)
     {
         CommitCurrentRule();
-
-        var member = property.GetMemberInfo();
-
-        var removed = Options.RemoveAll(member);
-
-        // clear any previous rule
-        var count = _pendingRules.RemoveWhere(r =>
-        {
-            var mi = r.Member.GetMemberInfo();
-            return mi.Name == member.Name && mi.DeclaringType == member.DeclaringType;
-        });
-
-        Debug.WriteLine("Removed from ValidationBehaviorOptions: {0}\nRemoved from pending rules: {1}", removed, count);
+        RemoveRulesFor(property);
 
         _currentRule = new PendingRule<T>(
             member: property,
-            predicate: _ => true, // Always validate unless overridden by .When(...)
+            predicate: DefaultAttributePredicate, // Always validate unless overridden by .When(...)
             resourceType: ValidationResourceType,
             culture: Culture,
             fallbackMessage: _fallbackMessage,
             useConventionalKeys: _useConventionalKeys
         );
+
+        return this;
+    }
+
+    #region When
+
+    public IValidationRuleBuilder<T, TProp> RuleFor<TProp>(Expression<Func<T, TProp>> property)
+    {
+        //Rule(property);
+        CommitCurrentRule();
+
+        var rule = new PendingRule<T>(
+            member: property,
+            predicate: DefaultAttributePredicate, // Always validate unless overridden by .When(...)
+            resourceType: ValidationResourceType,
+            culture: Culture,
+            fallbackMessage: _fallbackMessage,
+            useConventionalKeys: _useConventionalKeys
+        );
+
+        var configurator = new ValidationRuleBuilder<T, TProp>(rule);
+        _validationRuleBuilders.Add(configurator);
+
+        return configurator;
+    }
+
+    /// <summary>
+    /// Applies to the predicate of a rule created with <see cref="Rule{TProp}(Expression{Func{T, TProp}})"/>.
+    /// </summary>
+    /// <param name="condition"></param>
+    /// <returns>The current configurator for further chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// You must create a rule with the <see cref="Rule{TProp}(Expression{Func{T, TProp}})"/> method.
+    /// </exception>
+    public ValidationTypeConfigurator<T> When(Func<T, bool> condition)
+    {
+        // Applies to the predicate of a rule created with .Rule(...);
+        // throws if _currentRule is not defined
+
+        if (_currentRule is null)
+            throw new InvalidOperationException("You must create a rule with the .Rule(...) method.");
+
+        // .Rule(...) are attribute-based; therefore, the predicate
+        // should only be applicable to the attribute being configured
+        //var container = _currentRule.Attributes.Last();
+        //container.When = condition;
+        _currentRule.Predicate = condition;
 
         return this;
     }
@@ -104,11 +153,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         if (ShouldOverrideCurrentRule(property))
         {
             // continue configuration of the current rule
-            _currentRule!.Predicate = condition; // override the predicate
+            _currentRule!.Predicate = condition; // override the predicate, or compose?
         }
         else
         {
-            // AssertHasAttribute(property);
             CommitCurrentRule();
             _currentRule = new PendingRule<T>(
                 member: property,
@@ -122,6 +170,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    #endregion
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.And{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
     public ValidationTypeConfigurator<T> And<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
         => When(property, condition);
@@ -132,7 +182,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.AlwaysValidate{TProp}(Expression{Func{T, TProp}})"/>
     public ValidationTypeConfigurator<T> AlwaysValidate<TProp>(Expression<Func<T, TProp>> property)
-        => When(property, _ => true);
+        => When(property, TruePredicate);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithMessage(string)"/>
     public ValidationTypeConfigurator<T> WithMessage(string message)
@@ -174,12 +224,28 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.For{TNext}"/>
-    public ValidationTypeConfigurator<TNext> For<TNext>()
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp>(Expression<Func<T, TProp>> property)
     {
-        CommitCurrentRule();
-        ValidationConfiguratorStore.Registry.Register(typeof(T), this);
-        return parent.For<TNext>();
+        var member = property.GetMemberInfo();
+        var removed = Options.RemoveAll(member);
+
+        // clear any previous rule
+        var count = _pendingRules.RemoveWhere(r =>
+        {
+            var mi = r.Member.GetMemberInfo();
+            return mi.Name == member.Name && mi.DeclaringType == member.DeclaringType;
+        });
+
+        Debug.WriteLine("Removed from ValidationBehaviorOptions: {0}\nRemoved from pending rules: {1}", removed, count);
+
+        return this;
+    }
+
+    public ValidationTypeConfigurator<T> ClearRules()
+    {
+        _pendingRules.Clear();
+        Options.RemoveAllForType(typeof(T));
+        return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
@@ -200,7 +266,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
                 foreach (var attr in rule.Attributes)
                 {
                     // each attribute has its own rule
-                    var newRule = CreateRuleFromPending(rule, member, attr);
+                    var newRule = rule.CreateRuleFromPending(member, attr, rule.Predicate);
                     Options.AddRule(member, newRule);
                 }
             }
@@ -208,13 +274,23 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             {
                 parent.Register(opts =>
                 {
-                    var newRule = CreateRuleFromPending(rule, member);
-                    Options.AddRule(member, newRule);
+                    var newRule = rule.CreateRuleFromPending(member);
+                    opts.AddRule(member, newRule);
                 });
             }
         }
 
+        foreach (var builder in _validationRuleBuilders)
+        {
+            foreach (var rule in builder.GetRules())
+            {
+                Options.AddRule(rule.Member, rule);
+            }
+        }
+
         _pendingRules.Clear();
+        _validationRuleBuilders.Clear();
+
         parent.Build();
     }
 
@@ -272,12 +348,17 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #endregion
 
-    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute)
+    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
     {
         if (_currentRule is null)
             throw new InvalidOperationException("No pending rule to attach attribute to.");
 
+        //_currentRule.Attributes.Add(new() { Attribute = attribute, When = when });
         _currentRule.Attributes.Add(attribute);
+        
+        if (when is not null)
+            _currentRule.Predicate = when;
+
         return this;
     }
 
@@ -306,36 +387,148 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         }
     }
 
-    private static ConditionalValidationRule CreateRuleFromPending(PendingRule<T> rule, MemberInfo member, ValidationAttribute? attribute = null)
-    {
-        /*
-        Func<object, bool> predicate = model =>
-        {
-            var context = new ValidationContext(model) { MemberName = member.Name };
-        
-            var value = member is PropertyInfo pi ? pi.GetValue(model)
-                      : member is FieldInfo fi ? fi.GetValue(model)
-                      : null;
-        
-            var result = attr.GetValidationResult(value, context);
-            return ReferenceEquals(result, ValidationResult.Success);
-        };
-        */
-        var conditionalRule = new ConditionalValidationRule(model => rule.Predicate((T)model),
-            rule.Message,
-            rule.Key,
-            rule.ResourceKey,
-            rule.ResourceType,
-            rule.Culture,
-            rule.FallbackMessage,
-            rule.UseConventionalKeys ?? true)
-        {
-            Member = member,
-            Attribute = attribute,
-        };
+    #endregion
+}
 
-        return conditionalRule;
+public interface IValidationRuleBuilder
+{
+    IReadOnlyCollection<ConditionalValidationRule> GetRules();
+}
+
+public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
+{
+    IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
+    IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate);
+    IValidationRuleBuilder<T, TProp> Otherwise(Action<IValidationRuleBuilder<T, TProp>> configure);
+    IValidationRuleBuilder<T, TProp> WithMessage(string? message);
+    IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute);
+}
+
+public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IValidationRuleBuilder<T, TProp>
+{
+    private Func<T, bool>? whenPredicate;
+
+    //private PendingRule<T> CurrentRule => currentRule;
+
+    internal List<ConditionalValidationRule> Rules { get; } = [];
+
+    public IReadOnlyCollection<ConditionalValidationRule> GetRules() => Rules.AsReadOnly();
+
+    public IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure)
+    {
+        // Create a new, temporary builder to hold the nested rules.
+        var nestedBuilder = new ValidationRuleBuilder<T, TProp>(currentRule);
+
+        // Execute the action, which will populate the nested builder's Rules list.
+        configure(nestedBuilder);
+
+        var nestedBuilderRules = nestedBuilder.Rules;
+
+        if (nestedBuilderRules.Count == 0)
+            throw new InvalidOperationException("No rules configured.");
+
+        bool ShouldApply(object value) => predicate((T)value);
+
+        // For each rule collected by the nested builder, apply the 'When' condition.
+        foreach (var nestedRule in nestedBuilderRules)
+        {
+            var originalPredicate = nestedRule.Predicate;
+
+            // Compose a new predicate that checks the 'When' condition first,
+            // and then the original nested rule's predicate.
+            nestedRule.Predicate = model => predicate((T)model) && originalPredicate(model);
+
+            nestedRule.SetShouldApply(ShouldApply);
+
+            // Add the composed rule to the main rules list.
+            Rules.Add(nestedRule);
+        }
+
+        // It's good practice to clear the temporary builder's rules.
+        nestedBuilderRules.Clear();
+
+        whenPredicate = predicate;
+
+        return this;
     }
 
-    #endregion
+    public IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate)
+    {
+        var member = currentRule.Member;
+
+        // Create a new predicate that takes the full model and extracts the member's value
+        bool composedPredicate(T model)
+        {
+            var value = member.GetMemberValue(model!);
+            // Cast the value to TProperty and pass it to the user's predicate
+            return predicate((TProp)value!);
+        }
+
+        // Create and add a new pending rule with the composed predicate
+        var rule = currentRule.CreateRuleFromPending(member.GetMemberInfo(), 
+            attribute: new MustValidationAttribute<TProp>(predicate),
+            composedPredicate);
+        
+        Rules.Add(rule);
+
+        return this;
+    }
+
+    public IValidationRuleBuilder<T, TProp> Otherwise(Action<IValidationRuleBuilder<T, TProp>> configure)
+    {
+        // Find the last When condition and negate it for the Otherwise clause.
+        var lastCondition = GetLastConditionFromPendingRules()
+            ?? throw new InvalidOperationException("Otherwise() must follow a When() call.");
+
+        // Create a new, temporary configurator for the nested rules.
+        var nestedConfigurator = new ValidationRuleBuilder<T, TProp>(currentRule);
+
+        configure(nestedConfigurator);
+
+        bool ShouldApply(object value) => !lastCondition((T)value);
+
+        // Apply the negated condition to the nested rules.
+        foreach (var nestedRule in nestedConfigurator.Rules)
+        {
+            var originalPredicate = nestedRule.Predicate;
+            nestedRule.Predicate = model => ShouldApply(model) && originalPredicate(model);
+            nestedRule.SetShouldApply(ShouldApply);
+
+            Rules.Add(nestedRule);
+        }
+
+        nestedConfigurator.Rules.Clear();
+
+        return this;
+    }
+
+    public IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute)
+    {
+        //currentRule.Attributes.Add(attribute);
+        var member = currentRule.Member.GetMemberInfo();
+        var rule = currentRule.CreateRuleFromPending(member, 
+            attribute,
+            currentRule.Predicate);
+
+        rule.Message = 
+            //attribute is FluentValidationAttribute attr ? attr.GetErrorMessageString() : 
+            attribute.FormatErrorMessage(member.Name);
+
+        Rules.Add(rule);
+
+        return this;
+    }
+
+    public IValidationRuleBuilder<T, TProp> WithMessage(string? message)
+    {
+        Rules.Last().Message = message;
+        return this;
+    }
+
+    private Func<T, bool>? GetLastConditionFromPendingRules()
+    {
+        // This is a simplified way to get the condition; a more robust solution might store conditions separately.
+        // Assuming the predicate for the last rule is the condition.
+        return whenPredicate;
+    }
 }

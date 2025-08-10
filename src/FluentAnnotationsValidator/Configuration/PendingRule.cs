@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
-internal sealed class PendingRule<T>(
+public sealed class PendingRule<T>(
     Expression member,
     Func<T, bool> predicate,
     string? message = null,
@@ -26,6 +26,12 @@ internal sealed class PendingRule<T>(
     public CultureInfo? Culture { get; set; } = culture;
     public string? FallbackMessage { get; set; } = fallbackMessage;
     public bool? UseConventionalKeys { get; set; } = useConventionalKeys;
+
+    internal sealed class ValidationAttributeContainer
+    {
+        public ValidationAttribute Attribute { get; set; } = default!;
+        public Func<T, bool>? When { get; set; }
+    }
 
     /// <summary>
     /// Gets the list of dynamically added attributes via fluent rules.

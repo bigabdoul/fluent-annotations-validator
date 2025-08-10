@@ -2,8 +2,9 @@
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Reflection;
 
-namespace FluentAnnotationsValidator;
+namespace FluentAnnotationsValidator.Extensions;
 
 public static class ValidationTypeConfiguratorExtensions
 {
@@ -69,5 +70,37 @@ public static class ValidationTypeConfiguratorExtensions
         var attr = new NotEqualAttribute<TProp>(disallowed, equalityComparer);
         configurator.AttachAttribute(attr, when);
         return configurator;
+    }
+
+    public static ValidationTypeConfigurator<T> EmailAddress<T>(this ValidationTypeConfigurator<T> configurator,
+        Func<T, bool>? when = null)
+        => configurator.AttachAttribute(new EmailAddressAttribute(), when);
+
+    public static ValidationTypeConfigurator<T> WithAttribute<T, TAttribute>(this ValidationTypeConfigurator<T> configurator,
+        Func<T, bool>? when = null) where TAttribute : ValidationAttribute, new()
+        => configurator.AttachAttribute(new TAttribute(), when);
+
+    internal static ConditionalValidationRule CreateRuleFromPending<T>(this PendingRule<T> rule, MemberInfo member, ValidationAttribute? attribute = null, Func<T, bool>? when = null)
+    {
+        if (when is not null)
+        {
+            rule.Predicate = model => when(model);
+        }
+
+        var conditionalRule = new ConditionalValidationRule(
+            model => rule.Predicate((T)model),
+            rule.Message,
+            rule.Key,
+            rule.ResourceKey,
+            rule.ResourceType,
+            rule.Culture,
+            rule.FallbackMessage,
+            rule.UseConventionalKeys ?? true)
+        {
+            Member = member,
+            Attribute = attribute,
+        };
+
+        return conditionalRule;
     }
 }

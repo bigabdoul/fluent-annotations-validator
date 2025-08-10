@@ -24,6 +24,7 @@ public static class ValidationResultAggregator
         Type type, object instance, MemberInfo member,
         IValidationMessageResolver resolver)
     {
+
         // Determine if fluent rule applies for this member (i.e., any condition returns true)
         bool fluentConditionApplies = rules
             .Where(r => !r.HasAttribute)

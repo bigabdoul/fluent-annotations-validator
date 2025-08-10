@@ -3,8 +3,10 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
@@ -14,6 +16,9 @@ public class ValidationTypeConfiguratorTests
     private readonly MockValidationConfigurator _mockParentConfigurator;
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
+
+    private IValidator<ValidationTypeConfiguratorTestModel> Validator => 
+        _services.BuildServiceProvider().GetRequiredService<IValidator<ValidationTypeConfiguratorTestModel>>();
 
     public ValidationTypeConfiguratorTests()
     {
@@ -140,7 +145,6 @@ public class ValidationTypeConfiguratorTests
     {
         // Arrange
         var configurator = _configurator;
-        // This rule will cause `_overriddenMembers` to contain "Email".
         configurator.Rule(x => x.Email).NotEmpty();
 
         // Act
@@ -149,5 +153,126 @@ public class ValidationTypeConfiguratorTests
         // Assert
         // The Build method should not register any fallback rules for the `Email` member because it was overridden.
         _mockParentConfigurator.RegisteredActions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Rule_ShouldHonorRequired_WhenChainedCondition_IsMet()
+    {
+        // Arrange
+        var configurator = _configurator;
+        var model = new ValidationTypeConfiguratorTestModel { Email = "user@example.com", Age = 20 };
+
+        // Get rid of any rules for Name
+        //configurator.RemoveRulesFor(x => x.Name);
+
+        // Or clear all rules for the model to be sure
+        configurator.ClearRules();
+
+        // Act
+        configurator.Rule(x => x.Email)
+            .EmailAddress()
+            .Required()
+            .When(m => m.Age >= 18); // condition is chained
+
+        configurator.Build();
+
+        // Assert
+        // We should have rules registered for 'Email' with the specified conditions.
+        _mockOptions.AddedRules.Should().HaveCount(2);
+        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+
+        Validator.Validate(model).IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Rule_ShouldNotHonorRequired_WhenChainedCondition_IsNotMet()
+    {
+        // Arrange
+        // Initialize with empty rules
+        var configurator = _configurator.ClearRules();
+        var model = new ValidationTypeConfiguratorTestModel { Email = null, Age = 15 };
+
+        // Act
+        configurator.Rule(x => x.Email)
+            .EmailAddress()
+            .Required()
+            .When(m => m.Age >= 18); // condition is chained
+        configurator.Build();
+
+        // Assert
+        // We should have rules registered for 'Email' with the specified conditions.
+        _mockOptions.AddedRules.Should().HaveCount(2);
+        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+
+        // Invalid email should fail; however, the age is under the requirement
+        Validator.Validate(model).IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void WhenAndOtherwise_WhenConditionIsTrue_ShouldExecuteWhenRules()
+    {
+        // Arrange
+        var configurator = _configurator.ClearRules();
+        var model = new ValidationTypeConfiguratorTestModel
+        {
+            Age = 13,
+            IsPhysicalProduct = true,
+            ShippingAddress = "" // Invalid according to the 'When' block
+        };
+
+        // Act
+        configurator.RuleFor(x => x.ShippingAddress)
+            .When(x => x.IsPhysicalProduct, rule =>
+                rule
+                    .NotEmpty().WithMessage("Empty shipping address is disallowed.")
+                    .MaximumLength(100).WithMessage("The shipping address cannot exceed 100 characters.")
+            )
+            .Otherwise(rule => rule.Must(address => address == "N/A"));
+            //.Otherwise(rule => rule.NotEmpty()); // What does that mean?
+
+        // What does this imply?
+        //configurator.RuleFor(x => x.ShippingAddress).When(x => x.Age < 18, rule => rule.Empty());
+
+        configurator.Build();
+
+        // Assert
+        var validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeFalse();
+        validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("is disallowed"));
+    }
+
+    [Fact]
+    public void WhenAndOtherwise_WhenConditionIsFalse_ShouldExecuteOtherwiseRules()
+    {
+        // Arrange
+        var configurator = _configurator;
+        configurator.ClearRules();
+
+        var model = new ValidationTypeConfiguratorTestModel
+        {
+            IsPhysicalProduct = false,
+            ShippingAddress = "Some other address" // Invalid according to the 'Otherwise' block
+        };
+
+        // Act
+        configurator.RuleFor(x => x.ShippingAddress)
+            .When(x => x.IsPhysicalProduct, rule =>
+            {
+                // These rules are not evaluated (IsPhysicalProduct = false)
+                rule.NotEmpty().MaximumLength(100);
+            })
+            .Otherwise(rule =>
+            {
+                // This rule will be executed since it negates IsPhysicalProduct
+                rule.Must(address => address == "N/A")
+                    .WithMessage("The shipping address for non-physical products must be N/A.");
+            });
+
+        configurator.Build();
+
+        // Assert
+        var validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeFalse();
+        validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("must be N/A"));
     }
 }

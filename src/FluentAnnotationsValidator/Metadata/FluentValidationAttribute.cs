@@ -26,4 +26,6 @@ public abstract class FluentValidationAttribute : ValidationAttribute
 
         return new ValidationResult(message, [fieldName]);
     }
+
+    public string? GetErrorMessageString() => ErrorMessageString;
 }
