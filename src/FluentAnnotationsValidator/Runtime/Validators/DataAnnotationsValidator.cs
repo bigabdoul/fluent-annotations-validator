@@ -27,7 +27,11 @@ public sealed class DataAnnotationsValidator<T>(ValidationBehaviorOptions option
 
             foreach (var error in errors)
             {
-                failures.Add(new ValidationFailure(error.Member.Name, error.Message));
+                var failure = new ValidationFailure(error.Member.Name, error.Message, error.AttemptedValue)
+                {
+                    CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.GetType().Name}",
+                };
+                failures.Add(failure);
             }
         }
 
