@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Results;
 
@@ -21,4 +22,14 @@ public class ValidationErrorResult
     /// Gets the error message for the validation.
     /// </summary>
     public string? Message { get; init; }
+
+    /// <summary>
+    /// The value that was attempted to be validated, which may be null.
+    /// </summary>
+    public object? AttemptedValue { get; init; }
+
+    /// <summary>
+    /// The validation attribute that produced this error, if applicable.
+    /// </summary>
+    public ValidationAttribute? Attribute { get; init; }
 }
