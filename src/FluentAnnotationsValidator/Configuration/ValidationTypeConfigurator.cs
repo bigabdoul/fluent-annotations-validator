@@ -82,9 +82,15 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property)
+        => Rule(property, RuleDefinitionBehavior.Replace);
+
+    public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property, 
+        RuleDefinitionBehavior behavior)
     {
         CommitCurrentRule();
-        RemoveRulesFor(property);
+
+        if (behavior == RuleDefinitionBehavior.Replace)
+            RemoveRulesFor(property);
 
         _currentRule = new PendingRule<T>(
             member: property,
