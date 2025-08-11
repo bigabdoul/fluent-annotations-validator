@@ -55,7 +55,7 @@ public static class ValidationRuleBuilderExtensions
 
     public static IValidationRuleBuilder<T, TProp> NotEqual<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         object? disallowed)
-        => builder.AddRuleFromAttribute(new NotEqualAttribute<object?>(disallowed));
+        => builder.AddRuleFromAttribute(new NotEqualAttribute(disallowed));
 
     public static IValidationRuleBuilder<T, TProp> NotEqual<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         Expression<Func<T, TProp>> _, TProp disallowed, IEqualityComparer<TProp>? equalityComparer = null)

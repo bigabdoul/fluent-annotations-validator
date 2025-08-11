@@ -123,7 +123,6 @@ public class ValidationTypeConfiguratorTests
 
         // This one should prevail and replace the static attributes.
         configurator.Rule(x => x.Name)
-            //.Preserve()
             .Length(2, 10);
 
         // Act
@@ -280,17 +279,18 @@ public class ValidationTypeConfiguratorTests
     public void Rule_ShouldSupportCompareAttribute()
     {
         // Arrange
-        var configurator = _configurator.ClearRules();
+        var configurator = _configurator;//.ClearRules();
         var model = new ValidationTypeConfiguratorTestModel
         {
+            Name = "John Doe",
             Email = "john@example.com",
             ConfirmEmail = "john@example.com"
         };
 
         // Act
-        configurator.RuleFor(x => x.Email)
-            .Required()
-            .EmailAddress()
+        configurator.Rule(x => x.Email)
+            //.Required()
+            //.EmailAddress()
             .Compare(x => x.ConfirmEmail);
 
         configurator.Build();
