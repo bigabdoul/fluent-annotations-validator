@@ -8,8 +8,15 @@ namespace FluentAnnotationsValidator.Extensions;
 
 public static class ValidationTypeConfiguratorExtensions
 {
+    public static ValidationTypeConfigurator<T> Compare<T, TProp>(this ValidationTypeConfigurator<T> configurator,
+        Expression<Func<T, TProp>> otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal)
+    {
+        var otherPropertyName = otherProperty.GetMemberInfo().Name;
+        return configurator.AttachAttribute(new Compare2Attribute(otherPropertyName, comparison));
+    }
+
     public static ValidationTypeConfigurator<T> Compare<T>(this ValidationTypeConfigurator<T> configurator,
-        string otherProperty, ComparisonOperator comparison, Func<T, bool>? when = null)
+        string otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal, Func<T, bool>? when = null)
         => configurator.AttachAttribute(new Compare2Attribute(otherProperty, comparison), when);
 
     public static ValidationTypeConfigurator<T> Empty<T>(this ValidationTypeConfigurator<T> configurator,
@@ -36,11 +43,11 @@ public static class ValidationTypeConfiguratorExtensions
 
     public static ValidationTypeConfigurator<T> MaximumLength<T>(this ValidationTypeConfigurator<T> configurator, 
         int maximumLength, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new LengthCountAttribute(0, maximumLength), when);
+        => configurator.AttachAttribute(new Length2Attribute(0, maximumLength), when);
 
     public static ValidationTypeConfigurator<T> Length<T>(this ValidationTypeConfigurator<T> configurator, 
         int min, int max, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new LengthCountAttribute(min, max), when);
+        => configurator.AttachAttribute(new Length2Attribute(min, max), when);
 
     public static ValidationTypeConfigurator<T> Required<T>(this ValidationTypeConfigurator<T> configurator, 
         Func<T, bool>? when = null)

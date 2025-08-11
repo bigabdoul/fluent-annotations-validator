@@ -1,5 +1,5 @@
-﻿using FluentAnnotationsValidator.Runtime.Helpers;
-using FluentAnnotationsValidator.Runtime.Validators;
+﻿using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Runtime.Helpers;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Metadata;
@@ -14,6 +14,6 @@ public sealed class EmptyAttribute : FluentValidationAttribute
         if (value is string s && string.IsNullOrWhiteSpace(s) || !CountHelper.TryGetCount(value, out int length))
             return ValidationResult.Success;
 
-        return length == 0 ? ValidationResult.Success : GetFailedValidationResult(value, validationContext);
+        return length == 0 ? ValidationResult.Success : this.GetFailedValidationResult(value, validationContext, MessageResolver);
     }
 }

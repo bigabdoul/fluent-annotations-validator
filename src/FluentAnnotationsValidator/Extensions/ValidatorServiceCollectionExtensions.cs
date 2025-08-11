@@ -116,6 +116,14 @@ public static class ValidatorServiceCollectionExtensions
                 var rules = ValidationAttributeAdapter.ParseRules(declaringType, member);
                 behaviorOptions.AddRules(member, rules);
             }
+
+            var fluentGenericIValidator = typeof(IFluentValidator<>).MakeGenericType(declaringType);
+
+            if (!services.Any(sd => sd.ServiceType == fluentGenericIValidator))
+            {
+                var fluentValidatorType = typeof(FluentValidator<>).MakeGenericType(declaringType);
+                services.AddScoped(fluentGenericIValidator, fluentValidatorType);
+            }
         }
 
         services.AddTransient(_ => behaviorOptions);

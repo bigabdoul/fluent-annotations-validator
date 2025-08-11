@@ -3,29 +3,25 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Metadata;
 
-[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
+/// <summary>
+/// Base class for all FluentValidation attributes.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
 public abstract class FluentValidationAttribute : ValidationAttribute
 {
-    public FluentValidationAttribute() : base()
-    {
-    }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentValidationAttribute"/> class with no error message.
+    /// </summary>
+    public FluentValidationAttribute() : base() { }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentValidationAttribute"/> class with a specified error message.
+    /// </summary>
+    /// <param name="errorMessage">The error message to use when validation fails.</param>
     protected FluentValidationAttribute(string errorMessage) : base(errorMessage) { }
 
-    public IValidationMessageResolver? MessageResolver { get; set; }
-
-    public virtual ValidationResult GetFailedValidationResult(object? value, ValidationContext validationContext)
-    {
-        ArgumentNullException.ThrowIfNull(validationContext);
-        var fieldName = validationContext.DisplayName ?? validationContext.MemberName ?? "field";
-
-        var message = MessageResolver?.ResolveMessage(
-            validationContext.ObjectInstance.GetType(),
-            validationContext.MemberName ?? validationContext.DisplayName ?? fieldName,
-            this) ?? FormatErrorMessage(fieldName);
-
-        return new ValidationResult(message, [fieldName]);
-    }
-
-    public string? GetErrorMessageString() => ErrorMessageString;
+    /// <summary>
+    /// Optional message resolver to use for resolving validation messages.
+    /// </summary>
+    public virtual IValidationMessageResolver? MessageResolver { get; set; }
 }

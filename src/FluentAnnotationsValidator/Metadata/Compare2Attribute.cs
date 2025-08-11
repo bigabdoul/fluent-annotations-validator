@@ -1,12 +1,19 @@
-﻿using FluentAnnotationsValidator.Runtime.Validators;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Extensions;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Metadata;
 
 public class Compare2Attribute(string otherProperty, ComparisonOperator @operator = ComparisonOperator.Equal) 
-    : FluentValidationAttribute("The field '{0}' must satisfy the comparison with '{1}'.")
+    : CompareAttribute(GetErrorMessageFormat(@operator))
 {
+    protected static string GetErrorMessageFormat(ComparisonOperator comparison)
+        => "The field '{0}' must satisfy the " + comparison.ToString() +" comparison with '{1}'.";
+
+    public IValidationMessageResolver? MessageResolver { get; set; }
+
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         var instance = validationContext.ObjectInstance;
@@ -31,9 +38,12 @@ public class Compare2Attribute(string otherProperty, ComparisonOperator @operato
                 _ => throw new InvalidOperationException("Unsupported comparison operator.")
             };
 
-            return isValid ? ValidationResult.Success : GetFailedValidationResult(value, validationContext);
+            return isValid ? ValidationResult.Success : this.GetFailedValidationResult(value, validationContext, MessageResolver);
         }
 
         return new ValidationResult("Both values must implement IComparable.");
     }
+
+    public override string FormatErrorMessage(string name)
+        => string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, otherProperty);
 }

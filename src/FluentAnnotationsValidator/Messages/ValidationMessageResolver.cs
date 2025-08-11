@@ -82,8 +82,13 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
             return rule.FallbackMessage;
 
         // 6️ Inline message or final fallback
-        return !string.IsNullOrWhiteSpace(attr.ErrorMessage)
-            ? attr.FormatErrorMessage(memberName)
+        string? message = null;
+
+        try { message = attr.FormatErrorMessage(memberName); }
+        catch {}
+
+        return !string.IsNullOrWhiteSpace(message)
+            ? message
             : $"Invalid value for {memberName}";
     }
 
@@ -180,6 +185,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
                 : s.MaximumLength,
             RangeAttribute r => new[] { r.Minimum, r.Maximum },
             RegularExpressionAttribute r => r.Pattern,
+            Compare2Attribute c2 => c2.OtherProperty, // for "must match {0}" style messages
             CompareAttribute c => c.OtherProperty, // for "must match {0}" style messages
             CreditCardAttribute => "credit-card",   // semantic format type
             EmailAddressAttribute => "email",         // useful for diagnostics or fallback tagging
@@ -187,6 +193,8 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
             UrlAttribute => "url",           // gives context to string-based formats
             FileExtensionsAttribute f => f.Extensions,    // could return string.Join(", ", f.Extensions)
             RequiredAttribute => "required",      // placeholder-friendly (e.g. "{0} is required")
+            EqualAttribute e => e.Expected, // for "must equal {0}" style messages
+            NotEqualAttribute e => e.Unexpected, // for "must not equal {0}" style messages
             _ => null
         };
     }

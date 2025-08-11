@@ -86,7 +86,7 @@ public class ValidationTypeConfiguratorTests
 
         ruleForEmail = _mockOptions.AddedRules.Last(r => r.Member.Name == "Email").Rule;
         ruleForEmail.Attribute.Should().NotBeNull();
-        ruleForEmail.Attribute.GetType().Should().Be(typeof(LengthCountAttribute));
+        ruleForEmail.Attribute.GetType().Should().Be(typeof(Length2Attribute));
     }
 
 
@@ -137,7 +137,7 @@ public class ValidationTypeConfiguratorTests
         nameRules.Count.Should().Be(1);
         nameRules.Should().NotContain(r => r.Rule.Attribute is RequiredAttribute);
         nameRules.Should().NotContain(r => r.Rule.Attribute is MinLengthAttribute);
-        nameRules.Should().Contain(r => r.Rule.Attribute is LengthCountAttribute);
+        nameRules.Should().Contain(r => r.Rule.Attribute is Length2Attribute);
     }
 
     [Fact]
@@ -274,5 +274,34 @@ public class ValidationTypeConfiguratorTests
         var validationResult = Validator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
         validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("must be N/A"));
+    }
+
+    [Fact]
+    public void Rule_ShouldSupportCompareAttribute()
+    {
+        // Arrange
+        var configurator = _configurator.ClearRules();
+        var model = new ValidationTypeConfiguratorTestModel
+        {
+            Email = "john@example.com",
+            ConfirmEmail = "john@example.com"
+        };
+
+        // Act
+        configurator.RuleFor(x => x.Email)
+            .Required()
+            .EmailAddress()
+            .Compare(x => x.ConfirmEmail);
+
+        configurator.Build();
+
+        // Assert
+        var validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeTrue();
+
+        // Now change ConfirmEmail to something else
+        model.ConfirmEmail = "doe@example.com";
+        validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeFalse();
     }
 }

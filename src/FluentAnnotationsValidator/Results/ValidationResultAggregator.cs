@@ -59,9 +59,11 @@ public static class ValidationResultAggregator
                     var message = resolver.ResolveMessage(type, member.Name, attr, rule);
                     errors.Add(new ValidationErrorResult
                     {
+                        AttemptedValue = value,
                         Member = member,
+                        Message = message ?? result?.ErrorMessage ?? "Validation failed.",
                         UniqueKey = rule.UniqueKey,
-                        Message = message ?? result?.ErrorMessage ?? "Validation failed."
+                        Attribute = attr,
                     });
                 }
             }

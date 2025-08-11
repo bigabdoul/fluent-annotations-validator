@@ -31,4 +31,24 @@ internal static class TestHelpers
         }
         return services.BuildServiceProvider().GetRequiredService<IValidator<T>>();
     }
+
+    internal static IFluentValidator<T> GetFluentValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
+        [CallerMemberName] string? testName = null)
+    {
+        var builder = CreateBuilder(options =>
+        {
+            options.CurrentTestName = testName;
+        });
+        var services = builder.Services;
+        var fluent = builder.UseFluentAnnotations();
+        if (configure != null)
+        {
+            configure(fluent).Build();
+        }
+        else
+        {
+            fluent.Build();
+        }
+        return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
+    }
 }
