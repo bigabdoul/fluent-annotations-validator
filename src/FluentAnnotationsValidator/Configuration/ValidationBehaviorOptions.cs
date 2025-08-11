@@ -1,5 +1,6 @@
 using FluentAnnotationsValidator.Extensions;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -205,15 +206,114 @@ public class ValidationBehaviorOptions
     /// Removes all rules associated with the specified type.
     /// </summary>
     /// <param name="type">The type whose members' rules should be removed.</param>
-    public void RemoveAllForType(Type type)
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAllForType(Type type)
     {
-        List<MemberInfo> members = [.. _ruleRegistry.Keys];
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (member.DeclaringType == type && _ruleRegistry.TryRemove(member, out _))
+                removedCount++;
+        }
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules matching the specified predicate from all members.
+    /// </summary>
+    /// <param name="predicate">
+    /// A function that takes a MemberInfo and returns true if the rule should be removed.
+    /// </param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll(Func<MemberInfo, bool> predicate)
+    {
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (predicate(member) && _ruleRegistry.TryRemove(member, out _))
+                removedCount++;
+        }
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules associated with the specified attribute type for a given member.
+    /// </summary>
+    /// <typeparam name="TAttribute">The type of validation attribute to filter by.</typeparam>
+    /// <param name="key">The member whose rules should be removed.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll<TAttribute>(MemberInfo key) where TAttribute : ValidationAttribute
+        => RemoveAll<TAttribute>((member, _) => EqualityComparer<MemberInfo>.Default.Equals(key, member));
+
+    /// <summary>
+    /// Removes all rules associated with the specified attribute type for a given member.
+    /// </summary>
+    /// <param name="key">The member whose rules should be removed.</param>
+    /// <param name="attributeType">The type of validation attribute to filter by.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll(MemberInfo key, Type attributeType)
+    {
+        int removedCount = 0;
+        var members = GetMembers(m => EqualityComparer<MemberInfo>.Default.Equals(m, key));
         foreach (var member in members)
         {
-            if (member.DeclaringType == type)
+            if (!_ruleRegistry.TryGetValue(member, out var rules))
+                continue;
+
+            // Use pooled list to reduce allocations if performance-critical
+            var updatedRules = new List<ConditionalValidationRule>(rules.Count);
+
+            foreach (var rule in rules)
             {
-                _ruleRegistry.TryRemove(member, out _);
+                if (rule.Attribute is { } attr && attr.GetType().IsAssignableFrom(attributeType))
+                {
+                    removedCount++;
+                    continue;
+                }
+                updatedRules.Add(rule);
             }
+
+            if (removedCount > 0)
+                _ruleRegistry[member] = updatedRules;
         }
-    }   
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules matching the specified predicate for a given attribute type.
+    /// </summary>
+    /// <typeparam name="TAttribute">The type of validation attribute to filter by.</typeparam>
+    /// <param name="predicate">A function that takes a MemberInfo and an attribute instance.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll<TAttribute>(Func<MemberInfo, TAttribute, bool> predicate) where TAttribute : ValidationAttribute
+    {
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (!_ruleRegistry.TryGetValue(member, out var rules))
+                continue;
+
+            // Use pooled list to reduce allocations if performance-critical
+            var updatedRules = new List<ConditionalValidationRule>(rules.Count);
+
+            foreach (var rule in rules)
+            {
+                if (rule.Attribute is TAttribute attr && predicate(member, attr))
+                {
+                    removedCount++;
+                    continue;
+                }
+                updatedRules.Add(rule);
+            }
+
+            if (removedCount > 0)
+                _ruleRegistry[member] = updatedRules;
+        }
+        return removedCount;
+    }
+
+    private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) => 
+        predicate is null
+            ? [.. _ruleRegistry.Keys]
+            : [.. _ruleRegistry.Keys.Where(predicate)];
 }

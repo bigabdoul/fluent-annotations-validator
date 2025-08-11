@@ -247,6 +247,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp, TAttribute>(Expression<Func<T, TProp>> property)
+        where TAttribute : ValidationAttribute
+    {
+        var memberInfo = property.GetMemberInfo();
+        Options.RemoveAll<TAttribute>((member, attribute) => EqualityComparer<MemberInfo>.Default.Equals(member, memberInfo));
+        return this;
+    }
+
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp>(Expression<Func<T, TProp>> property, Type attributeType)
+    {
+        var memberInfo = property.GetMemberInfo();
+        Options.RemoveAll(memberInfo, attributeType);
+        return this;
+    }
+
     public ValidationTypeConfigurator<T> ClearRules()
     {
         _pendingRules.Clear();
