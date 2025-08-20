@@ -194,7 +194,12 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     public ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
-            _currentRule.Message = message;
+        {
+            if (_currentRule.Attributes.Count > 0)
+                _currentRule.Attributes.Last().ErrorMessage = message;
+            else
+                _currentRule.Message = message;
+        }
         return this;
     }
 
