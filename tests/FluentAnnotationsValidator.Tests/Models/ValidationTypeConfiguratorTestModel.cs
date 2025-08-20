@@ -9,6 +9,8 @@ public class ValidationTypeConfiguratorTestModel
 
     [Required, EmailAddress]
     public string? Email { get; set; }
+
+    [Compare("Email", ErrorMessage = "The email and confirmation email do not match.")]
     public string? ConfirmEmail { get; set; }
     public int Age { get; set; }
     public bool IsPhysicalProduct { get; internal set; }

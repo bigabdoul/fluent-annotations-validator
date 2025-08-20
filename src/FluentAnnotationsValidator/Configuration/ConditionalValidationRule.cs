@@ -83,4 +83,8 @@ public class ConditionalValidationRule(
 
     public override int GetHashCode()
         => HashCode.Combine(Member.Name, Member.DeclaringType, Attribute?.GetType());
+
+    public override string? ToString() => 
+        (HasAttribute ? $"[{Attribute?.GetType().Name}]" : string.Empty) + 
+        $"{Member.DeclaringType}.{Member.Name}";
 }

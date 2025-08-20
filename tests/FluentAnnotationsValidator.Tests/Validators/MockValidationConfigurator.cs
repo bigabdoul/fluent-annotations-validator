@@ -18,25 +18,20 @@ public class MockValidationBehaviorOptions(ValidationBehaviorOptions options)
 {
     public ValidationBehaviorOptions Options => options;
 
-    List<(MemberInfo Member, ConditionalValidationRule Rule)>? _addedRules;
-
     public List<(MemberInfo Member, ConditionalValidationRule Rule)> AddedRules
     {
         get
         {
-            if (_addedRules is null)
+            List<(MemberInfo Member, ConditionalValidationRule Rule)>? added = [];
+            var ruleTuples = options.EnumerateRules<ValidationTypeConfiguratorTestModel>();
+            foreach (var (member, ruleList) in ruleTuples)
             {
-                _addedRules = [];
-                var ruleTuples = options.EnumerateRules<ValidationTypeConfiguratorTestModel>();
-                foreach (var (member, ruleList) in ruleTuples)
+                foreach (var r in ruleList)
                 {
-                    foreach (var r in ruleList)
-                    {
-                        _addedRules.Add((member, r));
-                    }
+                    added.Add((member, r));
                 }
             }
-            return _addedRules;
+            return added;
         }
     }
 }

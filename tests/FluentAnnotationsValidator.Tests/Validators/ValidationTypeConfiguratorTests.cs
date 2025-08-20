@@ -58,10 +58,11 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
-        // We should have rules registered for both 'Name' and 'Email'.
-        _mockOptions.AddedRules.Should().HaveCount(2);
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Name");
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Email");
+        // We should have rules registered for both 'Name' and 'Email', and 'ConfirmEmail' already present.
+        var addedRules = _mockOptions.AddedRules;
+        addedRules.Should().HaveCount(3);
+        addedRules.Should().Contain(r => r.Member.Name == "Name");
+        addedRules.Should().Contain(r => r.Member.Name == "Email");
     }
 
     [Fact]
@@ -79,12 +80,13 @@ public class ValidationTypeConfiguratorTests
 
         // Assert
         // The result is a set of 2 rules, one for each attribute
-        _mockOptions.AddedRules.Count(r => r.Member.Name == "Email").Should().Be(2);
-        var ruleForEmail = _mockOptions.AddedRules.First(r => r.Member.Name == "Email").Rule;
+        var addedRules = _mockOptions.AddedRules;
+        addedRules.Count(r => r.Member.Name == "Email").Should().Be(2);
+        var ruleForEmail = addedRules.First(r => r.Member.Name == "Email").Rule;
         ruleForEmail.Attribute.Should().NotBeNull();
         ruleForEmail.Attribute.GetType().Should().Be(typeof(RequiredAttribute));
 
-        ruleForEmail = _mockOptions.AddedRules.Last(r => r.Member.Name == "Email").Rule;
+        ruleForEmail = addedRules.Last(r => r.Member.Name == "Email").Rule;
         ruleForEmail.Attribute.Should().NotBeNull();
         ruleForEmail.Attribute.GetType().Should().Be(typeof(Length2Attribute));
     }
@@ -103,13 +105,14 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
+        var addedRules = _mockOptions.AddedRules;
         // The Build method should find the static attributes and the dynamic ones.
         // Static attributes for 'Name':
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is RequiredAttribute);
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is MinLengthAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is MinLengthAttribute);
 
         // Dynamic attribute for 'Age':
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Age" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Age" && r.Rule.Attribute is RequiredAttribute);
     }
 
     [Fact]
@@ -176,9 +179,10 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
+        var addedRules = _mockOptions.AddedRules;
         // We should have rules registered for 'Email' with the specified conditions.
-        _mockOptions.AddedRules.Should().HaveCount(2);
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().HaveCount(2);
+        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
 
         Validator.Validate(model).IsValid.Should().BeTrue();
     }
@@ -199,9 +203,10 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
+        var addedRules = _mockOptions.AddedRules;
         // We should have rules registered for 'Email' with the specified conditions.
-        _mockOptions.AddedRules.Should().HaveCount(2);
-        _mockOptions.AddedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().HaveCount(2);
+        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
 
         // Invalid email should fail; however, the age is under the requirement
         Validator.Validate(model).IsValid.Should().BeTrue();
@@ -279,7 +284,7 @@ public class ValidationTypeConfiguratorTests
     public void Rule_ShouldSupportCompareAttribute()
     {
         // Arrange
-        var configurator = _configurator;//.ClearRules();
+        var configurator = _configurator;
         var model = new ValidationTypeConfiguratorTestModel
         {
             Name = "John Doe",
@@ -291,7 +296,8 @@ public class ValidationTypeConfiguratorTests
         configurator.Rule(x => x.Email)
             //.Required()
             //.EmailAddress()
-            .Compare(x => x.ConfirmEmail);
+            .Compare(x => x.ConfirmEmail).WithMessage("The {0} property must match the {1} value.")
+            ;
 
         configurator.Build();
 
@@ -301,6 +307,38 @@ public class ValidationTypeConfiguratorTests
 
         // Now change ConfirmEmail to something else
         model.ConfirmEmail = "doe@example.com";
+        validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeFalse();
+    }
+
+    // Test member-based attribute removal
+    [Fact]
+    public void Rule_ShouldBeRemoved_UsingSpecificAttribute()
+    {
+        // Arrange
+        var configurator = _configurator;
+        var model = new ValidationTypeConfiguratorTestModel
+        {
+            Name = null, // This should trigger the RequiredAttribute
+            Email = "john@example.com", // Email also has RequiredAttribute
+            ConfirmEmail = "john@example.com"
+        };
+
+        // Act
+
+        // Only remove the RequiredAttribute for Name
+        configurator.RemoveRulesFor(x => x.Name, typeof(RequiredAttribute));
+
+        configurator.Build();
+
+        // Assert
+
+        // The RequiredAttribute for Name should be removed, so the model should be valid now.
+        var validationResult = Validator.Validate(model);
+        validationResult.IsValid.Should().BeTrue();
+
+        // The Email should still have the RequiredAttribute
+        model.Email = null;
         validationResult = Validator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
     }
