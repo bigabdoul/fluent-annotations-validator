@@ -1,5 +1,4 @@
 using FluentAnnotationsValidator.Tests.Models;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
@@ -29,7 +28,7 @@ public class ConditionalValidationTests
     {
         var validator = CreateBuilder().Services
             .BuildServiceProvider()
-            .GetRequiredService<IValidator<TestLoginDto>>();
+            .GetRequiredService<IFluentValidator<TestLoginDto>>();
 
         // Email and Password still required
         var dto = new TestLoginDto(null!, string.Empty);

@@ -178,6 +178,10 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
     {
         return attr switch
         {
+            ExactLengthAttribute m => m.MinimumLength,
+            Length2Attribute m => m.MinimumLength > 0
+                ? new[] { m.MinimumLength, m.MaximumLength }
+                : m.MaximumLength,
             MinLengthAttribute m => m.Length,
             MaxLengthAttribute m => m.Length,
             StringLengthAttribute s => s.MinimumLength > 0
@@ -195,6 +199,8 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options) : IVal
             RequiredAttribute => "required",      // placeholder-friendly (e.g. "{0} is required")
             EqualAttribute e => e.Expected, // for "must equal {0}" style messages
             NotEqualAttribute e => e.Unexpected, // for "must not equal {0}" style messages
+            EmptyAttribute => "empty",
+            NotEmptyAttribute => "not empty",
             _ => null
         };
     }

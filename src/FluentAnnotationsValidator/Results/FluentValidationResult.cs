@@ -1,7 +1,7 @@
 ﻿namespace FluentAnnotationsValidator.Results;
 
 /// <summary>
-/// Represents the result of a validation operation using FluentValidation.
+/// Represents the result of a validation operation using FluentAnnotationsValidator.
 /// </summary>
 [Serializable]
 public class FluentValidationResult
@@ -17,6 +17,12 @@ public class FluentValidationResult
     public FluentValidationResult()
     {
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentValidationResult"/> class.
+    /// </summary>
+    /// <param name="errors">A list of validation errors encountered during the validation process.</param>
+    public FluentValidationResult(List<FluentValidationFailure> errors) => Errors = errors;
 
     /// <summary>
     /// A list of validation errors encountered during the validation process.

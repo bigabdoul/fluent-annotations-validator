@@ -1,13 +1,12 @@
 ﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
-using FluentValidation;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
 public class RegistrationValidatorTests
 {
-    // Use a convention-based IValidator<TestRegistrationDto> by default
-    private static IValidator<TestRegistrationDto> GetValidator()
+    // Use a convention-based IFluentValidator<TestRegistrationDto> by default
+    private static IFluentValidator<TestRegistrationDto> GetValidator()
     {
         return TestHelpers.GetValidator<TestRegistrationDto>();
     }

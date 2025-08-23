@@ -34,9 +34,9 @@ public interface IFluentValidator
 /// </summary>
 /// <typeparam name="T">The type of the object instance to validate.</typeparam>
 /// <remarks>
-/// Represents a wrapper around the <see cref="FluentValidation.IValidator{T}"/>
+/// Represents a wrapper around the <see cref="IFluentValidator{T}"/>
 /// defined in the FluentValidation API, and allows getting away
-/// from a direct reference to the FluentValidation library.
+/// from a direct reference to the FluentAnnotationsValidator library.
 /// </remarks>
 public interface IFluentValidator<T> : IFluentValidator
 {

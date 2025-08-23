@@ -1,6 +1,5 @@
 ﻿using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Tests.Models;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Results;
@@ -13,7 +12,7 @@ using static TestHelpers;
 /// </summary>
 /// <remarks>
 /// The <see cref="IFluentValidator{T}"/> interface is a wrapper 
-/// around the <see cref="IValidator{T}"/> defined in the 
+/// around the <see cref="IFluentValidator{T}"/> defined in the 
 /// FluentValidation API, and allows getting away from a direct
 /// reference to the FluentValidation library.
 /// </remarks>

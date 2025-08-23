@@ -2,7 +2,6 @@ using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.ComponentModel.DataAnnotations;
@@ -12,7 +11,7 @@ namespace FluentAnnotationsValidator.Extensions;
 
 /// <summary>
 /// ASP.NET Core-specific service registration utilities for FluentAnnotationsValidator.
-/// Automatically discovers and registers <see cref="IValidator{T}"/> instances for types decorated
+/// Automatically discovers and registers <see cref="IFluentValidator{T}"/> instances for types decorated
 /// with <see cref="ValidationAttribute"/>s.
 /// </summary>
 public static class ValidatorServiceCollectionExtensions
@@ -98,13 +97,13 @@ public static class ValidatorServiceCollectionExtensions
 
         foreach (var declaringType in modelTypes)
         {
-            var genericIValidator = typeof(IValidator<>).MakeGenericType(declaringType);
+            var genericIValidator = typeof(IFluentValidator<>).MakeGenericType(declaringType);
 
             if (services.Any(sd => sd.ServiceType == genericIValidator))
                 continue; // Skip redundant registration
 
             // Dynamically create validator for each type
-            var validatorType = typeof(DataAnnotationsValidator<>).MakeGenericType(declaringType);
+            var validatorType = typeof(FluentValidator<>).MakeGenericType(declaringType);
             services.AddScoped(genericIValidator, validatorType);
 
             // Register validation rules upfront (optional)
@@ -115,14 +114,6 @@ public static class ValidatorServiceCollectionExtensions
             {
                 var rules = ValidationAttributeAdapter.ParseRules(declaringType, member);
                 behaviorOptions.AddRules(member, rules);
-            }
-
-            var fluentGenericIValidator = typeof(IFluentValidator<>).MakeGenericType(declaringType);
-
-            if (!services.Any(sd => sd.ServiceType == fluentGenericIValidator))
-            {
-                var fluentValidatorType = typeof(FluentValidator<>).MakeGenericType(declaringType);
-                services.AddScoped(fluentGenericIValidator, fluentValidatorType);
             }
         }
 

@@ -4,7 +4,6 @@ using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -56,7 +55,7 @@ public class Resolver_CultureTests
         );
 
         var provider = services.BuildServiceProvider();
-        var validator = provider.GetRequiredService<IValidator<TestLoginDto>>();
+        var validator = provider.GetRequiredService<IFluentValidator<TestLoginDto>>();
 
         var result = validator.Validate(dto);
 

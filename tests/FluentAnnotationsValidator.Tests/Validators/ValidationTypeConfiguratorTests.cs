@@ -3,7 +3,6 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
@@ -17,8 +16,8 @@ public class ValidationTypeConfiguratorTests
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
 
-    private IValidator<ValidationTypeConfiguratorTestModel> Validator => 
-        _services.BuildServiceProvider().GetRequiredService<IValidator<ValidationTypeConfiguratorTestModel>>();
+    private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator => 
+        _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ValidationTypeConfiguratorTestModel>>();
 
     public ValidationTypeConfiguratorTests()
     {
