@@ -1,4 +1,5 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -67,6 +68,10 @@ public static class ValidationRuleBuilderExtensions
 
     public static IValidationRuleBuilder<T, TProp> EmailAddress<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
         => builder.AddRuleFromAttribute(new EmailAddressAttribute());
+    
+    public static IValidationRuleBuilder<T, TProp> WithAttribute<T, TProp, TAttribute>(this IValidationRuleBuilder<T, TProp> builder) 
+        where TAttribute : ValidationAttribute, new()
+        => builder.AddRuleFromAttribute(new TAttribute());
 
     internal static ValidationResult GetFailedValidationResult(this ValidationAttribute attribute, object? value, ValidationContext validationContext, 
         IValidationMessageResolver? messageResolver = null)
