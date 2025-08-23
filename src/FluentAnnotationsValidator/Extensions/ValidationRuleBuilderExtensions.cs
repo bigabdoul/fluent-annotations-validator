@@ -73,8 +73,7 @@ public static class ValidationRuleBuilderExtensions
         where TAttribute : ValidationAttribute, new()
         => builder.AddRuleFromAttribute(new TAttribute());
 
-    internal static ValidationResult GetFailedValidationResult(this ValidationAttribute attribute, object? value, ValidationContext validationContext, 
-        IValidationMessageResolver? messageResolver = null)
+    internal static ValidationResult GetFailedValidationResult(this ValidationAttribute attribute, ValidationContext validationContext, IValidationMessageResolver? messageResolver = null)
     {
         ArgumentNullException.ThrowIfNull(validationContext);
         var fieldName = validationContext.DisplayName ?? validationContext.MemberName ?? "field";

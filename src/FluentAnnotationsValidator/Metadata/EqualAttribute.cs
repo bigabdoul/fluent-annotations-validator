@@ -18,7 +18,7 @@ public class EqualAttribute(object? expectedValue, IEqualityComparer<object?>? e
 
         return _comparer.Equals(value, expectedValue)
                 ? ValidationResult.Success
-                : this.GetFailedValidationResult(value, validationContext, MessageResolver);
+                : this.GetFailedValidationResult(validationContext, MessageResolver);
     }
 }
 
@@ -38,7 +38,7 @@ public class EqualAttribute<TProperty>(TProperty expectedValue, IEqualityCompare
         return value is TProperty typedValue
             ? _comparer.Equals(typedValue, expectedValue) 
                 ? ValidationResult.Success 
-                : this.GetFailedValidationResult(value, validationContext, MessageResolver)
+                : this.GetFailedValidationResult(validationContext, MessageResolver)
             : new ValidationResult($"Type mismatch.\nExpected: {typeof(TProperty).Name}\nActual: {value.GetType().Name}");
     }
 }

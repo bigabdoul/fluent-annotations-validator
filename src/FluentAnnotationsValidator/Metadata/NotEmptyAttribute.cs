@@ -12,14 +12,14 @@ public sealed class NotEmptyAttribute : FluentValidationAttribute
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is string s && string.IsNullOrWhiteSpace(s))
-            return this.GetFailedValidationResult(value, validationContext, MessageResolver);
+            return this.GetFailedValidationResult(validationContext, MessageResolver);
 
         if (!CountHelper.TryGetCount(value, out int length))
             return ValidationResult.Success;
 
         return length > 0 
             ? ValidationResult.Success 
-            : this.GetFailedValidationResult(value, validationContext, MessageResolver);
+            : this.GetFailedValidationResult(validationContext, MessageResolver);
     }
 }
 

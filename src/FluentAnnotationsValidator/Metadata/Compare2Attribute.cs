@@ -38,7 +38,7 @@ public class Compare2Attribute(string otherProperty, ComparisonOperator @operato
                 _ => throw new InvalidOperationException("Unsupported comparison operator.")
             };
 
-            return isValid ? ValidationResult.Success : this.GetFailedValidationResult(value, validationContext, MessageResolver);
+            return isValid ? ValidationResult.Success : this.GetFailedValidationResult(validationContext, MessageResolver);
         }
 
         return new ValidationResult("Both values must implement IComparable.");

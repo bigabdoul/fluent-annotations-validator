@@ -14,6 +14,6 @@ public sealed class EmptyAttribute : FluentValidationAttribute
         if (value is string s && string.IsNullOrWhiteSpace(s) || !CountHelper.TryGetCount(value, out int length))
             return ValidationResult.Success;
 
-        return length == 0 ? ValidationResult.Success : this.GetFailedValidationResult(value, validationContext, MessageResolver);
+        return length == 0 ? ValidationResult.Success : this.GetFailedValidationResult(validationContext, MessageResolver);
     }
 }

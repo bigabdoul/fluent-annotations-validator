@@ -32,7 +32,7 @@ public class Length2Attribute : LengthAttribute
             return ValidationResult.Success; // Length not applicable to this type
 
         return length < MinimumLength || length > MaximumLength && MaximumLength != -1
-            ? this.GetFailedValidationResult(value, validationContext, MessageResolver)
+            ? this.GetFailedValidationResult(validationContext, MessageResolver)
             : ValidationResult.Success;
     }
 
