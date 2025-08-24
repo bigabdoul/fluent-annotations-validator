@@ -16,14 +16,10 @@ public class ValidationMessageResolverTests
     {
         // Arrange
         var attr = new RequiredAttribute { ErrorMessage = "Field {0} is required" };
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!,
-            InstanceType = typeof(TestLoginDto)
-        };
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
 
         // Act
-        var message = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr);
+        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr);
 
         // Assert
         Assert.Equal("Field Email is required", message);
@@ -38,61 +34,56 @@ public class ValidationMessageResolverTests
             ErrorMessageResourceType = typeof(ValidationMessages)
         };
 
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!,
-            InstanceType = typeof(TestLoginDto)
-        };
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
 
-        var message = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr);
+        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr);
         Assert.Equal(ValidationMessages.EmailRequired, message);
     }
 
     [Fact]
     public void ResolveMessage_ConditionalRuleMetadata_WinsOverAttribute()
     {
+        // Arrange
         var attr = new RequiredAttribute();
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!,
-            InstanceType = typeof(TestLoginDto)
-        };
-
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
         var rule = new ConditionalValidationRule(Predicate: null!, Message: "Overridden message");
 
-        var message = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        // Act
+        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
+
+        // Assert
         Assert.Equal("Overridden message", message);
     }
 
     [Fact]
     public void ResolveMessage_ResourceKey_FromRuleType_FormatsCorrectly()
     {
+        // Arrange
         var attr = new StringLengthAttribute(5);
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
-            InstanceType = typeof(TestLoginDto)
-        };
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
 
         var rule = new ConditionalValidationRule(Predicate: null!, 
             ResourceKey: nameof(ValidationMessages.PasswordRequired), 
             ResourceType: typeof(ValidationMessages));
 
-        var message = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        // Act
+        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
+
+        // Assert
         Assert.Equal(ValidationMessages.PasswordRequired, message);
     }
 
     [Fact]
     public void ResolveMessage_Fallback_UsesConventionBasedResolution()
     {
+        // Arrange
         var attr = new RequiredAttribute();
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!,
-            InstanceType = typeof(TestLoginDtoWithResource)
-        };
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
 
-        var message = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr);
+        // Act
+        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr);
+
+        // Assert
         Assert.Equal(ConventionValidationMessages.Email_Required, message);
     }
 }

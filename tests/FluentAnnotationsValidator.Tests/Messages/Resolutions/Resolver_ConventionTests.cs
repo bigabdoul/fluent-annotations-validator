@@ -13,14 +13,8 @@ public class Resolver_ConventionTests
     public void Resolves_Using_Convention_When_Enabled()
     {
         var attr = new RequiredAttribute();
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(LoginDtoWithResource).GetProperty(EmailName)!,
-            InstanceType = typeof(LoginDtoWithResource)
-        };
-
         var resolver = new ValidationMessageResolver(new ValidationBehaviorOptions());
-        var msg = resolver.ResolveMessage(info.InstanceType, EmailName, attr);
+        var msg = resolver.ResolveMessage(typeof(LoginDtoWithResource), EmailName, attr);
         Assert.Equal(ConventionValidationMessages.Email_Required, msg);
     }
 
@@ -33,14 +27,8 @@ public class Resolver_ConventionTests
             UseConventionalKeyFallback: false
         );
 
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(LoginDtoWithResource).GetProperty(EmailName)!,
-            InstanceType = typeof(LoginDtoWithResource)
-        };
-
         var resolver = new ValidationMessageResolver(new ValidationBehaviorOptions());
-        var msg = resolver.ResolveMessage(info.InstanceType, EmailName, attr, rule);
+        var msg = resolver.ResolveMessage(typeof(LoginDtoWithResource), EmailName, attr, rule);
 
         Assert.Equal($"The {EmailName} field is required.", msg);
     }

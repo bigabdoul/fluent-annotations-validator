@@ -27,13 +27,6 @@ public static class ValidationAttributeAdapter
 
         var rules = new List<ConditionalValidationRule>();
 
-        var validationInfo = new MemberValidationInfo()
-        {
-            InstanceType = instanceType,
-            Member = member,
-            Attributes = attributes,
-        };
-
         foreach (var attr in attributes)
         {
             var uniqueKey = $"[{attr.GetType().Name}:{attr.TypeId}]{instanceType.Namespace}.{instanceType.Name}.{member.Name}";

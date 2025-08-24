@@ -6,6 +6,7 @@ using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
 
@@ -91,6 +92,6 @@ public class Resolver_PriorityTests
         Assert.Equal("Use this instead", msg);
     }
 
-    private static MemberValidationInfo CreateInfo<T>(Expression<Func<T, string?>> expr) =>
-        new() { Member = expr.GetMemberInfo(), InstanceType = typeof(T) };
+    private static (MemberInfo Member, Type InstanceType) CreateInfo<T>(Expression<Func<T, string?>> expr) =>
+        (expr.GetMemberInfo(), typeof(T));
 }

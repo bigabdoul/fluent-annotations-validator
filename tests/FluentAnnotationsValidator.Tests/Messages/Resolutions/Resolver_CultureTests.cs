@@ -26,14 +26,10 @@ public class Resolver_CultureTests
         var (min, max) = (6, 20);
         var attr = new RangeAttribute(min, max);
         var expectedMessage = string.Format(ValidationMessages.Password_Range, min, max);
-        var info = new MemberValidationInfo
-        {
-            Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
-            InstanceType = typeof(TestLoginDto)
-        };
-
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
+        
         // Act
-        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
 
         Assert.Equal(expectedMessage, resolvedMessage);
     }
