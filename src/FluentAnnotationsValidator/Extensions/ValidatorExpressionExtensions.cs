@@ -1,4 +1,5 @@
-﻿using FluentAnnotationsValidator.Results;
+﻿using FluentAnnotationsValidator.Internals.Reflection;
+using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -52,22 +53,12 @@ public static class ValidatorExpressionExtensions
     /// <returns>
     /// <see langword="true"/> if the <see cref="MemberInfo.Name"/> property values of 
     /// <paramref name="sourceMemberInfo"/> and <paramref name="targetMemberInfo"/> are
-    /// equal, and the <see cref="MemberInfo.DeclaringType"/> property values are assignable
+    /// equal, and the <see cref="MemberInfo.ReflectedType"/> property values are assignable
     /// to each other in one or the other way; otherwise, <see langword="false"/>.
     /// </returns>
     public static bool AreSameMembers(this MemberInfo sourceMemberInfo, MemberInfo targetMemberInfo)
     {
         return sourceMemberInfo.Name == targetMemberInfo.Name &&
-        (
-            true == sourceMemberInfo.DeclaringType?.IsAssignableFrom(targetMemberInfo.DeclaringType) ||
-            true == sourceMemberInfo.DeclaringType?.IsAssignableTo(targetMemberInfo.DeclaringType)
-        );
-    }
-
-    internal static bool IsSameRule(this (MemberInfo, ValidationAttribute?) source, (MemberInfo, ValidationAttribute?) target)
-    {
-        var (member1, attr1) = source;
-        var (member2, attr2) = target;
-        return member1.AreSameMembers(member2) && attr1?.GetType() == attr2?.GetType();
+            TypeUtils.IsAssignableFrom(sourceMemberInfo.DeclaringType, targetMemberInfo.ReflectedType);
     }
 }

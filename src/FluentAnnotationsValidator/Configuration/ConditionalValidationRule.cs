@@ -136,5 +136,5 @@ public class ConditionalValidationRule(
 
     public override string? ToString() => 
         (HasAttribute ? $"[{Attribute?.GetType().Name}]" : string.Empty) + 
-        $"{Member.DeclaringType}.{Member.Name}";
+        $"{Member.ReflectedType}.{Member.Name}";
 }

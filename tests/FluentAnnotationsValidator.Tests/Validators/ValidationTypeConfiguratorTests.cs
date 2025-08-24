@@ -340,5 +340,9 @@ public class ValidationTypeConfiguratorTests
         model.Email = null;
         validationResult = Validator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
+
+        _mockOptions.AddedRules.Should().Contain(r => 
+            r.Member.Name == nameof(model.Email) && 
+            r.Rule.Attribute is RequiredAttribute);
     }
 }

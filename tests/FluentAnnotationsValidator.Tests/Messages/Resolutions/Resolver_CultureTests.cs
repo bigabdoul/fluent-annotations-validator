@@ -29,11 +29,11 @@ public class Resolver_CultureTests
         var info = new MemberValidationInfo
         {
             Member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!,
-            DeclaringType = typeof(TestLoginDto)
+            InstanceType = typeof(TestLoginDto)
         };
 
         // Act
-        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(info.DeclaringType, info.Member.Name, attr, rule);
+        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
 
         Assert.Equal(expectedMessage, resolvedMessage);
     }

@@ -88,31 +88,36 @@ public static class ValidatorServiceCollectionExtensions
                 // records may have attribute-decorated members in the constructor:
                 // public record LoginDto([Required, EmailAddress] string Email, [Required, MinLength(6)] string Password);
                 t.GetConstructors().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0)
-            );
+            ).ToList();
 
         var behaviorOptions = new ValidationBehaviorOptions();
         configure?.Invoke(behaviorOptions);
 
         var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
 
-        foreach (var declaringType in modelTypes)
-        {
-            var genericIValidator = typeof(IFluentValidator<>).MakeGenericType(declaringType);
+        // Filter the types to only include the most derived classes
+        var mostDerivedTypes = modelTypes
+            .Where(type => !modelTypes.Any(otherType => otherType.IsSubclassOf(type)))
+            .ToList();
 
-            if (services.Any(sd => sd.ServiceType == genericIValidator))
+        foreach (var modelType in mostDerivedTypes)
+        {
+            var genericValidator = typeof(IFluentValidator<>).MakeGenericType(modelType);
+
+            if (services.Any(sd => sd.ServiceType == genericValidator))
                 continue; // Skip redundant registration
 
             // Dynamically create validator for each type
-            var validatorType = typeof(FluentValidator<>).MakeGenericType(declaringType);
-            services.AddScoped(genericIValidator, validatorType);
+            var validatorType = typeof(FluentValidator<>).MakeGenericType(modelType);
+            services.AddScoped(genericValidator, validatorType);
 
             // Register validation rules upfront (optional)
-            var members = declaringType.GetMembers(BindingFlags.Instance | BindingFlags.Public)
+            var members = modelType.GetMembers(BindingFlags.Instance | BindingFlags.Public)
                 .Where(m => m is PropertyInfo or FieldInfo or ConstructorInfo /*or MethodInfo*/);
 
             foreach (var member in members)
             {
-                var rules = ValidationAttributeAdapter.ParseRules(declaringType, member);
+                var rules = ValidationAttributeAdapter.ParseRules(modelType, member);
                 behaviorOptions.AddRules(member, rules);
             }
         }

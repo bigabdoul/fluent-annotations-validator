@@ -26,7 +26,7 @@ public static class ValidationMetadataCache
              .Select(p => new MemberValidationInfo
              {
                  Member = p,
-                 DeclaringType = type,
+                 InstanceType = type,
                  Attributes = [.. p.GetCustomAttributes<ValidationAttribute>(true)]
              })
              .Where(p => p.Attributes.Length != 0)]

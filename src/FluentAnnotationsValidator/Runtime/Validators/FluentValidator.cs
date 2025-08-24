@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
 
@@ -21,13 +22,9 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
         foreach (var (member, rules) in options.EnumerateRules<T>())
         {
-            var errors = rules.Validate(typeof(T), instance!, member, resolver);
-
-            foreach (var error in errors)
+            foreach (var error in rules.Validate(typeof(T), instance!, member, resolver))
             {
-                var fail = new FluentValidationFailure(error);
-                //if (!failures.Contains(fail))
-                    failures.Add(fail);
+                failures.Add(new(error));
             }
         }
 
@@ -43,5 +40,6 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
     public virtual Task<FluentValidationResult> ValidateAsync(ValidationContext context, CancellationToken cancellation = default) =>
         Task.FromResult(Validate(context));
     
-    public virtual bool CanValidateInstancesOfType(Type type) => typeof(T).IsAssignableFrom(type);
+    public virtual bool CanValidateInstancesOfType(Type type) => 
+        TypeUtils.IsAssignableFrom(typeof(T), type);
 }

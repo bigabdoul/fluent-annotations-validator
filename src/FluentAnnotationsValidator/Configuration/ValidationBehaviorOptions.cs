@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using static FluentAnnotationsValidator.Internals.Reflection.TypeUtils;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -43,7 +44,7 @@ public class ValidationBehaviorOptions
 
     #endregion
 
-    internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
+    protected internal virtual void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
         _ruleRegistry.AddOrUpdate(member, rules, (_, _) => rules);
     }
@@ -63,7 +64,6 @@ public class ValidationBehaviorOptions
             {
                 var index = rules.IndexOf(rule);
                 if (index == -1)
-                    //if (!rules.Contains(rule))
                     rules.Add(rule);
                 else
                     rules[index] = rule;
@@ -173,8 +173,8 @@ public class ValidationBehaviorOptions
         var rules = GetRules(member);
 
         return [.. rules.Where(r =>
-                (IsAssignableFrom(r.Member.DeclaringType, type) || IsAssignableFrom(type, r.Member.DeclaringType)) &&
                 r.Member.Name == member.Name &&
+                r.Member.ReflectedType == type &&
                 (predicate?.Invoke(r) ?? true))
         ];
     }
@@ -190,7 +190,7 @@ public class ValidationBehaviorOptions
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
         foreach (var (member, rules) in _ruleRegistry)
         {
-            if (IsAssignableFrom(member.DeclaringType, typeof(T)))
+            if (IsAssignableFrom(member.ReflectedType, typeof(T)))
             {
                 result.Add((member, rules.ToList()));
             }
@@ -215,7 +215,7 @@ public class ValidationBehaviorOptions
         int removedCount = 0;
         foreach (var member in GetMembers())
         {
-            if (IsAssignableFrom(member.DeclaringType, type) && _ruleRegistry.TryRemove(member, out _))
+            if (IsAssignableFrom(member.ReflectedType, type) && _ruleRegistry.TryRemove(member, out _))
                 removedCount++;
         }
         return removedCount;
@@ -268,7 +268,7 @@ public class ValidationBehaviorOptions
 
             foreach (var rule in rules)
             {
-                if (rule.Attribute is { } attr && attr.GetType().IsAssignableFrom(attributeType))
+                if (rule.Attribute is { } attr && attr.GetType() == attributeType)
                 {
                     removedCount++;
                     continue;
@@ -314,9 +314,6 @@ public class ValidationBehaviorOptions
         }
         return removedCount;
     }
-
-    protected virtual bool IsAssignableFrom(Type? declaringType, Type? type)
-        => true == declaringType?.IsAssignableFrom(type);
 
     private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) =>
         predicate is null

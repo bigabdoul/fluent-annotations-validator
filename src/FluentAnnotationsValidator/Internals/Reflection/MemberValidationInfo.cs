@@ -23,5 +23,5 @@ public class MemberValidationInfo
     /// <summary>
     /// The target model type to inspect.
     /// </summary>
-    public Type DeclaringType { get; set; } = default!;
+    public Type InstanceType { get; set; } = default!;
 }

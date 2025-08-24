@@ -1,4 +1,6 @@
 ﻿using FluentAnnotationsValidator.Extensions;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace FluentAnnotationsValidator.Results;
@@ -46,7 +48,7 @@ public class FluentValidationFailure
         PropertyName = error.Member.Name;
         ErrorMessage = error.Message ?? string.Empty;
         AttemptedValue = error.AttemptedValue;
-        CustomState = error.Attribute is null ? null : $"Origin: [{error.Attribute.GetType().Name}]{error.Member.ReflectedType?.Name}.{error.Member.Name}";
+        CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.GetType().Name}";
     }
 
     /// <summary>
@@ -98,10 +100,18 @@ public class FluentValidationFailure
     {
         if (other is null || _error is null || other._error is null) 
             return false;
-        return (_error.Member, _error.Attribute).IsSameRule((other._error.Member, other._error.Attribute));
+
+        return IsSameRule((_error.Member, _error.Attribute), (other._error.Member, other._error.Attribute));
     }
 
     public override bool Equals(object? obj) => Equals(obj as FluentValidationFailure);
 
     public override int GetHashCode() => HashCode.Combine(_error?.Member.Name, _error?.Attribute?.GetType());
+
+    static bool IsSameRule((MemberInfo, ValidationAttribute?) source, (MemberInfo, ValidationAttribute?) target)
+    {
+        var (member1, attr1) = source;
+        var (member2, attr2) = target;
+        return member1.AreSameMembers(member2) && attr1?.GetType() == attr2?.GetType();
+    }
 }
