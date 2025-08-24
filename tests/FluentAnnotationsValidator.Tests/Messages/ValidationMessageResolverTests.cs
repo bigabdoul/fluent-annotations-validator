@@ -1,8 +1,8 @@
 ﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Messages;
@@ -77,13 +77,20 @@ public class ValidationMessageResolverTests
     public void ResolveMessage_Fallback_UsesConventionBasedResolution()
     {
         // Arrange
-        var attr = new RequiredAttribute();
+        var resolver = GetResolver();
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
+        var attribute = new RequiredAttribute();
+
+        var rule = new ConditionalValidationRule(Predicate: null!,
+            ResourceKey: nameof(ConventionValidationMessages.Email_Required),
+            ResourceType: typeof(ConventionValidationMessages));
 
         // Act
-        var message = GetResolver().ResolveMessage(typeof(TestLoginDto), member.Name, attr);
+        // This is where you would call your message resolution method.
+        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attribute, rule);
 
         // Assert
-        Assert.Equal(ConventionValidationMessages.Email_Required, message);
+        resolvedMessage.Should().NotBeNull();
+        resolvedMessage.Should().Be(ConventionValidationMessages.Email_Required);
     }
 }

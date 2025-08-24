@@ -1,6 +1,5 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
@@ -28,9 +27,9 @@ public class Resolver_PriorityTests
         );
 
         var attr = new RequiredAttribute();
-        var info = CreateInfo<TestLoginDto>(x => x.Email);
+        var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
         Assert.Equal("Override wins", msg);
     }
 
@@ -44,9 +43,9 @@ public class Resolver_PriorityTests
         );
 
         var attr = new RequiredAttribute { ErrorMessageResourceName = nameof(WrongMessages.WrongKey), ErrorMessageResourceType = typeof(WrongMessages) };
-        var info = CreateInfo<TestLoginDto>(x => x.Email);
+        var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
         Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
@@ -59,8 +58,8 @@ public class Resolver_PriorityTests
             ErrorMessageResourceType = typeof(ValidationMessages)
         };
 
-        var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
-        var msg = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr);
+        var (member, instanceType) = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
+        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr);
         Assert.Equal(ValidationMessages.EmailRequired, msg);
     }
 
@@ -68,9 +67,9 @@ public class Resolver_PriorityTests
     public void Convention_Fallback_Used_WhenNoResourceSpecified()
     {
         var attr = new RequiredAttribute();
-        var info = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
+        var (member, instanceType) = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr);
+        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr);
 
         Assert.Equal(ConventionValidationMessages.Email_Required, msg); // uses conventional key
     }
@@ -86,9 +85,9 @@ public class Resolver_PriorityTests
         );
 
         var attr = new RequiredAttribute();
-        var info = CreateInfo<TestLoginDto>(x => x.Email);
+        var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(info.InstanceType, info.Member.Name, attr, rule);
+        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
         Assert.Equal("Use this instead", msg);
     }
 
