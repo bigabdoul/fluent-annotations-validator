@@ -72,7 +72,7 @@ public class ValidationTypeConfiguratorTests
 
         // Act
 
-        // Initially one rule with 2 attributes: [Required, Length(50)]
+        // Initially one rule with 2 attributes: [Required, EmailAddress]
         configurator.Rule(x => x.Email).Required().MaximumLength(50); 
         
         configurator.Build();

@@ -1,6 +1,5 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Globalization;
@@ -81,10 +80,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return parent.For<TNext>();
     }
 
-    public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property)
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> property)
         => Rule(property, RuleDefinitionBehavior.Replace);
 
-    public ValidationTypeConfigurator<T> Rule<TProp>(Expression<Func<T, TProp>> property, 
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> property,
         RuleDefinitionBehavior behavior)
     {
         CommitCurrentRule();
@@ -106,7 +105,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #region When
 
-    public IValidationRuleBuilder<T, TProp> RuleFor<TProp>(Expression<Func<T, TProp>> property)
+    public IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> property)
     {
         //Rule(property);
         CommitCurrentRule();
@@ -120,19 +119,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             useConventionalKeys: _useConventionalKeys
         );
 
-        var configurator = new ValidationRuleBuilder<T, TProp>(rule);
+        var configurator = new ValidationRuleBuilder<T, TMember>(rule);
         _validationRuleBuilders.Add(configurator);
 
         return configurator;
     }
 
     /// <summary>
-    /// Applies to the predicate of a rule created with <see cref="Rule{TProp}(Expression{Func{T, TProp}})"/>.
+    /// Applies to the predicate of a rule created with <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/>.
     /// </summary>
     /// <param name="condition"></param>
     /// <returns>The current configurator for further chaining.</returns>
     /// <exception cref="InvalidOperationException">
-    /// You must create a rule with the <see cref="Rule{TProp}(Expression{Func{T, TProp}})"/> method.
+    /// You must create a rule with the <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/> method.
     /// </exception>
     public ValidationTypeConfigurator<T> When(Func<T, bool> condition)
     {
@@ -151,10 +150,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
-    public ValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
+    public ValidationTypeConfigurator<T> When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
     {
-        // Should only commit and create a new rule if the current rule is NOT one initiated with Rule<TProp>(...);
+        // Should only commit and create a new rule if the current rule is NOT one initiated with Rule<TMember>(...);
         // in this case, the PendingRule.Attributes should have at least one attribute
         if (ShouldOverrideCurrentRule(property))
         {
@@ -178,16 +177,16 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #endregion
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.And{TProp}(Expression{Func{T, TProp}}, Func{T, bool})"/>
-    public ValidationTypeConfigurator<T> And<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.And{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
+    public ValidationTypeConfigurator<T> And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Except{TProp}(Expression{Func{T, TProp}})"/>
-    public ValidationTypeConfigurator<T> Except<TProp>(Expression<Func<T, TProp>> property)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Except{TMember}(Expression{Func{T, TMember}})"/>
+    public ValidationTypeConfigurator<T> Except<TMember>(Expression<Func<T, TMember>> property)
         => When(property, _ => false);
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.AlwaysValidate{TProp}(Expression{Func{T, TProp}})"/>
-    public ValidationTypeConfigurator<T> AlwaysValidate<TProp>(Expression<Func<T, TProp>> property)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.AlwaysValidate{TMember}(Expression{Func{T, TMember}})"/>
+    public ValidationTypeConfigurator<T> AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
         => When(property, TruePredicate);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithMessage(string)"/>
@@ -235,24 +234,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp>(Expression<Func<T, TProp>> property)
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> property)
     {
         var member = property.GetMemberInfo();
         var removed = Options.RemoveAll(member);
 
         // clear any previous rule
-        var count = _pendingRules.RemoveWhere(r =>
-        {
-            var mi = r.Member.GetMemberInfo();
-            return mi.Name == member.Name && mi.DeclaringType == member.DeclaringType;
-        });
-
+        var count = _pendingRules.RemoveWhere(r => member.AreSameMembers(r.Member.GetMemberInfo()));
         Debug.WriteLine("Removed from ValidationBehaviorOptions: {0}\nRemoved from pending rules: {1}", removed, count);
 
         return this;
     }
 
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp, TAttribute>(Expression<Func<T, TProp>> property)
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember, TAttribute>(Expression<Func<T, TMember>> property)
         where TAttribute : ValidationAttribute
     {
         var memberInfo = property.GetMemberInfo();
@@ -260,7 +254,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TProp>(Expression<Func<T, TProp>> property, Type attributeType)
+    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> property, Type attributeType)
     {
         var memberInfo = property.GetMemberInfo();
         Options.RemoveAll(memberInfo, attributeType);
@@ -291,17 +285,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             {
                 foreach (var attr in rule.Attributes)
                 {
+                    var existingRules = Options.GetRules(member);
                     // each attribute has its own rule
                     var newRule = rule.CreateRuleFromPending(member, attr, rule.Predicate);
-                    Options.AddRule(member, newRule);
+                    if (existingRules is null || !existingRules.Contains(newRule))
+                        Options.AddRule(member, newRule);
                 }
             }
             else
             {
                 parent.Register(opts =>
                 {
+                    var existingRules = Options.GetRules(member);
                     var newRule = rule.CreateRuleFromPending(member);
-                    opts.AddRule(member, newRule);
+                    if (existingRules is null || !existingRules.Contains(newRule))
+                        opts.AddRule(member, newRule);
                 });
             }
         }
@@ -310,7 +308,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         {
             foreach (var rule in builder.GetRules())
             {
-                Options.AddRule(rule.Member, rule);
+                //Options.AddRule(rule.Member, rule);
+                var existingRules = Options.GetRules(rule.Member);
+                if (existingRules is null || !existingRules.Contains(rule))
+                    Options.AddRule(rule.Member, rule);
             }
         }
 
@@ -320,32 +321,33 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         parent.Build();
     }
 
-    protected virtual bool ShouldOverrideCurrentRule<TProp>(Expression<Func<T, TProp>> property)
-    {
-        if (_currentRule != null && _currentRule.Attributes.Count > 0)
-        {
-            var currentMember = _currentRule.Member.GetMemberInfo();
-            var propertyMember = property.GetMemberInfo();
-
-            var same =
-                currentMember.Name == propertyMember.Name &&
-                currentMember.DeclaringType == propertyMember.DeclaringType;
-
-            return same;
-        }
-
-        return false;
-    }
-
+    /// <summary>
+    /// Deterines whether the current rule should be overridden.
+    /// </summary>
+    /// <typeparam name="TMember">The member type.</typeparam>
+    /// <param name="member">The member (property or field) expression.</param>
+    /// <returns>
+    /// <see langword="true"/> if the rule should be overridden; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// The current rule should be overridden when it's defined (not <see langword="null"/>),
+    /// contains attributes (<see cref="PendingRule{T}.Attributes"/>.Count > 0), and its member
+    /// name matches the specified <paramref name="member"/> name.
+    /// </remarks>
+    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) => 
+        _currentRule != null && 
+        _currentRule.Attributes.Count != 0 && 
+        _currentRule.Member.GetMemberInfo().AreSameMembers(member.GetMemberInfo());
+    
     #region IValidationTypeConfigurator<T>
 
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.And<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => And(property, condition);
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Except<TProp>(Expression<Func<T, TProp>> property)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Except<TMember>(Expression<Func<T, TMember>> property)
         => Except(property);
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.AlwaysValidate<TProp>(Expression<Func<T, TProp>> property)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
         => AlwaysValidate(property);
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithMessage(string message) => WithMessage(message);
@@ -374,14 +376,20 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #endregion
 
-    internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
+    protected internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
     {
         if (_currentRule is null)
-            throw new InvalidOperationException("No pending rule to attach attribute to.");
+            throw new InvalidOperationException($"No pending rule to attach the attribute {attribute.GetType().Name} to.");
 
-        //_currentRule.Attributes.Add(new() { Attribute = attribute, When = when });
+        if (_currentRule.Attributes.Any(a => a.GetType() == attribute.GetType()))
+        {
+            //var mi = _currentRule.Member.GetMemberInfo();
+            Debug.WriteLine($"The current rule already contains an attribute of the same type.");
+            return this;
+        }
+
         _currentRule.Attributes.Add(attribute);
-        
+
         if (when is not null)
             _currentRule.Predicate = when;
 

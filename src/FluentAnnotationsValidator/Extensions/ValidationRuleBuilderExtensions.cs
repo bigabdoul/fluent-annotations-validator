@@ -1,5 +1,4 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;

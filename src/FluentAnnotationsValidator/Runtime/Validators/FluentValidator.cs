@@ -25,7 +25,9 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
             foreach (var error in errors)
             {
-                failures.Add(new(error));
+                var fail = new FluentValidationFailure(error);
+                //if (!failures.Contains(fail))
+                    failures.Add(fail);
             }
         }
 

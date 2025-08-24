@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using FluentAnnotationsValidator.Extensions;
+using System.Text.Json.Serialization;
 
 namespace FluentAnnotationsValidator.Results;
 
@@ -45,7 +46,7 @@ public class FluentValidationFailure
         PropertyName = error.Member.Name;
         ErrorMessage = error.Message ?? string.Empty;
         AttemptedValue = error.AttemptedValue;
-        CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.GetType().Name}";
+        CustomState = error.Attribute is null ? null : $"Origin: [{error.Attribute.GetType().Name}]{error.Member.ReflectedType?.Name}.{error.Member.Name}";
     }
 
     /// <summary>
@@ -87,4 +88,20 @@ public class FluentValidationFailure
     /// Creates a textual representation of the failure.
     /// </summary>
     public override string ToString() => ErrorMessage;
+
+    /// <summary>
+    /// Determines whether the other type is equal to the current <see cref="FluentValidationFailure"/>.
+    /// </summary>
+    /// <param name="other">The object to compare with the current object.</param>
+    /// <returns><see langword="true"/> if the specified object is equal to the current object; otherwise, <see langword="false"/>.</returns>
+    public virtual bool Equals(FluentValidationFailure? other)
+    {
+        if (other is null || _error is null || other._error is null) 
+            return false;
+        return (_error.Member, _error.Attribute).IsSameRule((other._error.Member, other._error.Attribute));
+    }
+
+    public override bool Equals(object? obj) => Equals(obj as FluentValidationFailure);
+
+    public override int GetHashCode() => HashCode.Combine(_error?.Member.Name, _error?.Attribute?.GetType());
 }

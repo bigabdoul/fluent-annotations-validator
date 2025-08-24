@@ -6,6 +6,10 @@ using System.Reflection;
 
 namespace FluentAnnotationsValidator.Extensions;
 
+/// <summary>
+/// Provides fluent chaining extension methods for instances 
+/// of the <see cref="ValidationTypeConfigurator{T}"/> class.
+/// </summary>
 public static class ValidationTypeConfiguratorExtensions
 {
     public static ValidationTypeConfigurator<T> Compare<T, TProp>(this ValidationTypeConfigurator<T> configurator,
@@ -24,11 +28,11 @@ public static class ValidationTypeConfiguratorExtensions
         => configurator.AttachAttribute(new EmptyAttribute(), when);
 
     /// <summary>
-    /// Attach rule to most recent .Rule(...) call; use for fluent chaining.
+    /// Attach a <see cref="NotEmptyAttribute"/> to the most recent .Rule(...) call; use for fluent chaining.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="configurator"></param>
-    /// <returns></returns>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <param name="configurator">The configurator for the specified <typeparamref name="T"/>.</param>
+    /// <returns>A reference to the <paramref name="configurator"/> instance.</returns>
     public static ValidationTypeConfigurator<T> NotEmpty<T>(this ValidationTypeConfigurator<T> configurator,
         Func<T, bool>? when = null)
         => configurator.AttachAttribute(new NotEmptyAttribute(), when);

@@ -5,6 +5,19 @@ using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
+/// <summary>
+/// Represents a temporary rule being configured for a given type <typeparamref name="T"/>.
+/// </summary>
+/// <typeparam name="T">The type containing the member being being configured.</typeparam>
+/// <param name="member">The member being configured.</param>
+/// <param name="predicate">A function that evaluates when the rule is applied.</param>
+/// <param name="message">The validation error message.</param>
+/// <param name="key">The failure key used by the message resolver or diagnostics.</param>
+/// <param name="resourceKey">The resource manager's key for retrieving a localized error message.</param>
+/// <param name="resourceType">The resource manager's type for localized error message.</param>
+/// <param name="culture">The culture to use in the resource manager.</param>
+/// <param name="fallbackMessage">A fallback error message if resolution fails.</param>
+/// <param name="useConventionalKeys">Indicates whether to use convention-based resource key names (e.g., Email_Required).</param>
 public sealed class PendingRule<T>(
     Expression member,
     Func<T, bool> predicate,
@@ -17,45 +30,61 @@ public sealed class PendingRule<T>(
     bool? useConventionalKeys = true
 )
 {
+    /// <summary>
+    /// Gets or sets the member being configured.
+    /// </summary>
     public Expression Member { get; set; } = member;
-    public Func<T, bool> Predicate { get; set; } = predicate;
-    public string? Message { get; set; } = message;
-    public string? Key { get; set; } = key;
-    public string? ResourceKey { get; set; } = resourceKey;
-    public Type? ResourceType { get; set; } = resourceType;
-    public CultureInfo? Culture { get; set; } = culture;
-    public string? FallbackMessage { get; set; } = fallbackMessage;
-    public bool? UseConventionalKeys { get; set; } = useConventionalKeys;
 
-    internal sealed class ValidationAttributeContainer
-    {
-        public ValidationAttribute Attribute { get; set; } = default!;
-        public Func<T, bool>? When { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets a function that evaluates when the rule is applied.
+    /// </summary>
+    public Func<T, bool> Predicate { get; set; } = predicate;
+
+    /// <summary>
+    /// Gets or sets the validation error message.
+    /// </summary>
+    public string? Message { get; set; } = message;
+
+    /// <summary>
+    /// Gets or sets the failure key used by the message resolver or diagnostics.
+    /// </summary>
+    public string? Key { get; set; } = key;
+
+    /// <summary>
+    /// Gets or sets the resource manager's key for retrieving a localized error message.
+    /// </summary>
+    public string? ResourceKey { get; set; } = resourceKey;
+
+    /// <summary>
+    /// Gets or sets the resource manager's type for localized error message.
+    /// </summary>
+    public Type? ResourceType { get; set; } = resourceType;
+
+    /// <summary>
+    /// Gets or sets the culture to use in the resource manager.
+    /// </summary>
+    public CultureInfo? Culture { get; set; } = culture;
+
+    /// <summary>
+    /// Gets or sets a fallback error message if resolution fails.
+    /// </summary>
+    public string? FallbackMessage { get; set; } = fallbackMessage;
+
+    /// <summary>
+    /// Gets or sets a value that indicates whether to use convention-based 
+    /// resource key names (e.g., Email_Required).
+    /// </summary>
+    public bool? UseConventionalKeys { get; set; } = useConventionalKeys;
 
     /// <summary>
     /// Gets the list of dynamically added attributes via fluent rules.
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
-    public override int GetHashCode()
-    {
-        var member = Member.GetMemberInfo();
-        return HashCode.Combine(member.Name, member.DeclaringType);
-    }
+    public override int GetHashCode() => Member.GetMemberInfo().GetHashCode();
 
-    public override bool Equals(object? obj)
-        => obj is PendingRule<T> other && Equals(other);
+    public override bool Equals(object? obj) => obj is PendingRule<T> other && Equals(other);
 
-    public bool Equals(PendingRule<T>? other)
-    {
-        if (other == null) return false;
-
-        var member1 = Member.GetMemberInfo();
-        var member2 = other.Member.GetMemberInfo();
-
-        return
-            member1.Name == member2.Name &&
-            member1.DeclaringType == member2.DeclaringType;
-    }
+    public bool Equals(PendingRule<T>? other) => 
+        other != null && Member.GetMemberInfo().Name == other.Member.GetMemberInfo().Name;
 }

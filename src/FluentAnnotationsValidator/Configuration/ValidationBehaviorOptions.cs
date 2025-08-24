@@ -61,7 +61,12 @@ public class ValidationBehaviorOptions
             _ => [rule],
             (_, rules) =>
             {
-                rules.Add(rule);
+                var index = rules.IndexOf(rule);
+                if (index == -1)
+                    //if (!rules.Contains(rule))
+                    rules.Add(rule);
+                else
+                    rules[index] = rule;
                 return rules;
             }
         );
@@ -168,7 +173,7 @@ public class ValidationBehaviorOptions
         var rules = GetRules(member);
 
         return [.. rules.Where(r =>
-                r.Member.DeclaringType == type &&
+                (IsAssignableFrom(r.Member.DeclaringType, type) || IsAssignableFrom(type, r.Member.DeclaringType)) &&
                 r.Member.Name == member.Name &&
                 (predicate?.Invoke(r) ?? true))
         ];
@@ -183,15 +188,13 @@ public class ValidationBehaviorOptions
     public virtual List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
     {
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
-
         foreach (var (member, rules) in _ruleRegistry)
         {
-            if (member.DeclaringType == typeof(T))
+            if (IsAssignableFrom(member.DeclaringType, typeof(T)))
             {
                 result.Add((member, rules.ToList()));
             }
         }
-
         return result;
     }
 
@@ -212,7 +215,7 @@ public class ValidationBehaviorOptions
         int removedCount = 0;
         foreach (var member in GetMembers())
         {
-            if (member.DeclaringType == type && _ruleRegistry.TryRemove(member, out _))
+            if (IsAssignableFrom(member.DeclaringType, type) && _ruleRegistry.TryRemove(member, out _))
                 removedCount++;
         }
         return removedCount;
@@ -312,7 +315,10 @@ public class ValidationBehaviorOptions
         return removedCount;
     }
 
-    private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) => 
+    protected virtual bool IsAssignableFrom(Type? declaringType, Type? type)
+        => true == declaringType?.IsAssignableFrom(type);
+
+    private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) =>
         predicate is null
             ? [.. _ruleRegistry.Keys]
             : [.. _ruleRegistry.Keys.Where(predicate)];
