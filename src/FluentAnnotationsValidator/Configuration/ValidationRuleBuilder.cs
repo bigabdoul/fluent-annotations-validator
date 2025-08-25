@@ -9,8 +9,6 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
 {
     private Func<T, bool>? whenPredicate;
 
-    //private PendingRule<T> CurrentRule => currentRule;
-
     internal List<ConditionalValidationRule> Rules { get; } = [];
 
     public IReadOnlyCollection<ConditionalValidationRule> GetRules() => Rules.AsReadOnly();
@@ -69,6 +67,8 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         var rule = currentRule.CreateRuleFromPending(member.GetMemberInfo(),
             attribute: new MustValidationAttribute<TProp>(predicate),
             composedPredicate);
+
+        rule.SetShouldApply(_ => true);
 
         Rules.Add(rule);
 
