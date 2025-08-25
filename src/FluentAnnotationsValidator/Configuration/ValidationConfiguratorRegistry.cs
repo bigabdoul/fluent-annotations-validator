@@ -1,4 +1,6 @@
-﻿namespace FluentAnnotationsValidator.Configuration;
+﻿using System.Collections.Concurrent;
+
+namespace FluentAnnotationsValidator.Configuration;
 
 /// <summary>
 /// Registry that maps DTO types to their validation configurator metadata.
@@ -6,7 +8,7 @@
 /// </summary>
 public sealed class ValidationConfiguratorRegistry
 {
-    private readonly Dictionary<Type, ValidationTypeConfiguratorBase> _configurators = [];
+    private readonly ConcurrentDictionary<Type, ValidationTypeConfiguratorBase> _configurators = [];
 
     /// <summary>
     /// Gets all registered configurators.
