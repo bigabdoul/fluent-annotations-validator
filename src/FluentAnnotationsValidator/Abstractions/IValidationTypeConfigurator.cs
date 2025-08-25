@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using FluentAnnotationsValidator.Configuration;
+using System.Globalization;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Abstractions;
@@ -10,6 +11,67 @@ namespace FluentAnnotationsValidator.Abstractions;
 /// <typeparam name="T">The model type being configured.</typeparam>
 public interface IValidationTypeConfigurator<T>
 {
+    /// <summary>
+    /// Transitions to configuring a different model type.
+    /// </summary>
+    /// <typeparam name="TNext">The next model type to configure.</typeparam>
+    /// <returns>A configurator for the specified model type.</returns>
+    IValidationTypeConfigurator<TNext> For<TNext>();
+
+    /// <summary>
+    /// Creates a preemptive rule that overrides all previously registered rules for the specified member.
+    /// </summary>
+    /// <typeparam name="TMember">The type of the member.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member);
+
+    /// <summary>
+    /// Creates a preemptive rule that optionally overrides all previously registered rules for the specified member.
+    /// </summary>
+    /// <typeparam name="TMember">The type of the member.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <param name="behavior">
+    /// A value that indicates whether to replace rules for the specified <paramref name="member"/>.
+    /// </param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, RuleDefinitionBehavior behavior);
+
+    /// <summary>
+    /// Creates a preemptive, conditionally executed rule that overrides 
+    /// all previously registered rules for the specified member.
+    /// </summary>
+    /// <typeparam name="TMember">The type of the member.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <param name="must">A function that performs the validation.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must);
+
+    /// <summary>
+    /// Creates a preemptive, conditionally executed rule that optionally 
+    /// overrides all previously registered rules for the specified member.
+    /// </summary>
+    /// <typeparam name="TMember">The type of the member.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <param name="must">A function that performs the validation.</param>
+    /// <param name="behavior">
+    /// A value that indicates whether to replace rules for the specified <paramref name="member"/>.
+    /// </param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior);
+
+    /// <summary>
+    /// Creates a non-preemptive rule, that is a rule that preserves 
+    /// all previously registered rules, for the specified member.
+    /// </summary>
+    /// <typeparam name="TMember">The type of the member.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <returns>
+    /// A new instance of a class that implements the <see cref="IValidationRuleBuilder{T, TProp}"/> interface 
+    /// for the specified type <typeparamref name="T"/>, and member type <typeparamref name="TMember"/>.
+    /// </returns>
+    IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> member);
+
     /// <summary>
     /// Sets the default resource type for localization lookups in this configuration chain.
     /// </summary>
@@ -99,13 +161,6 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="fallbackMessage">The fallback message to use.</param>
     /// <returns></returns>
     IValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage);
-
-    /// <summary>
-    /// Transitions to configuring a different model type.
-    /// </summary>
-    /// <typeparam name="TNext">The next model type to configure.</typeparam>
-    /// <returns>A configurator for the specified model type.</returns>
-    IValidationTypeConfigurator<TNext> For<TNext>();
 
     /// <summary>
     /// Finalizes the configuration by registering all buffered rules into the underlying options system.

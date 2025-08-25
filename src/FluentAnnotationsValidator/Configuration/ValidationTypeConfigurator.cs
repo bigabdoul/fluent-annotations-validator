@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Globalization;
@@ -20,15 +21,15 @@ namespace FluentAnnotationsValidator.Configuration;
 /// resource keys, and validation keys. All configured rules are buffered and registered during the final
 /// <c>Build()</c> call to ensure expressive, discoverable configuration flows.
 ///
-/// Typical usage:
+/// Typical usages:
 /// <code>
 /// services.UseFluentAnnotations()
+///     .WithKey("Email.AdminRequired")
 ///     .For&lt;LoginDto&gt;()
 ///         .When(x =&gt; x.Email, dto =&gt; dto.Role == "Admin")
-///             .WithMessage("Email is required for admins.")
-///             .WithKey("Email.AdminRequired")
-///             .Localized("Admin_Email_Required")
+///         .Localized("Admin_Email_Required")
 ///         .AlwaysValidate(x =&gt; x.Password)
+///         .WithMessage("A password is always required.")
 ///         .Except(x =&gt; x.Role)
 ///     .Build();
 /// </code>
@@ -80,19 +81,20 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return parent.For<TNext>();
     }
 
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> property)
-        => Rule(property, RuleDefinitionBehavior.Replace);
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}})"/>
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member)
+        => Rule(member, RuleDefinitionBehavior.Replace);
 
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> property,
-        RuleDefinitionBehavior behavior)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, RuleDefinitionBehavior)"/>
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, RuleDefinitionBehavior behavior)
     {
         CommitCurrentRule();
 
         if (behavior == RuleDefinitionBehavior.Replace)
-            RemoveRulesFor(property);
+            RemoveRulesFor(member);
 
         _currentRule = new PendingRule<T>(
-            member: property,
+            member,
             predicate: DefaultAttributePredicate, // Always validate unless overridden by .When(...)
             resourceType: ValidationResourceType,
             culture: Culture,
@@ -103,15 +105,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    #region When
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, Func{TMember, bool})"/>
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must)
+        => Rule(member, must, RuleDefinitionBehavior.Replace);
 
-    public IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> property)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, Func{TMember, bool}, RuleDefinitionBehavior)"/>
+    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
+        => Rule(member, behavior).AttachAttribute(new MustValidationAttribute<TMember>(must), DefaultAttributePredicate);
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RuleFor{TMember}(Expression{Func{T, TMember}})"/>
+    public IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> member)
     {
-        //Rule(property);
         CommitCurrentRule();
 
         var rule = new PendingRule<T>(
-            member: property,
+            member,
             predicate: DefaultAttributePredicate, // Always validate unless overridden by .When(...)
             resourceType: ValidationResourceType,
             culture: Culture,
@@ -125,10 +133,12 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return configurator;
     }
 
+    #region When
+
     /// <summary>
     /// Applies to the predicate of a rule created with <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/>.
     /// </summary>
-    /// <param name="condition"></param>
+    /// <param name="condition">A function that evaluates when the rule is applied.</param>
     /// <returns>The current configurator for further chaining.</returns>
     /// <exception cref="InvalidOperationException">
     /// You must create a rule with the <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/> method.
@@ -175,8 +185,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    #endregion
-
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.And{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
     public ValidationTypeConfigurator<T> And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
@@ -188,6 +196,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.AlwaysValidate{TMember}(Expression{Func{T, TMember}})"/>
     public ValidationTypeConfigurator<T> AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
         => When(property, TruePredicate);
+
+    #endregion
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithMessage(string)"/>
     public ValidationTypeConfigurator<T> WithMessage(string message)
@@ -269,7 +279,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
-    public void Build()
+    public virtual void Build()
     {
         CommitCurrentRule();
 
@@ -320,24 +330,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         parent.Build();
     }
-
-    /// <summary>
-    /// Deterines whether the current rule should be overridden.
-    /// </summary>
-    /// <typeparam name="TMember">The member type.</typeparam>
-    /// <param name="member">The member (property or field) expression.</param>
-    /// <returns>
-    /// <see langword="true"/> if the rule should be overridden; otherwise, <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// The current rule should be overridden when it's defined (not <see langword="null"/>),
-    /// contains attributes (<see cref="PendingRule{T}.Attributes"/>.Count > 0), and its member
-    /// name matches the specified <paramref name="member"/> name.
-    /// </remarks>
-    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) => 
-        _currentRule != null && 
-        _currentRule.Attributes.Count != 0 && 
-        _currentRule.Member.GetMemberInfo().AreSameMembers(member.GetMemberInfo());
     
     #region IValidationTypeConfigurator<T>
 
@@ -374,8 +366,47 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.UseFallbackMessage(string fallbackMessage)
         => UseFallbackMessage(fallbackMessage);
 
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member)
+        => Rule(member);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member, RuleDefinitionBehavior behavior)
+        => Rule(member, behavior);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must)
+        => Rule(member, must);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
+        => Rule(member, must, behavior);
+
     #endregion
 
+    /// <summary>
+    /// Deterines whether the current rule should be overridden.
+    /// </summary>
+    /// <typeparam name="TMember">The member type.</typeparam>
+    /// <param name="member">The expression that contains the property, field, or method info.</param>
+    /// <returns>
+    /// <see langword="true"/> if the rule should be overridden; otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// The current rule should be overridden when it's defined (not <see langword="null"/>),
+    /// contains attributes (<see cref="PendingRule{T}.Attributes"/>.Count > 0), and its member
+    /// name matches the specified <paramref name="member"/> name.
+    /// </remarks>
+    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) => 
+        _currentRule != null && 
+        _currentRule.Attributes.Count != 0 && 
+        _currentRule.Member.GetMemberInfo().AreSameMembers(member.GetMemberInfo());
+
+    /// <summary>
+    /// Adds the specified validation attribute to the collection of <see cref="PendingRule{T}.Attributes"/>
+    /// and optionally sets a predicate that determines when the rule should be applied.
+    /// </summary>
+    /// <param name="attribute">The attribute to add to the collection of <see cref="PendingRule{T}.Attributes"/>.</param>
+    /// <param name="when">A function that determines when the rule should be applied.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    /// <exception cref="InvalidOperationException">There's no pending rule to attach the attribute to.</exception>
     protected internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
     {
         if (_currentRule is null)
@@ -396,9 +427,11 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    #region helpers
-
-    private void CommitCurrentRule()
+    /// <summary>
+    /// Adds the currently pending rule to the rules to configure, and 
+    /// dereferences it (by setting its value to <see langword="null"/>).
+    /// </summary>
+    protected virtual void CommitCurrentRule()
     {
         if (_currentRule is not null)
         {
@@ -406,6 +439,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             _currentRule = null;
         }
     }
+
+    #region helpers
 
     private void AssignCultureTo(Type? type)
     {
