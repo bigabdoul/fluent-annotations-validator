@@ -10,6 +10,8 @@ public class ValidationTypeConfiguratorTestModel
     [Required, EmailAddress]
     public string? Email { get; set; }
 
+    public string Password { get; set; } = default!;
+
     [Compare("Email", ErrorMessage = "The email and confirmation email do not match.")]
     public string? ConfirmEmail { get; set; }
     public int Age { get; set; }
