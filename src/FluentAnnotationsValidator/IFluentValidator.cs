@@ -48,6 +48,18 @@ public interface IFluentValidator<T> : IFluentValidator
 	FluentValidationResult Validate(T instance);
 
     /// <summary>
+    /// Validates the specified instance, optionally throwing an exception 
+    /// when no rules were configured for the type <typeparamref name="T"/>.
+    /// </summary>
+    /// <param name="instance">The instance to validate.</param>
+    /// <param name="throwWhenNoRules">
+    /// <see langword="true"/> to throw an exception if no rules were configured 
+    /// for <typeparamref name="T"/>; otherwise, <see langword="false"/>.
+    /// </param>
+    /// <returns>A <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
+	FluentValidationResult Validate(T instance, bool throwWhenNoRules);
+
+    /// <summary>
     /// Validate the specified instance asynchronously
     /// </summary>
     /// <param name="instance">The instance to validate</param>
