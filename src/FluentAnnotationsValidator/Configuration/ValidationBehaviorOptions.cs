@@ -203,20 +203,34 @@ public class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The member whose rules should be removed.</param>
     /// <returns>True if any rules were removed, false otherwise.</returns>
-    public bool RemoveAll(MemberInfo member) => _ruleRegistry.Remove(member, out _);
+    public bool RemoveAll(MemberInfo member)
+    {
+        return member.DeclaringType != null
+            ? RemoveAllForType(member.DeclaringType, m => m.Name == member.Name) > 0
+            : _ruleRegistry.Remove(member, out _);
+    }
 
     /// <summary>
     /// Removes all rules associated with the specified type.
     /// </summary>
     /// <param name="type">The type whose members' rules should be removed.</param>
+    /// <param name="predicate">
+    /// An optional function that determines whether a key should be 
+    /// removed from the registry when a compatible type is matched.
+    /// </param>
     /// <returns>The number of rules removed.</returns>
-    public int RemoveAllForType(Type type)
+    public int RemoveAllForType(Type type, Func<MemberInfo, bool>? predicate = null)
     {
         int removedCount = 0;
         foreach (var member in GetMembers())
         {
-            if (IsAssignableFrom(member.ReflectedType, type) && _ruleRegistry.TryRemove(member, out _))
+            if (IsAssignableFrom(member.DeclaringType, type) &&
+                (predicate is null || predicate(member)) &&
+                _ruleRegistry.TryRemove(member, out _)
+            )
+            {
                 removedCount++;
+            }
         }
         return removedCount;
     }
