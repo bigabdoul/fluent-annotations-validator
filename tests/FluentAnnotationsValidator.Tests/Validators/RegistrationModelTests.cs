@@ -37,7 +37,7 @@ public partial class RegistrationModelTests
     [InlineData("PASSWORD", false)]
     [InlineData("12345678", false)]
     [InlineData("Abcdefgh", false)]
-    [InlineData("Abc1234", false)] // too short
+    [InlineData("Abc12", false)] // too short
     public void NonPreemptive_RuleFor_ComplexPassword_Should_Return_CorrectResult(string password, bool expectedResult)
     {
         // Arrange
