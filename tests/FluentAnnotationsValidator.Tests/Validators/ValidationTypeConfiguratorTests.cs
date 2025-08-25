@@ -1,6 +1,7 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
+using FluentAnnotationsValidator.Tests.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Data;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
+using static TestHelpers;
 
 public class ValidationTypeConfiguratorTests
 {
@@ -98,7 +100,7 @@ public class ValidationTypeConfiguratorTests
         // The ValidationTypeConfiguratorTestModel has static [Required] and [MinLength(5)] on the Name property.
         // We will add a dynamic rule.
         var configurator = _configurator;
-        configurator.Rule(x => x.Age).Required();
+        configurator.Rule(x => x.Age, RuleDefinitionBehavior.Preserve).Required();
 
         // Act
         configurator.Build();
@@ -344,5 +346,40 @@ public class ValidationTypeConfiguratorTests
         _mockOptions.AddedRules.Should().Contain(r => 
             r.Member.Name == nameof(model.Email) && 
             r.Rule.Attribute is RequiredAttribute);
+    }
+
+    [Theory]
+    [InlineData("Abc1234!", true)]
+    [InlineData("password", false)]
+    [InlineData("PASSWORD", false)]
+    [InlineData("12345678", false)]
+    [InlineData("Abcdefgh", false)]
+    [InlineData("Abc1234", false)] // too short
+    public void Preemptive_Rule_ComplexPassword_Should_Return_CorrectResult(string password, bool expectedResult)
+    {
+        // Arrange
+        var configurator = _configurator.ClearRules(); // Focus only on the Password property
+
+        configurator.Rule(x => x.Password, must: BeComplexPassword)
+            .WithMessage(ConventionValidationMessages.Password_MustValidation)
+            .Build();
+
+        var model = new ValidationTypeConfiguratorTestModel { Password = password, Email = "test@example.com" };
+
+        // Act
+        var result = Validator.Validate(model);
+
+        // Assert
+        if (expectedResult)
+        {
+            result.IsValid.Should().BeTrue();
+        }
+        else
+        {
+            result.IsValid.Should().BeFalse();
+            result.Errors.Should().Contain(e =>
+                e.PropertyName == nameof(ValidationTypeConfiguratorTestModel.Password) &&
+                e.ErrorMessage == ConventionValidationMessages.Password_MustValidation);
+        }
     }
 }
