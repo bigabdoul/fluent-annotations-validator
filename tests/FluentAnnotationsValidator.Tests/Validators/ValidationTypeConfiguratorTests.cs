@@ -355,7 +355,7 @@ public class ValidationTypeConfiguratorTests
     [InlineData("12345678", false)]
     [InlineData("Abcdefgh", false)]
     [InlineData("Abc1234", false)] // too short
-    public void Preemptive_Rule_ComplexPassword_Should_Return_CorrectResult(string password, bool expectedResult)
+    public void Preemptive_Rule_ComplexPassword_Should_Return_CorrectResult(string password, bool validResult)
     {
         // Arrange
         var configurator = _configurator.ClearRules(); // Focus only on the Password property
@@ -370,7 +370,7 @@ public class ValidationTypeConfiguratorTests
         var result = Validator.Validate(model);
 
         // Assert
-        if (expectedResult)
+        if (validResult)
         {
             result.IsValid.Should().BeTrue();
         }
