@@ -2,6 +2,7 @@
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -11,7 +12,10 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
 
     internal List<ConditionalValidationRule> Rules { get; } = [];
 
+    public Expression Member => currentRule.Member;
     public IReadOnlyCollection<ConditionalValidationRule> GetRules() => Rules.AsReadOnly();
+
+    public int RemoveRules(Predicate<ConditionalValidationRule> predicate) => Rules.RemoveAll(predicate);
 
     public IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure)
     {

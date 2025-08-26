@@ -53,21 +53,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     public ValidationBehaviorOptions Options => options;
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
-    public ValidationTypeConfigurator<T> WithValidationResource<TResource>()
+    public virtual ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
         AssignCultureTo(typeof(TResource));
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
-    public ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
+    public virtual ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
         AssignCultureTo(resourceType);
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithCulture(CultureInfo)"/>
-    public ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
+    public virtual ValidationTypeConfigurator<T> WithCulture(CultureInfo culture)
     {
         Culture = culture;
         return this;
@@ -81,12 +81,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return parent.For<TNext>();
     }
 
+    #region Rules Management
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}})"/>
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member)
+    public virtual ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member)
         => Rule(member, RuleDefinitionBehavior.Replace);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, RuleDefinitionBehavior)"/>
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, RuleDefinitionBehavior behavior)
+    public virtual ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, RuleDefinitionBehavior behavior)
     {
         CommitCurrentRule();
 
@@ -106,11 +108,11 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, Func{TMember, bool})"/>
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must)
+    public virtual ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must)
         => Rule(member, must, RuleDefinitionBehavior.Replace);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, Func{TMember, bool}, RuleDefinitionBehavior)"/>
-    public ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
+    public virtual ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
         => Rule(member, behavior).AttachAttribute(new MustValidationAttribute<TMember>(must), DefaultAttributePredicate);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.RuleFor{TMember}(Expression{Func{T, TMember}})"/>
@@ -133,6 +135,107 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return configurator;
     }
 
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemoveRulesFor{TMember}(Expression{Func{T, TMember}})"/>
+    public virtual ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> member)
+    {
+        var memberInfo = member.GetMemberInfo();
+        _ = Options.RemoveAll(memberInfo);
+        return RemovePendingRules(memberInfo);
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemoveRulesFor{TMember, TAttribute}(Expression{Func{T, TMember}})"/>
+    public virtual ValidationTypeConfigurator<T> RemoveRulesFor<TMember, TAttribute>(Expression<Func<T, TMember>> member)
+        where TAttribute : ValidationAttribute
+    {
+        var memberInfo = member.GetMemberInfo();
+
+        Options.RemoveAll<TAttribute>((member, attribute) => memberInfo.AreSameMembers(member));
+        RemovePendingRules(memberInfo, typeof(TAttribute));
+
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemoveRulesFor{TMember}(Expression{Func{T, TMember}}, Type)"/>
+    public virtual ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> member, Type attributeType)
+    {
+        var memberInfo = member.GetMemberInfo();
+        _ = Options.RemoveAll(memberInfo, attributeType);
+        return RemovePendingRules(memberInfo, attributeType);
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemoveRulesExceptFor{TMember}(Expression{Func{T, TMember}})"/>
+    public virtual ValidationTypeConfigurator<T> RemoveRulesExceptFor<TMember>(Expression<Func<T, TMember>> member)
+    {
+        var memberInfo = member.GetMemberInfo();
+
+        _ = Options.RemoveAll(mi => !memberInfo.AreSameMembers(mi));
+        _ = _pendingRules.RemoveWhere(rule => !memberInfo.AreSameMembers(rule.Member.GetMemberInfo()));
+        _ = _validationRuleBuilders.RemoveAll(builder => !memberInfo.AreSameMembers(builder.Member.GetMemberInfo()));
+
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemovePendingRules(MemberInfo)"/>
+    public virtual ValidationTypeConfigurator<T> RemovePendingRules(MemberInfo memberInfo)
+    {
+        _ = _pendingRules.RemoveWhere(rule => memberInfo.AreSameMembers(rule.Member.GetMemberInfo()));
+        _ = _validationRuleBuilders.RemoveAll(builder => memberInfo.AreSameMembers(builder.Member.GetMemberInfo()));
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemovePendingRules(MemberInfo, Type)"/>
+    public virtual ValidationTypeConfigurator<T> RemovePendingRules(MemberInfo memberInfo, Type validationAttributeType)
+    {
+        ArgumentNullException.ThrowIfNull(validationAttributeType);
+
+        var attributesRemoved = 0;
+
+        foreach (var rule in _pendingRules)
+        {
+            if (!memberInfo.AreSameMembers(rule.Member.GetMemberInfo()))
+                continue;
+
+#if DEBUG
+            var aspect = rule.ToString();
+#endif
+            // Remove attributes of the specified type
+            var count = rule.Attributes.RemoveAll(attr =>
+                EqualityComparer<Type>.Default.Equals(attr.GetType(), validationAttributeType));
+
+            attributesRemoved += count;
+#if DEBUG
+            Debug.WriteLine($"Removed {count} attribute(s) from pending rule: {aspect}.");
+#endif
+        }
+
+        foreach (var builder in _validationRuleBuilders)
+        {
+            if (!memberInfo.AreSameMembers(builder.Member.GetMemberInfo()))
+                continue;
+
+            var count = builder.RemoveRules(rule =>
+                rule.HasAttribute &&
+                EqualityComparer<Type>.Default.Equals(rule.Attribute!.GetType(), validationAttributeType));
+
+            attributesRemoved += count;
+            Debug.WriteLine($"Removed {count} attribute(s) from validation rule builders.");
+        }
+
+        Debug.WriteLine($"Removed a total of {attributesRemoved} attribute(s) from all pending rules.");
+
+        return this;
+    }
+
+    public virtual ValidationTypeConfigurator<T> ClearRules()
+    {
+        _pendingRules.Clear();
+        _validationRuleBuilders.Clear();
+        Options.RemoveAllForType(typeof(T));
+        return this;
+    }
+
+    #endregion
+
     #region When
 
     /// <summary>
@@ -143,7 +246,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <exception cref="InvalidOperationException">
     /// You must create a rule with the <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/> method.
     /// </exception>
-    public ValidationTypeConfigurator<T> When(Func<T, bool> condition)
+    public virtual ValidationTypeConfigurator<T> When(Func<T, bool> condition)
     {
         // Applies to the predicate of a rule created with .Rule(...);
         // throws if _currentRule is not defined
@@ -161,7 +264,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
-    public ValidationTypeConfigurator<T> When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
+    public virtual ValidationTypeConfigurator<T> When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
     {
         // Should only commit and create a new rule if the current rule is NOT one initiated with Rule<TMember>(...);
         // in this case, the PendingRule.Attributes should have at least one attribute
@@ -186,21 +289,24 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.And{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
-    public ValidationTypeConfigurator<T> And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
+    public virtual ValidationTypeConfigurator<T> And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Except{TMember}(Expression{Func{T, TMember}})"/>
-    public ValidationTypeConfigurator<T> Except<TMember>(Expression<Func<T, TMember>> property)
-        => When(property, _ => false);
+    public virtual ValidationTypeConfigurator<T> Except<TMember>(Expression<Func<T, TMember>> property)
+    {
+        CommitCurrentRule();
+        return RemoveRulesFor(property);
+    }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.AlwaysValidate{TMember}(Expression{Func{T, TMember}})"/>
-    public ValidationTypeConfigurator<T> AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
+    public virtual ValidationTypeConfigurator<T> AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
         => When(property, TruePredicate);
 
     #endregion
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithMessage(string)"/>
-    public ValidationTypeConfigurator<T> WithMessage(string message)
+    public virtual ValidationTypeConfigurator<T> WithMessage(string message)
     {
         if (_currentRule is not null)
         {
@@ -213,7 +319,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithKey(string)"/>
-    public ValidationTypeConfigurator<T> WithKey(string key)
+    public virtual ValidationTypeConfigurator<T> WithKey(string key)
     {
         if (_currentRule is not null)
             _currentRule.Key = key;
@@ -221,7 +327,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Localized(string)"/>
-    public ValidationTypeConfigurator<T> Localized(string resourceKey)
+    public virtual ValidationTypeConfigurator<T> Localized(string resourceKey)
     {
         if (_currentRule is not null)
             _currentRule.ResourceKey = resourceKey;
@@ -229,52 +335,18 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConventionalKeys"/>
-    public ValidationTypeConfigurator<T> DisableConventionalKeys()
+    public virtual ValidationTypeConfigurator<T> DisableConventionalKeys()
     {
         _useConventionalKeys = false;
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.UseFallbackMessage(string)"/>
-    public ValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage)
+    public virtual ValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage)
     {
         _fallbackMessage = fallbackMessage;
         if (_currentRule is not null)
             _currentRule.FallbackMessage = _fallbackMessage;
-        return this;
-    }
-
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> property)
-    {
-        var member = property.GetMemberInfo();
-        var removed = Options.RemoveAll(member);
-
-        // clear any previous rule
-        var count = _pendingRules.RemoveWhere(r => member.AreSameMembers(r.Member.GetMemberInfo()));
-        Debug.WriteLine("Removed from ValidationBehaviorOptions: {0}\nRemoved from pending rules: {1}", removed, count);
-
-        return this;
-    }
-
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember, TAttribute>(Expression<Func<T, TMember>> property)
-        where TAttribute : ValidationAttribute
-    {
-        var memberInfo = property.GetMemberInfo();
-        Options.RemoveAll<TAttribute>((member, attribute) => EqualityComparer<MemberInfo>.Default.Equals(member, memberInfo));
-        return this;
-    }
-
-    public ValidationTypeConfigurator<T> RemoveRulesFor<TMember>(Expression<Func<T, TMember>> property, Type attributeType)
-    {
-        var memberInfo = property.GetMemberInfo();
-        Options.RemoveAll(memberInfo, attributeType);
-        return this;
-    }
-
-    public ValidationTypeConfigurator<T> ClearRules()
-    {
-        _pendingRules.Clear();
-        Options.RemoveAllForType(typeof(T));
         return this;
     }
 
@@ -330,7 +402,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         parent.Build();
     }
-    
+
     #region IValidationTypeConfigurator<T>
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
@@ -379,6 +451,27 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
         => Rule(member, must, behavior);
 
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemovePendingRules(MemberInfo memberInfo)
+        => RemovePendingRules(memberInfo);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemovePendingRules(MemberInfo memberInfo, Type validationAttributeType)
+        => RemovePendingRules(memberInfo, validationAttributeType);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemoveRulesFor<TMember>(Expression<Func<T, TMember>> memberExpression)
+        => RemoveRulesFor(memberExpression);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemoveRulesFor<TMember, TAttribute>(Expression<Func<T, TMember>> memberExpression)
+        => RemoveRulesFor<TMember, TAttribute>(memberExpression);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemoveRulesFor<TMember>(Expression<Func<T, TMember>> memberExpression, Type attributeType)
+        => RemoveRulesFor(memberExpression, attributeType);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemoveRulesExceptFor<TMember>(Expression<Func<T, TMember>> memberExpression)
+        => RemoveRulesExceptFor(memberExpression);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.ClearRules()
+        => ClearRules();
+
     #endregion
 
     /// <summary>
@@ -394,9 +487,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// contains attributes (<see cref="PendingRule{T}.Attributes"/>.Count > 0), and its member
     /// name matches the specified <paramref name="member"/> name.
     /// </remarks>
-    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) => 
-        _currentRule != null && 
-        _currentRule.Attributes.Count != 0 && 
+    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) =>
+        _currentRule != null &&
+        _currentRule.Attributes.Count != 0 &&
         _currentRule.Member.GetMemberInfo().AreSameMembers(member.GetMemberInfo());
 
     /// <summary>
