@@ -260,7 +260,7 @@ public class ValidationBehaviorOptions
     /// <param name="key">The member whose rules should be removed.</param>
     /// <returns>The number of rules removed.</returns>
     public int RemoveAll<TAttribute>(MemberInfo key) where TAttribute : ValidationAttribute
-        => RemoveAll<TAttribute>((member, _) => EqualityComparer<MemberInfo>.Default.Equals(key, member));
+        => RemoveAll<TAttribute>((member, _) => key.AreSameMembers(member));
 
     /// <summary>
     /// Removes all rules associated with the specified attribute type for a given member.
@@ -271,7 +271,7 @@ public class ValidationBehaviorOptions
     public int RemoveAll(MemberInfo key, Type attributeType)
     {
         int removedCount = 0;
-        var members = GetMembers(m => EqualityComparer<MemberInfo>.Default.Equals(m, key));
+        var members = GetMembers(key.AreSameMembers);
         foreach (var member in members)
         {
             if (!_ruleRegistry.TryGetValue(member, out var rules))
