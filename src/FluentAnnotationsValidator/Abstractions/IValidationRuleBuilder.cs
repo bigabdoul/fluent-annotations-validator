@@ -1,11 +1,14 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Abstractions;
 
 public interface IValidationRuleBuilder
 {
+    Expression Member { get; }
     IReadOnlyCollection<ConditionalValidationRule> GetRules();
+    int RemoveRules(Predicate<ConditionalValidationRule> predicate);
 }
 
 
