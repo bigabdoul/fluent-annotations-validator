@@ -81,10 +81,14 @@ public sealed class PendingRule<T>(
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
+    public override string ToString() => 
+        $"Member: {Member.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
+        string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));
+
     public override int GetHashCode() => Member.GetMemberInfo().GetHashCode();
 
     public override bool Equals(object? obj) => obj is PendingRule<T> other && Equals(other);
 
     public bool Equals(PendingRule<T>? other) => 
-        other != null && Member.GetMemberInfo().Name == other.Member.GetMemberInfo().Name;
+        other != null && Member.GetMemberInfo().AreSameMembers(other.Member.GetMemberInfo());
 }
