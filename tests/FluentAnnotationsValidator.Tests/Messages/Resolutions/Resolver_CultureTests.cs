@@ -45,11 +45,7 @@ public class Resolver_CultureTests
         // Act
         services.AddFluentAnnotations
         (
-            localizerFactory: factory =>
-            {
-                factory.Create(typeof(ValidationMessages));
-                return new(typeof(ValidationMessages), CultureInfo.GetCultureInfo("fr-FR"));
-            },
+            localizerFactory: factory => new(typeof(ValidationMessages), CultureInfo.GetCultureInfo("fr-FR")),
             targetAssembliesTypes: typeof(TestLoginDto)
         );
 

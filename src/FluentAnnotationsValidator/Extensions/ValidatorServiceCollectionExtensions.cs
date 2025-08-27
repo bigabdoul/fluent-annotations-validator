@@ -157,9 +157,14 @@ public static class ValidatorServiceCollectionExtensions
             var factory = tempProvider.GetRequiredService<IStringLocalizerFactory>();
             var result = localizerFactory.Invoke(factory);
 
-            if (result != null)
+            if (result?.SharedResourceType != null)
             {
+                factory.Create(result.SharedResourceType);
                 behaviorOptions.CommonResourceType ??= result.SharedResourceType;
+            }
+
+            if (result?.SharedCulture != null)
+            {
                 behaviorOptions.CommonCulture ??= result.SharedCulture;
             }
         }
