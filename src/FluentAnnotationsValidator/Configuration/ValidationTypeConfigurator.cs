@@ -23,15 +23,29 @@ namespace FluentAnnotationsValidator.Configuration;
 ///
 /// Typical usages:
 /// <code>
-/// services.UseFluentAnnotations()
-///     .WithKey("Email.AdminRequired")
-///     .For&lt;LoginDto&gt;()
-///         .When(x =&gt; x.Email, dto =&gt; dto.Role == "Admin")
-///         .Localized("Admin_Email_Required")
-///         .AlwaysValidate(x =&gt; x.Password)
-///         .WithMessage("A password is always required.")
-///         .Except(x =&gt; x.Role)
-///     .Build();
+/// services.AddFluentAnnotations(
+///     localizerFactory: factory => new(typeof(FluentValidationMessages), CultureInfo.GetCultureInfo("fr")),
+///     configure: config =>
+///     {
+///         var registrationValidator = config.For&lt;RegisterModel>();
+///
+///         registrationValidator.RuleFor(x => x.BirthDate)
+///             .When(x => x.BirthDate.HasValue, user => user.Must(BeAtLeast13));
+///
+///         registrationValidator.RuleFor(x => x.Email)
+///             .Required()
+///             .EmailAddress();
+///
+///         registrationValidator.RuleFor(x => x.Password)
+///             .Must(BeComplexPassword);
+///             
+///         registrationValidator.RuleFor(x => x.PhoneNumber)
+///             .When(x => !string.IsNullOrEmpty(x.PhoneNumber), number => number.MinimumLength(9).Must(BeValidPhoneNumber));
+///
+///         registrationValidator.Build();
+///
+///     },
+///     targetAssembliesTypes: typeof(RegisterModel));
 /// </code>
 /// </remarks>
 public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, ValidationBehaviorOptions options)
