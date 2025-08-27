@@ -27,7 +27,7 @@ public class ValidationTypeConfiguratorTests
         (
             config => _configurator = config.For<ValidationTypeConfiguratorTestModel>(),
             configureBehavior: options => _mockOptions = new(options),
-            typeof(ValidationTypeConfiguratorTestModel)
+            targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
         );
         
         if (_mockOptions is null)

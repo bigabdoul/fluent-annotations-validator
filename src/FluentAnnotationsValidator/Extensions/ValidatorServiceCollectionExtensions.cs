@@ -3,6 +3,7 @@ using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -27,6 +28,23 @@ public static class ValidatorServiceCollectionExtensions
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) =>
         services.AddFluentAnnotationsValidators(configure: null, targetAssembliesTypes);
+
+    /// <summary>
+    /// Forwards the call to <see cref="AddFluentAnnotationsValidators(IServiceCollection, Action{ValidationBehaviorOptions}?, Action{LocalizationOptions}?, Func{IStringLocalizerFactory, StringLocalizerFactoryResult}?, Type[])"/>.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="targetAssembliesTypes">
+    /// Optional: One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
+    Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes) =>
+        services.AddFluentAnnotationsValidators(configure, 
+            configureLocalization: null, 
+            localizerFactory: null, 
+            targetAssembliesTypes);
 
     /// <summary>
     /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
@@ -64,13 +82,18 @@ public static class ValidatorServiceCollectionExtensions
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="configureLocalization">A delegate to invoke to further configure <see cref="LocalizationOptions"/>. Can be null.</param>
+    /// <param name="localizerFactory">An action delegate to invoke to further configure <see cref="IStringLocalizerFactory"/>. Can be null.</param>
     /// <param name="targetAssembliesTypes">
     /// Optional: One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
-        Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes)
+    Action<ValidationBehaviorOptions>? configure = null, 
+    Action<LocalizationOptions>? configureLocalization = null,
+    Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
+    params Type[] targetAssembliesTypes)
     {
         var assemblies = targetAssembliesTypes.Length > 0
             ? [.. targetAssembliesTypes.Select(t => t.Assembly)]
@@ -123,13 +146,23 @@ public static class ValidatorServiceCollectionExtensions
 
         services.AddTransient(_ => behaviorOptions);
 
-        // Try to add a default validation message resolver.
-        // This has no effect if a custom resolver has been previously added.
-        //services.TryAddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
+        services.AddLogging(); // Localizaer factory needs logging support
 
-        // Register Localization services
-        services.AddLogging();
-        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        // Register and configure Localization services...
+        services.AddLocalization(options => configureLocalization?.Invoke(options));
+
+        if (localizerFactory != null)
+        {
+            var tempProvider = services.BuildServiceProvider();
+            var factory = tempProvider.GetRequiredService<IStringLocalizerFactory>();
+            var result = localizerFactory.Invoke(factory);
+
+            if (result != null)
+            {
+                behaviorOptions.CommonResourceType ??= result.SharedResourceType;
+                behaviorOptions.CommonCulture ??= result.SharedCulture;
+            }
+        }
 
         //services.AddDataAnnotationsLocalization();
 
@@ -156,31 +189,30 @@ public static class ValidatorServiceCollectionExtensions
     /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
-    /// <param name="configure">An action to configure a <see cref="ValidationConfigurator"/>.</param>
-    /// <param name="configureBehavior">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationConfigurator"/>. Can be null.</param>
+    /// <param name="configureBehavior">An action to configure a <see cref="ValidationBehaviorOptions"/>. Can be null.</param>
+    /// <param name="configureLocalization">An action delegate to configure <see cref="LocalizationOptions"/>. Can be null.</param>
+    /// <param name="localizerFactory">An action delegate to configure <see cref="IStringLocalizerFactory"/>. Can be null.</param>
     /// <param name="targetAssembliesTypes">
     /// One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, 
-        Action<ValidationConfigurator>? configure = null,
-        Action<ValidationBehaviorOptions>? configureBehavior = null,
-        params Type[] targetAssembliesTypes)
+    public static IServiceCollection AddFluentAnnotations(this IServiceCollection services,
+    Action<ValidationConfigurator>? configure = null,
+    Action<ValidationBehaviorOptions>? configureBehavior = null,
+    Action<LocalizationOptions>? configureLocalization = null,
+    Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
+    params Type[] targetAssembliesTypes)
     {
-        var builder = services.AddFluentAnnotationsValidators(configureBehavior, targetAssembliesTypes);
+        var builder = services.AddFluentAnnotationsValidators(configureBehavior,
+            configureLocalization,
+            localizerFactory,
+            targetAssembliesTypes);
+
         var configurator = builder.UseFluentAnnotations();
 
         configure?.Invoke(configurator);
         return services;
     }
-
-    /// <summary>
-    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
-    /// </summary>
-    /// <param name="services">The DI container to register validators into.</param>
-    /// <param name="targetAssembliesTypes">One or more types used to infer target assemblies to scan.</param>
-    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
-    public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, params Type[] targetAssembliesTypes)
-        => services.AddFluentAnnotations(configure: null, targetAssembliesTypes: targetAssembliesTypes);
 }
