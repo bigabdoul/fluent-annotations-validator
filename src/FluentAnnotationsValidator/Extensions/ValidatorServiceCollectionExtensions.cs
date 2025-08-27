@@ -3,7 +3,6 @@ using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -113,7 +112,7 @@ public static class ValidatorServiceCollectionExtensions
 
             // Register validation rules upfront (optional)
             var members = modelType.GetMembers(BindingFlags.Instance | BindingFlags.Public)
-                .Where(m => m is PropertyInfo or FieldInfo or ConstructorInfo /*or MethodInfo*/);
+                .Where(m => m is PropertyInfo or FieldInfo /*or ConstructorInfo or MethodInfo*/);
 
             foreach (var member in members)
             {
@@ -126,7 +125,16 @@ public static class ValidatorServiceCollectionExtensions
 
         // Try to add a default validation message resolver.
         // This has no effect if a custom resolver has been previously added.
-        services.TryAddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
+        //services.TryAddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
+
+        // Register Localization services
+        services.AddLogging();
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+        //services.AddDataAnnotationsLocalization();
+
+        // Register the custom message resolver and the main validator service
+        services.AddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
 
         return builder;
     }

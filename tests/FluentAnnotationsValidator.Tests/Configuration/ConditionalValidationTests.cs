@@ -1,4 +1,5 @@
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
@@ -20,7 +21,8 @@ public class ConditionalValidationTests
         // Act
         var result = await validator.ValidateAsync(dto);
 
-        Assert.True(result.IsValid); // Email not validated
+        //Assert.True(result.IsValid); // Email not validated
+        result.IsValid.Should().BeTrue("Email has not been validated.");
     }
 
     [Fact]
@@ -36,11 +38,17 @@ public class ConditionalValidationTests
         // Act
         var result = await validator.ValidateAsync(dto);
 
-        Assert.Multiple
-        (
-            () => Assert.False(result.IsValid),
-            () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Email)),
-            () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Password))
-        );
+        // Assert
+
+        //Assert.Multiple
+        //(
+        //    () => Assert.False(result.IsValid),
+        //    () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Email)),
+        //    () => Assert.Contains(result.Errors, e => e.PropertyName == nameof(TestLoginDto.Password))
+        //);
+
+        result.IsValid.Should().BeFalse("Email and Password are still required.");
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TestLoginDto.Email));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TestLoginDto.Password));
     }
 }

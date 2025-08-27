@@ -1,12 +1,7 @@
 ﻿using FluentAnnotationsValidator.Metadata;
+using FluentAnnotationsValidator.Tests.Resources;
 
-namespace FluentAnnotationsValidator.Tests.Messages;
-
-public static class ConventionValidationMessages
-{
-    public static string Email_Required => "Email is required (convention).";
-    public const string Password_MustValidation = "Password is not complex enough.";
-}
+namespace FluentAnnotationsValidator.Tests.Models;
 
 [ValidationResource(typeof(ConventionValidationMessages))]
 public class TestLoginDtoWithResource

@@ -125,13 +125,11 @@ public class ValidationBehaviorOptions
     /// <summary>
     /// Determines if any rule exists for the given expression.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the property.</typeparam>
-    /// <param name="expression">Expression referencing the property.</param>
+    /// <typeparam name="T">Declaring type of the member.</typeparam>
+    /// <param name="expression">Expression referencing the member.</param>
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>True if at least one matching rule exists, false otherwise.</returns>
-    public virtual bool Contains<T>(
-        Expression<Func<T, string?>> expression,
-        Func<ConditionalValidationRule, bool>? predicate = null)
+    public virtual bool Contains<T>(Expression<Func<T, string?>> expression, Func<ConditionalValidationRule, bool>? predicate = null)
     {
         try
         {
@@ -144,39 +142,45 @@ public class ValidationBehaviorOptions
     }
 
     /// <summary>
+    /// Determines if any rule exists for the given member using a predicate to test each one,
+    /// and returns true as soon as the first rule satisfies the predicate; otherwise false.
+    /// </summary>
+    /// <typeparam name="T">The declaring type of the member.</typeparam>
+    /// <param name="member">The member information to look up.</param>
+    /// <param name="predicate">A function that tests each rule.</param>
+    /// <returns>
+    /// <see langword="true"/> as soon as the first rule satisfies the 
+    /// <paramref name="predicate"/>; otherwise <see langword="false"/>.
+    /// </returns>
+    public virtual bool ContainsAny<T>(MemberInfo member, Func<ConditionalValidationRule, bool> predicate)
+    {
+        var rules = GetRules(member);
+        foreach (var rule in rules)
+        {
+            if (predicate(rule)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Finds all rules for a given member access expression.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the property.</typeparam>
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
-        Expression<Func<T, string?>> expression,
-        Func<ConditionalValidationRule, bool>? predicate = null)
-        => FindRules<T>(expression.GetMemberInfo(), predicate);
+    public IReadOnlyList<ConditionalValidationRule> FindRules(Expression expression, Func<ConditionalValidationRule, bool>? predicate = null)
+        => FindRules(expression.GetMemberInfo(), predicate);
 
     /// <summary>
     /// Finds all rules for a given <see cref="MemberInfo"/> and optional filter.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the member.</typeparam>
     /// <param name="member">The member to look up.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
-        MemberInfo member,
-        Func<ConditionalValidationRule, bool>? predicate = null)
-        => FindRules(typeof(T), member, predicate);
-
-    public virtual IReadOnlyList<ConditionalValidationRule> FindRules(Type type,
-        MemberInfo member, Func<ConditionalValidationRule, bool>? predicate = null)
+    public virtual IReadOnlyList<ConditionalValidationRule> FindRules(MemberInfo member, Func<ConditionalValidationRule, bool>? predicate = null)
     {
         var rules = GetRules(member);
-
-        return [.. rules.Where(r =>
-                r.Member.Name == member.Name &&
-                r.Member.ReflectedType == type &&
-                (predicate?.Invoke(r) ?? true))
-        ];
+        return [.. rules.Where(r => member.AreSameMembers(r.Member) && (predicate?.Invoke(r) ?? true))];
     }
 
     /// <summary>

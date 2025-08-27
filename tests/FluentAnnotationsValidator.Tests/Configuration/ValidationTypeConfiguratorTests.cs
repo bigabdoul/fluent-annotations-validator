@@ -1,18 +1,21 @@
 ﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Tests.Assertions;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
+
 public class ValidationTypeConfiguratorTests
 {
     private static ValidationTypeConfigurator<TestLoginDto> GetConfigurator()
     {
-        var options = new ValidationBehaviorOptions();
-        var validationConfigurator = new ValidationConfigurator(options);
-        return new(validationConfigurator, options);
+        return new ServiceCollection()
+            .AddFluentAnnotationsValidators()
+            .UseFluentAnnotations()
+            .For<TestLoginDto>();
     }
 
     [Fact]

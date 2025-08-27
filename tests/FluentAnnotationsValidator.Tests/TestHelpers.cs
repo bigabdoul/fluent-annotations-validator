@@ -1,7 +1,10 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using Moq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -19,8 +22,11 @@ internal static partial class TestHelpers
         {
             options.CurrentTestName = testName;
         });
+        
         var services = builder.Services;
+
         var fluent = builder.UseFluentAnnotations();
+        
         if (configure != null)
         {
             configure(fluent).Build();
@@ -29,6 +35,7 @@ internal static partial class TestHelpers
         {
             fluent.Build();
         }
+        
         return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }
 
@@ -68,4 +75,22 @@ internal static partial class TestHelpers
 
     [GeneratedRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).*$")]
     private static partial Regex ComplexPasswordRegex();
+
+    internal static IStringLocalizerFactory MockStringLocalizerFactory<T>(string? localizedStringValue)
+    {
+        // 1. Mock the IStringLocalizer for the specific resource type
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+                     .Returns<string>(s => new LocalizedString(s, localizedStringValue ?? string.Empty, resourceNotFound: localizedStringValue is null));
+
+        // 2. Mock the IStringLocalizerFactory to return the localizer mock for the specific resource type
+        var localizerFactoryMock = new Mock<IStringLocalizerFactory>();
+        localizerFactoryMock.Setup(f => f.Create(typeof(T)))
+                             .Returns(localizerMock.Object);
+
+        return localizerFactoryMock.Object;
+    }
+
+    internal static ValidationMessageResolver GetMessageResolver<T>(string? localizedStringValue) =>
+        new(new ValidationBehaviorOptions(), MockStringLocalizerFactory<T>(localizedStringValue));
 }

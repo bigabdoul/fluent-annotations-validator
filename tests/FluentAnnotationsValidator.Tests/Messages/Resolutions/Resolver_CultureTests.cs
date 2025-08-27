@@ -1,14 +1,14 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Internals.Reflection;
-using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+using static TestHelpers;
 
 public class Resolver_CultureTests
 {
@@ -20,18 +20,19 @@ public class Resolver_CultureTests
             dto => true,
             ResourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
             ResourceType: typeof(ValidationMessages),
-            Culture: ValidationMessages.Culture = CultureInfo.GetCultureInfo("fr-FR") // must set the Culture on ValidationMessages
+            Culture: CultureInfo.GetCultureInfo("fr-FR")
         );
 
         var (min, max) = (6, 20);
         var attr = new RangeAttribute(min, max);
         var expectedMessage = string.Format(ValidationMessages.Password_Range, min, max);
-        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
-        
-        // Act
-        var resolvedMessage = new ValidationMessageResolver(new ValidationBehaviorOptions()).ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
+        var resolver = GetMessageResolver<ValidationMessages>(expectedMessage);
 
-        Assert.Equal(expectedMessage, resolvedMessage);
+        // Act
+        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Password), attr, rule);
+
+        resolvedMessage.Should().NotBeNull();
+        resolvedMessage.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -42,12 +43,11 @@ public class Resolver_CultureTests
         var dto = new TestLoginDto("email@example.com", ""); // 1 error: password required
 
         // Act
-        services.AddFluentAnnotations(
-            configureBehavior: options =>
-            {
-                options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
-                options.CommonResourceType = typeof(ValidationMessages);
-            }
+        services.AddFluentAnnotations
+        (
+            configure: validationConfigurator => validationConfigurator
+                .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
+                .WithValidationResource(typeof(ValidationMessages))
         );
 
         var provider = services.BuildServiceProvider();
@@ -56,18 +56,7 @@ public class Resolver_CultureTests
         var result = validator.Validate(dto);
 
         // Assert
-        Assert.Multiple
-        (
-            () => Assert.False(result.IsValid),
-            () => Assert.Equal
-                (
-                    // error message must match localized version
-                    ValidationMessages.Password_Required,
-                    result.Errors.FirstOrDefault
-                    (
-                        e => e.PropertyName == nameof(TestLoginDto.Password)
-                    )?.ErrorMessage
-                )
-        );
+        result.IsValid.Should().BeFalse("The password is required.");
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(TestLoginDto.Password) && e.ErrorMessage == ValidationMessages.Password_Required);
     }
 }

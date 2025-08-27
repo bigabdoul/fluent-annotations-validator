@@ -256,35 +256,40 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         // .Rule(...) are attribute-based; therefore, the predicate
         // should only be applicable to the attribute being configured
-        //var container = _currentRule.Attributes.Last();
-        //container.When = condition;
+
+        if (_currentRule.Attributes.Count == 0)
+            EnsureContainsAnyRule(_currentRule.Member);
+
         _currentRule.Predicate = condition;
 
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.When{TMember}(Expression{Func{T, TMember}}, Func{T, bool})"/>
-    public virtual ValidationTypeConfigurator<T> When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
+    public virtual ValidationTypeConfigurator<T> When<TMember>(Expression<Func<T, TMember>> member, Func<T, bool> condition)
     {
-        // Should only commit and create a new rule if the current rule is NOT one initiated with Rule<TMember>(...);
-        // in this case, the PendingRule.Attributes should have at least one attribute
-        if (ShouldOverrideCurrentRule(property))
-        {
-            // continue configuration of the current rule
-            _currentRule!.Predicate = condition; // override the predicate, or compose?
-        }
-        else
+        if (_currentRule is null || _currentRule.Attributes.Count == 0)
+            EnsureContainsAnyRule(member);
+
+        MemberInfo memberInfo;
+
+        if (_currentRule is null || !_currentRule.Member.GetMemberInfo().AreSameMembers(memberInfo = member.GetMemberInfo()))
         {
             CommitCurrentRule();
             _currentRule = new PendingRule<T>(
-                member: property,
+                member,
                 predicate: model => condition(model),
                 resourceType: ValidationResourceType,
                 culture: Culture,
                 fallbackMessage: _fallbackMessage,
                 useConventionalKeys: _useConventionalKeys
             );
+            return this;
         }
+
+        // continue configuration of the current rule
+        _currentRule.Predicate = condition; // override the predicate, or compose?
+
         return this;
     }
 
@@ -367,21 +372,16 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             {
                 foreach (var attr in rule.Attributes)
                 {
-                    var existingRules = Options.GetRules(member);
-                    // each attribute has its own rule
                     var newRule = rule.CreateRuleFromPending(member, attr, rule.Predicate);
-                    if (existingRules is null || !existingRules.Contains(newRule))
-                        Options.AddRule(member, newRule);
+                    Options.AddRule(member, newRule);
                 }
             }
             else
             {
                 parent.Register(opts =>
                 {
-                    var existingRules = Options.GetRules(member);
                     var newRule = rule.CreateRuleFromPending(member);
-                    if (existingRules is null || !existingRules.Contains(newRule))
-                        opts.AddRule(member, newRule);
+                    opts.AddRule(member, newRule);
                 });
             }
         }
@@ -390,10 +390,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         {
             foreach (var rule in builder.GetRules())
             {
-                //Options.AddRule(rule.Member, rule);
-                var existingRules = Options.GetRules(rule.Member);
-                if (existingRules is null || !existingRules.Contains(rule))
-                    Options.AddRule(rule.Member, rule);
+                Options.AddRule(rule.Member, rule);
             }
         }
 
@@ -475,22 +472,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     #endregion
 
     /// <summary>
-    /// Deterines whether the current rule should be overridden.
+    /// Makes sure the specified expression has at least one concrete 
+    /// rule (with one or more validation attributes) registered.
     /// </summary>
-    /// <typeparam name="TMember">The member type.</typeparam>
-    /// <param name="member">The expression that contains the property, field, or method info.</param>
-    /// <returns>
-    /// <see langword="true"/> if the rule should be overridden; otherwise, <see langword="false"/>.
-    /// </returns>
-    /// <remarks>
-    /// The current rule should be overridden when it's defined (not <see langword="null"/>),
-    /// contains attributes (<see cref="PendingRule{T}.Attributes"/>.Count > 0), and its member
-    /// name matches the specified <paramref name="member"/> name.
-    /// </remarks>
-    protected virtual bool ShouldOverrideCurrentRule<TMember>(Expression<Func<T, TMember>> member) =>
-        _currentRule != null &&
-        _currentRule.Attributes.Count != 0 &&
-        _currentRule.Member.GetMemberInfo().AreSameMembers(member.GetMemberInfo());
+    /// <param name="memberExpression">
+    /// A member expression that contains a property, field, or method info.
+    /// </param>
+    /// <exception cref="InvalidOperationException">
+    /// There is no rule for the specified <paramref name="memberExpression"/>.
+    /// </exception>
+    protected virtual void EnsureContainsAnyRule(Expression memberExpression)
+    {
+        MemberInfo memberInfo;
+        if (!Options.ContainsAny<T>(memberInfo = memberExpression.GetMemberInfo(), rule => rule.HasAttribute))
+            throw new InvalidOperationException($"There is no rule for the {memberInfo.Name} {memberInfo.MemberType}.");
+    }
 
     /// <summary>
     /// Adds the specified validation attribute to the collection of <see cref="PendingRule{T}.Attributes"/>
@@ -505,11 +501,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         if (_currentRule is null)
             throw new InvalidOperationException($"No pending rule to attach the attribute {attribute.GetType().Name} to.");
 
-        if (_currentRule.Attributes.Any(a => a.GetType() == attribute.GetType()))
+        var runtimeType = attribute.GetType();
+
+        if (_currentRule.Attributes.Any(a => a.GetType() == runtimeType))
         {
-            //var mi = _currentRule.Member.GetMemberInfo();
-            Debug.WriteLine($"The current rule already contains an attribute of the same type.");
-            return this;
+            // check if the attribute supports multiple instance on the same member
+            var usage = runtimeType.GetCustomAttribute<AttributeUsageAttribute>();
+
+            if (usage != null && !usage.AllowMultiple)
+            {
+                //var mi = _currentRule.Member.GetMemberInfo();
+                Debug.WriteLine($"The current rule already contains an attribute of the same type.");
+                return this;
+            }
         }
 
         _currentRule.Attributes.Add(attribute);

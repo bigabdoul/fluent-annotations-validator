@@ -3,17 +3,21 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
+using Microsoft.Extensions.Localization;
+using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+using static TestHelpers;
 
 public class Resolver_PriorityTests
 {
-    private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions());
+    private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
 
-    private static class WrongMessages
+    private class WrongMessages
     {
         public static string WrongKey => "Wrong!";
     }
@@ -44,9 +48,14 @@ public class Resolver_PriorityTests
 
         var attr = new RequiredAttribute { ErrorMessageResourceName = nameof(WrongMessages.WrongKey), ErrorMessageResourceType = typeof(WrongMessages) };
         var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
+        var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.EmailRequired);
 
-        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
-        Assert.Equal(ValidationMessages.EmailRequired, msg);
+        // Act
+        var msg = resolver.ResolveMessage(instanceType, member.Name, attr, rule);
+
+        // Assert
+        msg.Should().NotBeNull();
+        msg.Should().Be(ValidationMessages.EmailRequired);
     }
 
     [Fact]
@@ -59,8 +68,14 @@ public class Resolver_PriorityTests
         };
 
         var (member, instanceType) = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
-        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr);
-        Assert.Equal(ValidationMessages.EmailRequired, msg);
+        var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.EmailRequired);
+
+        // Act
+        var msg = resolver.ResolveMessage(instanceType, member.Name, attr);
+
+        // Assert
+        msg.Should().NotBeNull();
+        msg.Should().Be(ValidationMessages.EmailRequired);
     }
 
     [Fact]
@@ -68,10 +83,14 @@ public class Resolver_PriorityTests
     {
         var attr = new RequiredAttribute();
         var (member, instanceType) = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
+        var resolver = GetMessageResolver<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
-        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr);
+        // Act
+        var msg = resolver.ResolveMessage(instanceType, member.Name, attr);
 
-        Assert.Equal(ConventionValidationMessages.Email_Required, msg); // uses conventional key
+        // Assert
+        msg.Should().NotBeNull();
+        msg.Should().Be(ConventionValidationMessages.Email_Required); // uses conventional key
     }
 
     [Fact]
@@ -86,9 +105,14 @@ public class Resolver_PriorityTests
 
         var attr = new RequiredAttribute();
         var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
+        var resolver = GetMessageResolver<WrongMessages>(null); // null means the resource was not found
 
-        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
-        Assert.Equal("Use this instead", msg);
+        // Act
+        var msg = resolver.ResolveMessage(instanceType, member.Name, attr, rule);
+
+        // Assert
+        msg.Should().NotBeNull();
+        msg.Should().Be("Use this instead");
     }
 
     private static (MemberInfo Member, Type InstanceType) CreateInfo<T>(Expression<Func<T, string?>> expr) =>

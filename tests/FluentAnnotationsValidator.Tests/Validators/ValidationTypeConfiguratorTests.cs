@@ -1,8 +1,8 @@
 ﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
-using FluentAnnotationsValidator.Tests.Messages;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;

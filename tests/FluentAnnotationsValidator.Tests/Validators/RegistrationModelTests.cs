@@ -1,8 +1,8 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Messages;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 

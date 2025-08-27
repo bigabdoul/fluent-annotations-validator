@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Tests.Models;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Results;
@@ -43,12 +44,20 @@ public class FluentValidationResultAggregatorTests
         var dto = new TestLoginDto(Email: null!, Password: "Pass123", Role: "User");
 
         var validator = GetFluentValidator(builder =>
-            builder.For<TestLoginDto>().When(x => x.Email, model => model.Role == "Admin"));
+            builder.For<TestLoginDto>()
+                .Rule(x => x.Email, FluentAnnotationsValidator.Configuration.RuleDefinitionBehavior.Preserve)
+                //.Required()
+                //.EmailAddress()
+                //.When(m => m.Role == "Admin")
+                .When(x => x.Email, model => model.Role == "Admin")
+            );
 
         var result = validator.Validate(dto);
 
-        Assert.True(result.IsValid);
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Email");
+        //Assert.True(result.IsValid);
+        //Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Email");
+        result.IsValid.Should().BeTrue("Email is required only when the role is Admin.");
+        result.Errors.Should().NotContain(e => e.PropertyName == nameof(TestLoginDto.Email));
     }
 
     [Fact]
