@@ -72,9 +72,9 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         /// <summary>
         ///   Looks up a localized string similar to Password is not complex enough..
         /// </summary>
-        internal static string Password_MustValidation {
+        internal static string Password_Must {
             get {
-                return ResourceManager.GetString("Password_MustValidation", resourceCulture);
+                return ResourceManager.GetString("Password_Must", resourceCulture);
             }
         }
     }

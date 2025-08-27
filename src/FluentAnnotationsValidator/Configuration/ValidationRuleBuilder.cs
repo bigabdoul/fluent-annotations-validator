@@ -69,7 +69,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
 
         // Create and add a new pending rule with the composed predicate
         var rule = currentRule.CreateRuleFromPending(member.GetMemberInfo(),
-            attribute: new MustValidationAttribute<TProp>(predicate),
+            attribute: new MustAttribute<TProp>(predicate),
             composedPredicate);
 
         rule.SetShouldApply(_ => true);

@@ -361,7 +361,7 @@ public class ValidationTypeConfiguratorTests
         var configurator = _configurator.ClearRules(); // Focus only on the Password property
 
         configurator.Rule(x => x.Password, must: BeComplexPassword)
-            .WithMessage(ConventionValidationMessages.Password_MustValidation)
+            .WithMessage(ConventionValidationMessages.Password_Must)
             .Build();
 
         var model = new ValidationTypeConfiguratorTestModel { Password = password, Email = "test@example.com" };
@@ -379,7 +379,7 @@ public class ValidationTypeConfiguratorTests
             result.IsValid.Should().BeFalse();
             result.Errors.Should().Contain(e =>
                 e.PropertyName == nameof(ValidationTypeConfiguratorTestModel.Password) &&
-                e.ErrorMessage == ConventionValidationMessages.Password_MustValidation);
+                e.ErrorMessage == ConventionValidationMessages.Password_Must);
         }
     }
 }

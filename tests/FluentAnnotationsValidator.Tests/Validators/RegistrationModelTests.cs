@@ -26,7 +26,7 @@ public partial class RegistrationModelTests
                 // TestRegistrationDto.Password property).
                 configurator.RuleFor(x => x.Password)
                     .Must(BeComplexPassword)
-                    .WithMessage(ConventionValidationMessages.Password_MustValidation);
+                    .WithMessage(ConventionValidationMessages.Password_Must);
 
                 configurator.Build();
 
@@ -66,7 +66,7 @@ public partial class RegistrationModelTests
             result.IsValid.Should().BeFalse();
             result.Errors.Should().Contain(e =>
                 e.PropertyName == nameof(TestRegistrationDto.Password) &&
-                e.ErrorMessage == ConventionValidationMessages.Password_MustValidation);
+                e.ErrorMessage == ConventionValidationMessages.Password_Must);
         }
     }
 

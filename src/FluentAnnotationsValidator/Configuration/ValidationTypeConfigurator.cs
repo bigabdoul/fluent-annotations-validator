@@ -127,7 +127,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Rule{TMember}(Expression{Func{T, TMember}}, Func{TMember, bool}, RuleDefinitionBehavior)"/>
     public virtual ValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
-        => Rule(member, behavior).AttachAttribute(new MustValidationAttribute<TMember>(must), DefaultAttributePredicate);
+        => Rule(member, behavior).AttachAttribute(new MustAttribute<TMember>(must), DefaultAttributePredicate);
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.RuleFor{TMember}(Expression{Func{T, TMember}})"/>
     public IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> member)

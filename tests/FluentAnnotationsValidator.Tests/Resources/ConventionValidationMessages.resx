@@ -120,7 +120,7 @@
   <data name="Email_Required" xml:space="preserve">
     <value>Email is required (convention).</value>
   </data>
-  <data name="Password_MustValidation" xml:space="preserve">
+  <data name="Password_Must" xml:space="preserve">
     <value>Password is not complex enough.</value>
   </data>
 </root>
