@@ -1,6 +1,7 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Metadata;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
@@ -16,86 +17,6 @@ namespace FluentAnnotationsValidator.Messages;
 /// </summary>
 public class ValidationMessageResolver(ValidationBehaviorOptions options, IStringLocalizerFactory localizerFactory) : IValidationMessageResolver
 {
-    /*
-    /// <summary>
-    /// Resolves the error message to be used for a validation failure, based on the supplied
-    /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
-    /// </summary>
-    /// <param name="declaringType">
-    /// The metadata container for the property, field, or parameter being validated, including its <see cref="PropertyInfo"/> and target model type.
-    /// </param>
-    /// <param name="attr">
-    /// The <see cref="ValidationAttribute"/> instance describing the validation logic and message configuration.
-    /// </param>
-    /// <param name="rule">
-    /// Optional: The <see cref="ConditionalValidationRule"/> representing conditional validation logic.
-    /// May contain metadata overrides such as <c>ResourceKey</c> or <c>Message</c>.
-    /// </param>
-    /// <returns>
-    /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
-    /// Returns <c>null</c> if no message can be resolved.
-    /// </returns>
-    public virtual string? ResolveMessage(Type declaringType, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
-    {
-        // 1️ Rule-based explicit message override
-        if (rule is not null && !string.IsNullOrWhiteSpace(rule.Message))
-        {
-            return rule.Message;
-        }
-
-        var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentCulture;
-        var resourceType = rule?.ResourceType ?? options.CommonResourceType;
-
-        // 2️ Rule-based resource lookup
-        if (rule is not null &&
-            !string.IsNullOrWhiteSpace(rule.ResourceKey) &&
-            resourceType is not null &&
-            TryResolveFromResource(resourceType, rule.ResourceKey!, culture, formatArg, out var resolvedFromRule))
-        {
-            return resolvedFromRule;
-        }
-
-        // 3️ Attribute-based explicit resource key
-        if (!string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName))
-        {
-            var explicitType = attr.ErrorMessageResourceType
-                ?? declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
-
-            if (explicitType is not null &&
-                TryResolveFromResource(explicitType, attr.ErrorMessageResourceName!, culture, formatArg, out var resolvedFromAttr))
-            {
-                return resolvedFromAttr;
-            }
-        }
-
-        // 4️ Convention fallback via [ValidationResource]
-        var fallbackType = declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
-
-        if (fallbackType is not null && (rule?.UseConventionalKeyFallback ?? options.UseConventionalKeys))
-        {
-            var key = rule?.ResourceKey ?? GetConventionalKey(memberName, attr);
-
-            if (TryResolveFromResource(fallbackType, key, culture, formatArg, out var resolvedFromConvention))
-                return resolvedFromConvention;
-        }
-
-        // 5️ Rule-level fallback message
-        if (rule is not null && !string.IsNullOrWhiteSpace(rule.FallbackMessage))
-            return rule.FallbackMessage;
-
-        // 6️ Inline message or final fallback
-        string? message = null;
-
-        try { message = attr.FormatErrorMessage(memberName); }
-        catch {}
-
-        return !string.IsNullOrWhiteSpace(message)
-            ? message
-            : $"Invalid value for {memberName}";
-    }
-    */
-
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
@@ -113,7 +34,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// </param>
     /// <returns>
     /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
-    /// Returns <c>null</c> if no message can be resolved.
+    /// Returns <see langword="null"/> if no message can be resolved.
     /// </returns>
     public virtual string? ResolveMessage(Type declaringType, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
     {
@@ -125,13 +46,16 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
 
         var formatArg = GetFormatValue(attr);
         var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentCulture;
-        var resourceType = rule?.ResourceType ?? attr.ErrorMessageResourceType ?? options.CommonResourceType;
+
+        var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
+
+        var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? options.CommonResourceType;
         var useConventionalKeys = rule?.UseConventionalKeyFallback ?? options.UseConventionalKeys;
 
         var resourceKey = rule?.ResourceKey // Give priority to the rule's resource key;
 
             // then give a chance to the attribute's resources;
-            ?? (attr.ErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
+            ?? (attrErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
 
             // fall back to conventional keys; otherwise, use the error message;
             ?? (useConventionalKeys ? attr.GetConventionalKey(memberName) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
@@ -142,17 +66,13 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
         // 2️ Attempt resolution using IStringLocalizer
         if (rule is not null && !string.IsNullOrWhiteSpace(resourceKey))
         {
-            if (TryResolveFromLocalizer(resourceKey, resourceType ?? declaringType, out var resolved))
-            {
-                return string.Format(culture, resolved, memberName, formatArg);
-            }
+            if (TryResolveFromLocalizer(localizerFactory, resourceKey, resourceType ?? declaringType, culture, formatArg, out var resolved))
+                return resolved;
         }
         else if (useConventionalKeys && resourceType is not null)
         {
-            if (TryResolveFromLocalizer(resourceKey, resourceType, out var resolved))
-            {
-                return string.Format(culture, resolved, memberName, formatArg);
-            }
+            if (TryResolveFromLocalizer(localizerFactory, resourceKey, resourceType, culture, formatArg, out var resolved))
+                return resolved;
         }
 
         // 3️ Legacy ResourceManager-based lookup as a fallback
@@ -160,15 +80,13 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
         !string.IsNullOrWhiteSpace(resourceKey))
         {
             if (TryResolveFromResource(resourceType, resourceKey, culture, formatArg, out var resolved))
-            {
-                return string.Format(culture, resolved, memberName, formatArg);
-            }
+                return resolved;
         }
 
         // 4️ Convention fallback via [ValidationResource]
-        if (useConventionalKeys && declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType is { } fallbackType)
+        if (useConventionalKeys && attrErrorMessageResourceType != null)
         {
-            if (TryResolveFromResource(fallbackType, resourceKey, culture, formatArg, out var resolvedFromConvention))
+            if (TryResolveFromResource(attrErrorMessageResourceType, resourceKey, culture, formatArg, out var resolvedFromConvention))
                 return resolvedFromConvention;
         }
 
@@ -193,38 +111,36 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// <param name="resourceKey">The property name to retrieve.</param>
     /// <param name="culture">
     /// Optional: A specific <see cref="CultureInfo"/> to format the resolved message.
-    /// If <c>null</c>, defaults to <see cref="CultureInfo.CurrentCulture"/>.
+    /// If <see langword="null"/>, defaults to <see cref="CultureInfo.CurrentCulture"/>.
     /// </param>
     /// <param name="formatArg">Optional: An argument used to format the resolved message string.</param>
     /// <param name="message">
     /// When this method returns, contains the resolved and formatted message if found;
-    /// otherwise, <c>null</c>.
+    /// otherwise, <see langword="null"/>.
     /// </param>
     /// <returns>
     /// <see langword="true"/> if resolution succeeded and a non-null message was returned;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    public virtual bool TryResolveFromResource(
-        Type resourceType,
-        string resourceKey,
-        CultureInfo? culture,
-        object? formatArg,
-        [NotNullWhen(true)] out string? message)
+    protected static bool TryResolveFromResource(Type resourceType,
+    string resourceKey, CultureInfo? culture, object? formatArg,
+    [NotNullWhen(true)] out string? message)
     {
         message = null;
 
         if (resourceType is null || string.IsNullOrWhiteSpace(resourceKey))
             return false;
 
-        var raw = GetResourceValue(resourceType, resourceKey);
+        culture ??= CultureInfo.CurrentCulture;
+        
+        var raw = resourceType.GetResourceValue(resourceKey, culture);
+        
         if (string.IsNullOrWhiteSpace(raw))
             return false;
 
         try
         {
-            var formatter = culture ?? CultureInfo.CurrentCulture;
-            message = FormatMessage(formatter, raw, formatArg);
-
+            message = FormatMessage(culture, raw, formatArg);
             return true;
         }
         catch (FormatException)
@@ -236,22 +152,34 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     }
 
     /// <summary>
-    /// Attempts to resolve a localized message from a specified resource type and key using <see cref="IStringLocalizer"/>.
+    /// Attempts to resolve a localized message from a specified resource 
+    /// type and key using <see cref="IStringLocalizerFactory"/>.
     /// </summary>
-    /// <param name="resourceKey"></param>
-    /// <param name="resourceType"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    protected virtual bool TryResolveFromLocalizer(
-        string resourceKey,
-        Type resourceType,
-        [NotNullWhen(true)] out string? message)
+    /// <param name="localizerFactory">The factory used to resolve the localized message.</param>
+    /// <param name="resourceKey">The resource key to retrieve.</param>
+    /// <param name="resourceType">The resource type to look up.</param>
+    /// <param name="message">Returns the localized message if the look up was successful.</param>
+    /// <param name="culture">
+    /// Optional: A specific <see cref="CultureInfo"/> to look up the resource key.
+    /// If <see langword="null"/>, defaults to <see cref="CultureInfo.CurrentCulture"/>.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if resolution succeeded and a non-null message was returned;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <remarks>
+    /// The method first attempts to resolve the specified <paramref name="resourceType"/>
+    /// and <paramref name="resourceKey"/> by calling the method 
+    /// <see cref="TryResolveFromResource(Type, string, CultureInfo?, object?, out string?)"/>.
+    /// </remarks>
+    protected static bool TryResolveFromLocalizer(IStringLocalizerFactory localizerFactory,
+    string resourceKey, Type resourceType, CultureInfo? culture,
+    object? formatArg, [NotNullWhen(true)] out string? message)
     {
-        message = null;
+        if (TryResolveFromResource(resourceType, resourceKey, culture, formatArg, out message))
+            return true;
+
         var localizer = localizerFactory.Create(resourceType);
-
-        //if (localizer is null) return false;
-
         var localizedString = localizer?[resourceKey];
 
         if (localizedString is null || localizedString.ResourceNotFound)
@@ -264,37 +192,13 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     }
 
     /// <summary>
-    /// Retrieves the value of a localized resource key exposed as a static property or method 
-    /// from a resource class, typically generated from a .resx file.
-    /// </summary>
-    /// <param name="type">The resource type (e.g. <c>ValidationMessages</c>) containing the key.</param>
-    /// <param name="key">The name of the static member to retrieve (e.g. <c>"Email_Required"</c>).</param>
-    /// <returns>
-    /// The resolved localized string, or <c>null</c> if the key does not exist or retrieval fails.
-    /// </returns>
-    protected internal static string? GetResourceValue(Type type, string key)
-    {
-        var member = type.GetMember(key,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault();
-
-        return member switch
-        {
-            PropertyInfo prop => prop.GetValue(null)?.ToString(),
-            FieldInfo field => field.GetValue(null)?.ToString(),
-            MethodInfo method when method.GetParameters().Length == 0 =>
-                method.Invoke(null, null)?.ToString(),
-            _ => null
-        };
-    }
-
-    /// <summary>
     /// Extracts contextual formatting data from common <see cref="ValidationAttribute"/> types, 
     /// which can be injected into error messages as format arguments (e.g. min/max lengths).
     /// </summary>
     /// <param name="attr">The validation attribute instance to inspect.</param>
     /// <returns>
     /// An object representing the format argument(s), such as an integer, array, or pattern string. 
-    /// Returns <c>null</c> if the attribute type is unsupported or lacks relevant data.
+    /// Returns <see langword="null"/> if the attribute type is unsupported or lacks relevant data.
     /// </returns>
     protected static object? GetFormatValue(ValidationAttribute attr)
     {

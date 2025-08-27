@@ -25,7 +25,7 @@ public class Resolver_CultureTests
 
         var (min, max) = (6, 20);
         var attr = new RangeAttribute(min, max);
-        var expectedMessage = string.Format(ValidationMessages.Password_Range, min, max);
+        var expectedMessage = string.Format(rule.Culture, ValidationMessages.Password_Range, min, max);
         var resolver = GetMessageResolver<ValidationMessages>(expectedMessage);
 
         // Act

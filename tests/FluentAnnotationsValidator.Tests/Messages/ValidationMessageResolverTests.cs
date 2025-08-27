@@ -15,16 +15,20 @@ public class ValidationMessageResolverTests
     private static ValidationMessageResolver GetResolver() =>
         new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
 
+    public ValidationMessageResolverTests()
+    {
+        ValidationMessages.Culture = ConventionValidationMessages.Culture = Thread.CurrentThread.CurrentCulture;
+    }
+
     [Fact]
     public void ResolveMessage_Inline_ReturnsFormattedMessage()
     {
         // Arrange
         var attr = new RequiredAttribute { ErrorMessage = "Field {0} is required" };
-        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
         var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr);
+        var message = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Email), attr);
 
         // Assert
         message.Should().NotBeNull();
