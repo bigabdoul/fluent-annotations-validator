@@ -47,6 +47,8 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
         foreach (var (member, rules) in enumeratedRules)
         {
+            if (rules.Count == 0) continue;
+
             foreach (var error in rules.Validate(typeof(T), instance!, member, resolver))
             {
                 failures.Add(new(error));
