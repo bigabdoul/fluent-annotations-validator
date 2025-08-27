@@ -1,5 +1,4 @@
 ﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -34,7 +33,6 @@ public static class ValidationAttributeAdapter
                 Member = member,
                 Attribute = attr,
                 UniqueKey = uniqueKey,
-                ResourceKey = attr.GetConventionalKey(member.Name),
             };
             rules.Add(rule);
         }
