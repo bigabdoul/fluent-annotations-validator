@@ -48,7 +48,7 @@ public class FluentValidationFailure
         PropertyName = error.Member.Name;
         ErrorMessage = error.Message ?? string.Empty;
         AttemptedValue = error.AttemptedValue;
-        CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.GetType().Name}";
+        CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.CleanAttributeName()}";
     }
 
     /// <summary>

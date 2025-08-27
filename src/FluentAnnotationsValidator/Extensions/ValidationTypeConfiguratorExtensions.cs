@@ -114,4 +114,13 @@ public static class ValidationTypeConfiguratorExtensions
 
         return conditionalRule;
     }
+
+    internal static string GetConventionalKey(this ValidationAttribute attr, string memberName)
+        => $"{memberName}_{attr.ShortAttributeName()}";
+
+    internal static string ShortAttributeName(this ValidationAttribute attr) =>
+        attr.CleanAttributeName().Replace("Attribute", "");
+
+    internal static string CleanAttributeName(this Attribute attr) =>
+        attr.GetType().Name.TrimEnd('`', '1');
 }

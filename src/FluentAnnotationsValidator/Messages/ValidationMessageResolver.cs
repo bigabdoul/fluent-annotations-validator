@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
@@ -133,7 +134,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             ?? (attr.ErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
 
             // fall back to conventional keys; otherwise, use the error message;
-            ?? (useConventionalKeys ? GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
+            ?? (useConventionalKeys ? attr.GetConventionalKey(memberName) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
 
             // and finally the empty string.
             ?? string.Empty;
@@ -347,11 +348,5 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             Array arr => string.Format(culture, format, [.. arr.Cast<object>()]),
             _ => string.Format(culture, format, args)
         };
-    }
-
-    internal static string GetConventionalKey(string memberName, ValidationAttribute attr)
-    {
-        var shortName = attr.GetType().Name.Replace("Attribute", "");
-        return $"{memberName}_{shortName}";
     }
 }
