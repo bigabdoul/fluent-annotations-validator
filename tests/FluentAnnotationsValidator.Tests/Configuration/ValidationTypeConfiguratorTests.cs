@@ -161,9 +161,6 @@ public class ValidationTypeConfiguratorTests
 
         passwr.Message.Should().NotBeNull();
         passwr.Message.Should().Match("Must validate password");
-
-        //emailr.ShouldMatch(expectedMessage: "Must validate email");
-        //passwr.ShouldMatch(expectedMessage: "Must validate password");
     }
 
     [Fact]
