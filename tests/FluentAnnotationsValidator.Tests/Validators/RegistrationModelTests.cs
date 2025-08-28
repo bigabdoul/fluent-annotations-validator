@@ -15,6 +15,8 @@ public partial class RegistrationModelTests
 
     public RegistrationModelTests()
     {
+        ConventionValidationMessages.Culture = Thread.CurrentThread.CurrentCulture;
+
         _serviceProvider = new ServiceCollection()
             .AddFluentAnnotations(configure: config =>
             {
