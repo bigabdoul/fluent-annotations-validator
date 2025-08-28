@@ -160,12 +160,12 @@ public static class ValidatorServiceCollectionExtensions
             if (result?.SharedResourceType != null)
             {
                 factory.Create(result.SharedResourceType);
-                behaviorOptions.CommonResourceType ??= result.SharedResourceType;
+                behaviorOptions.SharedResourceType ??= result.SharedResourceType;
             }
 
             if (result?.SharedCulture != null)
             {
-                behaviorOptions.CommonCulture ??= result.SharedCulture;
+                behaviorOptions.SharedCulture ??= result.SharedCulture;
             }
         }
 

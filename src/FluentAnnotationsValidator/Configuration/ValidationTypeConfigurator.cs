@@ -386,8 +386,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         {
             var member = rule.Member.GetMemberInfo();
 
-            rule.ResourceType ??= Options.CommonResourceType;
-            rule.Culture ??= Options.CommonCulture;
+            rule.ResourceType ??= Options.SharedResourceType;
+            rule.Culture ??= Options.SharedCulture;
             rule.UseConventionalKeys ??= Options.UseConventionalKeys;
 
             if (rule.Attributes.Count > 0)

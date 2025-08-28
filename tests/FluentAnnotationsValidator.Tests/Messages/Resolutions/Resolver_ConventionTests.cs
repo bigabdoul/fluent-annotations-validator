@@ -18,7 +18,7 @@ public class Resolver_ConventionTests
     {
         // Arrange
         var attr = new RequiredAttribute();
-        var options = new ValidationBehaviorOptions { UseConventionalKeys = true, CommonResourceType = typeof(ConventionValidationMessages) };
+        var options = new ValidationBehaviorOptions { UseConventionalKeys = true, SharedResourceType = typeof(ConventionValidationMessages) };
 
         var localizerFactoryMock = MockStringLocalizerFactory<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 

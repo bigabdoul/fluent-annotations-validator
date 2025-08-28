@@ -45,11 +45,11 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
         }
 
         var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? options.CommonCulture ?? CultureInfo.CurrentCulture;
+        var culture = rule?.Culture ?? options.SharedCulture ?? CultureInfo.CurrentCulture;
 
         var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
 
-        var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? options.CommonResourceType;
+        var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? options.SharedResourceType;
         var useConventionalKeys = rule?.UseConventionalKeyFallback ?? options.UseConventionalKeys;
 
         var resourceKey = rule?.ResourceKey // Give priority to the rule's resource key;

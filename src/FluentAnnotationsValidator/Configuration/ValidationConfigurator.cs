@@ -37,7 +37,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <inheritdoc cref="IValidationConfigurator.WithValidationResource(Type?)"/>
     public ValidationConfigurator WithValidationResource(Type? resourceType)
     {
-        options.CommonResourceType = resourceType;
+        options.SharedResourceType = resourceType;
         AssignCultureTo(resourceType);
         return this;
     }
@@ -45,7 +45,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <inheritdoc cref="IValidationConfigurator.WithCulture(CultureInfo)"/>
     public ValidationConfigurator WithCulture(CultureInfo culture)
     {
-        options.CommonCulture = culture;
+        options.SharedCulture = culture;
         return this;
     }
 
@@ -76,7 +76,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
 
     private void AssignCultureTo(Type? type)
     {
-        type.TrySetResourceManagerCulture(options.CommonCulture, fallbackToType: true);
+        type.TrySetResourceManagerCulture(options.SharedCulture, fallbackToType: true);
     }
 
     #region IValidationConfigurator

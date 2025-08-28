@@ -25,12 +25,12 @@ public class ValidationBehaviorOptions
     /// <summary>
     /// Optional common resource type used for localization.
     /// </summary>
-    public Type? CommonResourceType { get; set; }
+    public Type? SharedResourceType { get; set; }
 
     /// <summary>
     /// Optional culture to use for error messages and formatting.
     /// </summary>
-    public CultureInfo? CommonCulture { get; set; }
+    public CultureInfo? SharedCulture { get; set; }
 
     /// <summary>
     /// When true, uses conventional resource key naming (e.g. MemberName_Attribute).
