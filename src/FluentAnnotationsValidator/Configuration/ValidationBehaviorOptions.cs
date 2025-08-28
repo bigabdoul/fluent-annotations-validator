@@ -42,6 +42,11 @@ public class ValidationBehaviorOptions
     /// </summary>
     public string? CurrentTestName { get; set; }
 
+    /// <summary>
+    /// Determines whether fluent configurations are checked for consistency.
+    /// </summary>
+    public bool ConfigurationEnforcementDisabled { get; set; }
+
     #endregion
 
     protected internal virtual void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
