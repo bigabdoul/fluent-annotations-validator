@@ -58,7 +58,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             ?? (attrErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
 
             // fall back to conventional keys; otherwise, use the error message;
-            ?? (useConventionalKeys ? attr.GetConventionalKey(memberName) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
+            ?? (useConventionalKeys ? options.ConventionalKeyGetter?.Invoke(declaringType, memberName, attr) ?? declaringType.GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
 
             // and finally the empty string.
             ?? string.Empty;

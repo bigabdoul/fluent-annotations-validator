@@ -250,10 +250,11 @@ public static class ValidationTypeConfiguratorExtensions
     /// <summary>
     /// Generates a conventional localization key for a validation attribute and a member name.
     /// </summary>
-    /// <param name="attr">The validation attribute instance.</param>
+    /// <param name="declaringType">The declaring type.</param>
     /// <param name="memberName">The name of the member.</param>
     /// <returns>The generated conventional key.</returns>
-    internal static string GetConventionalKey(this ValidationAttribute attr, string memberName)
+    /// <param name="attr">The validation attribute instance.</param>
+    public static string GetConventionalKey(this Type declaringType, string memberName, ValidationAttribute attr)
         => $"{memberName}_{attr.ShortAttributeName()}";
 
     /// <summary>
@@ -261,7 +262,7 @@ public static class ValidationTypeConfiguratorExtensions
     /// </summary>
     /// <param name="attr">The validation attribute instance.</param>
     /// <returns>The shortened attribute name.</returns>
-    internal static string ShortAttributeName(this ValidationAttribute attr) =>
+    public static string ShortAttributeName(this ValidationAttribute attr) =>
         attr.CleanAttributeName().Replace("Attribute", string.Empty);
 
     /// <summary>
@@ -269,6 +270,6 @@ public static class ValidationTypeConfiguratorExtensions
     /// </summary>
     /// <param name="attr">The attribute instance.</param>
     /// <returns>The cleaned attribute name.</returns>
-    internal static string CleanAttributeName(this Attribute attr) =>
+    public static string CleanAttributeName(this Attribute attr) =>
         attr.GetType().Name.TrimEnd('`', '1');
 }

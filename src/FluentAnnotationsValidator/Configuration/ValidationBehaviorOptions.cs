@@ -38,6 +38,11 @@ public class ValidationBehaviorOptions
     public bool UseConventionalKeys { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the delegate to retrieve the conventional key aspect.
+    /// </summary>
+    public ConventionalKeyDelegate? ConventionalKeyGetter { get; set; }
+
+    /// <summary>
     /// Used when running tests.
     /// </summary>
     public string? CurrentTestName { get; set; }
