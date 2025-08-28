@@ -1,6 +1,8 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Internals.Reflection;
 using System.Globalization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -74,11 +76,7 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
 
     private void AssignCultureTo(Type? type)
     {
-        if (type != null)
-        {
-            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            prop?.SetValue(null, options.CommonCulture);
-        }
+        type.TrySetResourceManagerCulture(options.CommonCulture, fallbackToType: true);
     }
 
     #region IValidationConfigurator

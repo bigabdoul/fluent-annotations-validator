@@ -8,7 +8,7 @@ namespace FluentAnnotationsValidator.Internals.Reflection;
 
 internal static class TypeUtils
 {
-    internal const BindingFlags StaticPublicNonPublicFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+    internal const BindingFlags StaticPublicNonPublicFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
     private static readonly ConcurrentDictionary<Type, ResourceManager?> _resourceManagerCache = new();
     private static readonly ConcurrentDictionary<(Type, string, string), string?> _localizedStringCache = new();
 
@@ -39,7 +39,7 @@ internal static class TypeUtils
         string? value;
 
         // Method defined in TypeUtils
-        if (TryGetResourceManager(type, out var rm))
+        if (type.TryGetResourceManager(out var rm))
         {
             value = rm.GetString(key, culture);
         }
@@ -62,14 +62,36 @@ internal static class TypeUtils
         return value;
     }
 
-    internal static bool TryGetResourceManager(Type type, [NotNullWhen(true)] out ResourceManager? rm)
+    internal static bool TryGetResourceManager([NotNullWhen(true)] this Type? type, [NotNullWhen(true)] out ResourceManager? rm)
     {
+        rm = null;
+
+        if (type == null) return false;
+
         rm = _resourceManagerCache.GetOrAdd(type, t =>
         {
             var prop = t.GetProperty(nameof(ResourceManager), StaticPublicNonPublicFlags);
             return prop?.GetValue(null) as ResourceManager;
         });
+
         return rm != null;
+    }
+
+    internal static bool TrySetResourceManagerCulture(this Type? type, CultureInfo? culture, bool fallbackToType)
+    {
+        if (type == null) return false;
+
+        if (type.TryGetResourceManager(out var rm))
+            type = rm.GetType();
+        else if (!fallbackToType)
+            return false;
+
+        var prop = type.GetProperty("Culture", StaticPublicNonPublicFlags);
+
+        if (prop == null) return false;
+
+        prop.SetValue(null, culture ?? Thread.CurrentThread.CurrentCulture);
+        return true;
     }
 
     internal static bool IsAssignableFrom(Type? declaringType, Type? type)

@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
@@ -60,6 +61,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     private PendingRule<T>? _currentRule;
     private bool _useConventionalKeys = true;
     private string? _fallbackMessage;
+    private bool? _disableConfigurationEnforcement;
 
     /// <summary>
     /// Gets the validation behavior options.
@@ -360,6 +362,12 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    public virtual ValidationTypeConfigurator<T> DisableConfigurationEnforcement(bool disableConfigurationEnforcement)
+    {
+        _disableConfigurationEnforcement = disableConfigurationEnforcement;
+        return this;
+    }
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.UseFallbackMessage(string)"/>
     public virtual ValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage)
     {
@@ -497,6 +505,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// </exception>
     protected virtual void EnsureContainsAnyRule(Expression memberExpression)
     {
+        if (_disableConfigurationEnforcement ?? Options.ConfigurationEnforcementDisabled) return;
+
         MemberInfo memberInfo;
         if (!Options.ContainsAny<T>(memberInfo = memberExpression.GetMemberInfo(), rule => rule.HasAttribute))
             throw new InvalidOperationException($"There is no rule for the {memberInfo.Name} {memberInfo.MemberType}.");
@@ -557,14 +567,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         var oldType = ValidationResourceType;
         ValidationResourceType = type;
-
-        type ??= oldType;
-
-        if (type != null)
-        {
-            var prop = type.GetProperty("Culture", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            prop?.SetValue(null, Culture);
-        }
+        (type ?? oldType).TrySetResourceManagerCulture(Culture, fallbackToType: true);
     }
 
     #endregion
