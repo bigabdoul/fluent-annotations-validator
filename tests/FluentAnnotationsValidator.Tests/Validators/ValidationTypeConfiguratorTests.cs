@@ -89,7 +89,7 @@ public class ValidationTypeConfiguratorTests
 
         ruleForEmail = addedRules.Last(r => r.Member.Name == "Email").Rule;
         ruleForEmail.Attribute.Should().NotBeNull();
-        ruleForEmail.Attribute.GetType().Should().Be(typeof(Length2Attribute));
+        ruleForEmail.Attribute.GetType().Should().Be(typeof(MaxLengthAttribute));
     }
 
 
