@@ -16,11 +16,13 @@ public class Resolver_CultureTests
     public void Formats_Message_Using_Provided_Culture()
     {
         // Arrange
+        var frenchCulture = ValidationMessages.Culture = CultureInfo.GetCultureInfo("fr-FR");
+
         var rule = new ConditionalValidationRule(
             dto => true,
             ResourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
             ResourceType: typeof(ValidationMessages),
-            Culture: CultureInfo.GetCultureInfo("fr-FR")
+            Culture: frenchCulture
         );
 
         var (min, max) = (6, 20);
