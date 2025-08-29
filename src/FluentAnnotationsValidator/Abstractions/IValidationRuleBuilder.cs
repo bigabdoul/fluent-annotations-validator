@@ -30,7 +30,7 @@ public interface IValidationRuleBuilder
 
 /// <summary>
 /// Defines a fluent, type-safe contract for building validation rules for a specific
-/// property of a model.
+/// property or field of a model.
 /// </summary>
 /// <typeparam name="T">The type of the object instance being validated.</typeparam>
 /// <typeparam name="TProp">The type of the property being validated.</typeparam>
@@ -45,6 +45,15 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// <param name="configure">An action to configure the validation rules to apply when the condition is met.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
+
+    /// <summary>
+    /// Alias for <see cref="When(Func{T, bool}, Action{IValidationRuleBuilder{T, TProp}})"/>
+    /// to make the intent clearer for complex validation logics.
+    /// </summary>
+    /// <param name="predicate">A function that returns <see langword="true"/> to enable the rules.</param>
+    /// <param name="configure">An action to configure the validation rules to apply when the condition is met.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    IValidationRuleBuilder<T, TProp> Must(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
     /// Adds a custom rule that validates the property's value based on a predicate function.

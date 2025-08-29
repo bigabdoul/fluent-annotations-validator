@@ -6,17 +6,32 @@ using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
+/// <summary>
+/// Implements a fluent, type-safe contract for building validation rules for a specific
+/// property or field of a model.
+/// </summary>
+/// <typeparam name="T">The type of the object instance being validated.</typeparam>
+/// <typeparam name="TProp">The type of the property being validated.</typeparam>
+/// <param name="currentRule">The <see cref="PendingRule{T}"/> for which the member is being configured.</param>
 public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IValidationRuleBuilder<T, TProp>
 {
     private Func<T, bool>? whenPredicate;
 
-    internal List<ConditionalValidationRule> Rules { get; } = [];
+    /// <summary>
+    /// Gets the internally configured rules list.
+    /// </summary>
+    protected internal List<ConditionalValidationRule> Rules { get; } = [];
 
+    /// <inheritdoc cref="IValidationRuleBuilder.Member"/>
     public Expression Member => currentRule.Member;
+
+    /// <inheritdoc cref="IValidationRuleBuilder.GetRules"/>
     public IReadOnlyCollection<ConditionalValidationRule> GetRules() => Rules.AsReadOnly();
 
+    /// <inheritdoc cref="IValidationRuleBuilder.RemoveRules(Predicate{ConditionalValidationRule})"/>
     public int RemoveRules(Predicate<ConditionalValidationRule> predicate) => Rules.RemoveAll(predicate);
 
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.When(Func{T, bool}, Action{IValidationRuleBuilder{T, TProp}})"/>
     public IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure)
     {
         // Create a new, temporary builder to hold the nested rules.
@@ -55,6 +70,11 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         return this;
     }
 
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.Must(Func{T, bool}, Action{IValidationRuleBuilder{T, TProp}})"/>
+    public IValidationRuleBuilder<T, TProp> Must(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure)
+        => When(predicate, configure);
+
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.Must(Func{TProp, bool})"/>
     public IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate)
     {
         var member = currentRule.Member;
@@ -79,11 +99,14 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         return this;
     }
 
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.Otherwise(Action{IValidationRuleBuilder{T, TProp}})"/>
     public IValidationRuleBuilder<T, TProp> Otherwise(Action<IValidationRuleBuilder<T, TProp>> configure)
     {
         // Find the last When condition and negate it for the Otherwise clause.
         var lastCondition = GetLastConditionFromPendingRules()
-            ?? throw new InvalidOperationException("Otherwise() must follow a When() call.");
+            ?? throw new InvalidOperationException("Otherwise(...) must follow a call to " +
+            "When(Func<T, bool>, Action<IValidationRuleBuilder<T, TProp>>) or " +
+            "Must(Func<T, bool>, Action<IValidationRuleBuilder<T, TProp>>).");
 
         // Create a new, temporary configurator for the nested rules.
         var nestedConfigurator = new ValidationRuleBuilder<T, TProp>(currentRule);
@@ -107,6 +130,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         return this;
     }
 
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.AddRuleFromAttribute(ValidationAttribute)"/>
     public IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute)
     {
         //currentRule.Attributes.Add(attribute);
@@ -122,6 +146,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         return this;
     }
 
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.WithMessage(string?)"/>
     public IValidationRuleBuilder<T, TProp> WithMessage(string? message)
     {
         Rules.Last().Message = message;
