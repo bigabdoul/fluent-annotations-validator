@@ -17,7 +17,7 @@ namespace FluentAnnotationsValidator.Extensions;
 public static class ValidatorServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
+    /// Registers <see cref="IFluentValidator"/> services for all discovered types that contain
     /// at least one property decorated with a <see cref="ValidationAttribute"/>.
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
@@ -27,10 +27,24 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, params Type[] targetAssembliesTypes) =>
-        services.AddFluentAnnotationsValidators(configure: null, targetAssembliesTypes);
+        services.AddFluentAnnotationsValidators(configure: null, extraValidatableTypes: null, targetAssembliesTypes);
 
     /// <summary>
-    /// Forwards the call to <see cref="AddFluentAnnotationsValidators(IServiceCollection, Action{ValidationBehaviorOptions}?, Action{LocalizationOptions}?, Func{IStringLocalizerFactory, StringLocalizerFactoryResult}?, Type[])"/>.
+    /// Registers <see cref="IFluentValidator"/> services for all discovered types that contain
+    /// at least one property decorated with a <see cref="ValidationAttribute"/>.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="extraValidatableTypes">A function to include additional types into the validation pipeline.</param>
+    /// <param name="targetAssembliesTypes">
+    /// Optional: One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, Func<IEnumerable<Type>>? extraValidatableTypes, params Type[] targetAssembliesTypes) =>
+        services.AddFluentAnnotationsValidators(configure: null, extraValidatableTypes, targetAssembliesTypes);
+
+    /// <summary>
+    /// Forwards the call to <see cref="AddFluentAnnotationsValidators(IServiceCollection, Action{ValidationBehaviorOptions}?, Action{LocalizationOptions}?, Func{IStringLocalizerFactory, StringLocalizerFactoryResult}?, Func{IEnumerable{Type}}?, Type[])"/>.
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
@@ -40,19 +54,41 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
-    Action<ValidationBehaviorOptions>? configure = null, params Type[] targetAssembliesTypes) =>
-        services.AddFluentAnnotationsValidators(configure, 
-            configureLocalization: null, 
-            localizerFactory: null, 
-            targetAssembliesTypes);
+    Action<ValidationBehaviorOptions>? configure = null,
+    params Type[] targetAssembliesTypes) => 
+        services.AddFluentAnnotationsValidators(configure, extraValidatableTypes: null, targetAssembliesTypes);
 
     /// <summary>
-    /// Registers <c>IValidator&lt;T&gt;</c> services for all discovered types that contain
-    /// at least one property decorated with a <see cref="ValidationAttribute"/>.
+    /// Forwards the call to <see cref="AddFluentAnnotationsValidators(IServiceCollection, Action{ValidationBehaviorOptions}?, Action{LocalizationOptions}?, Func{IStringLocalizerFactory, StringLocalizerFactoryResult}?, Func{IEnumerable{Type}}?, Type[])"/>.
+    /// </summary>
+    /// <param name="services">The DI container to register validators into.</param>
+    /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
+    /// <param name="extraValidatableTypes">A function to include additional types into the validation pipeline.</param>
+    /// <param name="targetAssembliesTypes">
+    /// Optional: One or more types used to infer target assemblies to scan.
+    /// If omitted, all assemblies in the current AppDomain are scanned.
+    /// </param>
+    /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
+    public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
+    Action<ValidationBehaviorOptions>? configure = null, 
+    Func<IEnumerable<Type>>? extraValidatableTypes = null, 
+    params Type[] targetAssembliesTypes)
+    {
+        return services.AddFluentAnnotationsValidators(configure,
+            configureLocalization: null,
+            localizerFactory: null,
+            extraValidatableTypes,
+            targetAssembliesTypes);
+    }
+
+    /// <summary>
+    /// Registers <see cref="IFluentValidator"/> services for all discovered types that contain
+    /// at least one property or field decorated with a <see cref="ValidationAttribute"/>, or
+    /// any type that implements the marker interface <see cref="IFluentValidatable"/>.
     /// 
     /// Scans the provided assemblies (via types) or defaults to the current AppDomain.
     /// This method dynamically generates and registers transient validators based on
-    /// <c>DataAnnotationsValidator&lt;T&gt;</c> for all matching types.
+    /// <see cref="FluentValidator{T}"/> for all matching types.
     /// 
     /// <para>
     /// <strong>Scanning Rationale:</strong>
@@ -66,6 +102,8 @@ public static class ValidatorServiceCollectionExtensions
     /// While <see cref="ValidationAttribute"/> is technically applicable to classes, the built-in
     /// attributes do not support or implement meaningful class-level validation semantics.
     /// Supporting class-level discovery may lead to false positives or require custom attribute usage.
+    /// Instead, implement <see cref="IFluentValidatable"/> to include a type into the validation
+    /// pipeline, or use the <paramref name="extraValidatableTypes"/> to specify the extra types to include.
     /// </para>
     /// 
     /// <para>
@@ -84,6 +122,7 @@ public static class ValidatorServiceCollectionExtensions
     /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
     /// <param name="configureLocalization">A delegate to invoke to further configure <see cref="LocalizationOptions"/>. Can be null.</param>
     /// <param name="localizerFactory">An action delegate to invoke to further configure <see cref="IStringLocalizerFactory"/>. Can be null.</param>
+    /// <param name="extraValidatableTypes">A function to include additional types into the validation pipeline.</param>
     /// <param name="targetAssembliesTypes">
     /// Optional: One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
@@ -93,6 +132,7 @@ public static class ValidatorServiceCollectionExtensions
     Action<ValidationBehaviorOptions>? configure = null, 
     Action<LocalizationOptions>? configureLocalization = null,
     Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
+    Func<IEnumerable<Type>>? extraValidatableTypes = null,
     params Type[] targetAssembliesTypes)
     {
         var assemblies = targetAssembliesTypes.Length > 0
@@ -100,10 +140,11 @@ public static class ValidatorServiceCollectionExtensions
             : AppDomain.CurrentDomain.GetAssemblies();
 
         // Scan all model types in application assembly
-        var modelTypes = assemblies
+        var attributeDecoratedTypes = assemblies
             .SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && !t.IsAbstract)
             .Where(t =>
+                typeof(IFluentValidatable).IsAssignableFrom(t) ||
                 t.GetProperties().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
                 t.GetFields().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
 
@@ -112,14 +153,21 @@ public static class ValidatorServiceCollectionExtensions
                 t.GetConstructors().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0)
             ).ToList();
 
+        if (extraValidatableTypes != null)
+        {
+            // Get any additional types from the provided function and combine them
+            var additionalTypes = extraValidatableTypes.Invoke();
+            attributeDecoratedTypes = additionalTypes.Any() ? [.. attributeDecoratedTypes.Union(additionalTypes)] : attributeDecoratedTypes;
+        }
+
         var behaviorOptions = new ValidationBehaviorOptions();
         configure?.Invoke(behaviorOptions);
 
         var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
 
         // Filter the types to only include the most derived classes
-        var mostDerivedTypes = modelTypes
-            .Where(type => !modelTypes.Any(otherType => otherType.IsSubclassOf(type)))
+        var mostDerivedTypes = attributeDecoratedTypes
+            .Where(type => !attributeDecoratedTypes.Any(otherType => otherType.IsSubclassOf(type)))
             .ToList();
 
         foreach (var modelType in mostDerivedTypes)
@@ -180,24 +228,12 @@ public static class ValidatorServiceCollectionExtensions
     /// <summary>
     /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
     /// </summary>
-    /// <param name="builder">A fluent configuration builder used instantiate a <see cref="ValidationConfigurator"/>.</param>
-    /// <returns>
-    /// A <see cref="ValidationConfigurator"/> instance that allows for fluent configuration of conditional validation rules.
-    /// </returns>
-    public static ValidationConfigurator UseFluentAnnotations(this FluentAnnotationsBuilder builder)
-    {
-        var configurator = new ValidationConfigurator(builder.Options);
-        return configurator;
-    }
-
-    /// <summary>
-    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
-    /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationConfigurator"/>. Can be null.</param>
     /// <param name="configureBehavior">An action to configure a <see cref="ValidationBehaviorOptions"/>. Can be null.</param>
     /// <param name="configureLocalization">An action delegate to configure <see cref="LocalizationOptions"/>. Can be null.</param>
     /// <param name="localizerFactory">An action delegate to configure <see cref="IStringLocalizerFactory"/>. Can be null.</param>
+    /// <param name="extraValidatableTypes">A function to include additional types into the validation pipeline.</param>
     /// <param name="targetAssembliesTypes">
     /// One or more types used to infer target assemblies to scan.
     /// If omitted, all assemblies in the current AppDomain are scanned.
@@ -208,16 +244,31 @@ public static class ValidatorServiceCollectionExtensions
     Action<ValidationBehaviorOptions>? configureBehavior = null,
     Action<LocalizationOptions>? configureLocalization = null,
     Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
+    Func<IEnumerable<Type>>? extraValidatableTypes = null,
     params Type[] targetAssembliesTypes)
     {
         var builder = services.AddFluentAnnotationsValidators(configureBehavior,
             configureLocalization,
             localizerFactory,
+            extraValidatableTypes,
             targetAssembliesTypes);
 
         var configurator = builder.UseFluentAnnotations();
 
         configure?.Invoke(configurator);
         return services;
+    }
+
+    /// <summary>
+    /// Registers and initializes FluentAnnotations services and validation configuration into the dependency injection container.
+    /// </summary>
+    /// <param name="builder">A fluent configuration builder used instantiate a <see cref="ValidationConfigurator"/>.</param>
+    /// <returns>
+    /// A <see cref="ValidationConfigurator"/> instance that allows for fluent configuration of conditional validation rules.
+    /// </returns>
+    public static ValidationConfigurator UseFluentAnnotations(this FluentAnnotationsBuilder builder)
+    {
+        var configurator = new ValidationConfigurator(builder.Options);
+        return configurator;
     }
 }

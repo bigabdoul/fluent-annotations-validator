@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FluentAnnotationsValidator.Abstractions;
+using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
@@ -15,6 +16,10 @@ public class ValidationTypeConfiguratorTestModel
     [Compare("Email", ErrorMessage = "The email and confirmation email do not match.")]
     public string? ConfirmEmail { get; set; }
     public int Age { get; set; }
-    public bool IsPhysicalProduct { get; internal set; }
-    public string ShippingAddress { get; internal set; } = string.Empty;
+}
+
+public class TestProductModel : IFluentValidatable
+{
+    public bool IsPhysicalProduct { get; set; }
+    public string ShippingAddress { get; set; } = string.Empty;
 }

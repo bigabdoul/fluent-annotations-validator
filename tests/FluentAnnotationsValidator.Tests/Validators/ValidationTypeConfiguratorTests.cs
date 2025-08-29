@@ -17,15 +17,22 @@ public class ValidationTypeConfiguratorTests
     private readonly MockValidationConfigurator _mockParentConfigurator;
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
+    private ValidationTypeConfigurator<TestProductModel> _productConfigurator;
 
     private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator => 
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ValidationTypeConfiguratorTestModel>>();
+    private IFluentValidator<TestProductModel> ProductValidator =>
+        _services.BuildServiceProvider().GetRequiredService<IFluentValidator<TestProductModel>>();
 
     public ValidationTypeConfiguratorTests()
     {
         _services.AddFluentAnnotations
         (
-            config => _configurator = config.For<ValidationTypeConfiguratorTestModel>(),
+            config =>
+            {
+                _configurator = config.For<ValidationTypeConfiguratorTestModel>();
+                _productConfigurator = config.For<TestProductModel>();
+            },
             configureBehavior: options => _mockOptions = new(options),
             targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
         );
@@ -38,7 +45,9 @@ public class ValidationTypeConfiguratorTests
         }
 
         _mockParentConfigurator = new(_mockOptions.Options);
-        _configurator ??= new ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel>(_mockParentConfigurator, _mockOptions.Options);
+
+        ArgumentNullException.ThrowIfNull(_configurator);
+        ArgumentNullException.ThrowIfNull (_productConfigurator);
     }
 
     [Fact]
@@ -217,10 +226,9 @@ public class ValidationTypeConfiguratorTests
     public void WhenAndOtherwise_WhenConditionIsTrue_ShouldExecuteWhenRules()
     {
         // Arrange
-        var configurator = _configurator.ClearRules();
-        var model = new ValidationTypeConfiguratorTestModel
+        var configurator = _productConfigurator.ClearRules();
+        var model = new TestProductModel
         {
-            Age = 13,
             IsPhysicalProduct = true,
             ShippingAddress = "" // Invalid according to the 'When' block
         };
@@ -241,7 +249,7 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
-        var validationResult = Validator.Validate(model);
+        var validationResult = ProductValidator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
         validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("is disallowed"));
     }
@@ -250,10 +258,10 @@ public class ValidationTypeConfiguratorTests
     public void WhenAndOtherwise_WhenConditionIsFalse_ShouldExecuteOtherwiseRules()
     {
         // Arrange
-        var configurator = _configurator;
+        var configurator = _productConfigurator;
         configurator.ClearRules();
 
-        var model = new ValidationTypeConfiguratorTestModel
+        var model = new TestProductModel
         {
             IsPhysicalProduct = false,
             ShippingAddress = "Some other address" // Invalid according to the 'Otherwise' block
@@ -276,7 +284,7 @@ public class ValidationTypeConfiguratorTests
         configurator.Build();
 
         // Assert
-        var validationResult = Validator.Validate(model);
+        var validationResult = ProductValidator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
         validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("must be N/A"));
     }

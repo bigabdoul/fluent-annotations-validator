@@ -1,4 +1,5 @@
-﻿using FluentAnnotationsValidator.Configuration;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -21,13 +22,26 @@ public static class ValidationAttributeAdapter
     {
         ValidationAttribute[] attributes = [..member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
-        if (attributes.Length == 0) return [];
-
         var rules = new List<ConditionalValidationRule>();
 
-        foreach (var attr in attributes)
+        if (attributes.Length == 0)
         {
-            var uniqueKey = $"[{attr.GetType().Name}:{attr.TypeId}]{instanceType.Namespace}.{instanceType.Name}.{member.Name}";
+            if (typeof(IFluentValidatable).IsAssignableFrom(instanceType))
+                AddRule($"{instanceType.Namespace}.{instanceType.Name}.{member.Name}", null);
+        }
+        else
+        {
+            foreach (var attr in attributes)
+            {
+                var uniqueKey = $"[{attr.GetType().Name}:{attr.TypeId}]{instanceType.Namespace}.{instanceType.Name}.{member.Name}";
+                AddRule(uniqueKey, attr);
+            }
+        }
+
+        return rules;
+
+        void AddRule(string uniqueKey, ValidationAttribute? attr)
+        {
             var rule = new ConditionalValidationRule(Predicate: _ => true) // always validate, unless fluent overrides occur
             {
                 Member = member,
@@ -36,7 +50,5 @@ public static class ValidationAttributeAdapter
             };
             rules.Add(rule);
         }
-
-        return rules;
     }
 }
