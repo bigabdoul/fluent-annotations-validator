@@ -94,6 +94,11 @@ public class ConditionalValidationRule(
     public MemberInfo Member { get; init; } = default!;
 
     /// <summary>
+    /// A delegate to perform custom instance configuration before validation occurs.
+    /// </summary>
+    public PreValidationValueProviderDelegate? ConfigureBeforeValidation { get; set; }
+
+    /// <summary>
     /// Determines whether the current rule should be evaluated.
     /// </summary>
     /// <param name="targetInstance">The target instance passed to the predicate.</param>

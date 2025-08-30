@@ -4,136 +4,287 @@
 [![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
-A lightweight, dynamic bridge between `System.ComponentModel.DataAnnotations` and FluentValidation. Supports localized error messages, DI registration, convention-based resolution, ASP.NET Core integration — and ships with full Source Link and step-through symbol support.
+A powerful and lightweight library that bridges `System.ComponentModel.DataAnnotations` and a new, highly expressive fluent validation API. This new approach offers a seamless, feature-rich enhancement for any .NET API or ASP.NET Core backend, with support for conditional rules, custom logic, and localized error messages.
 
----
+-----
 
 ## ✨ Purpose
 
-FluentAnnotationsValidator is a reflection-powered adapter that converts standard `[ValidationAttribute]` annotations into fluent validation rules at runtime. It handles localized messaging, performance caching, debug support, and DI registration — making it a seamless enhancement for any .NET API or ASP.NET Core backend.
+`FluentAnnotationsValidator` is a reflection-powered adapter that dynamically converts standard `[ValidationAttribute]` annotations into powerful validation rules at runtime. This new version replaces the dependency on the `FluentValidation` package with a native, streamlined engine, providing a cleaner, more intuitive, and fully integrated experience.
 
----
+-----
 
 ## 🧠 Key Features
 
-- Converts `[Required]`, `[EmailAddress]`, `[Range]`, `[MinLength]`, `[StringLength]`, etc. into runtime FluentValidation rules
-- Localized error messages via `.resx` or static resource classes
-- Supports conventional message keys (`Property_Attribute`) and explicit `ErrorMessageResourceName`
-- Conditional rules with lambda-based validation and fallback messages
-- Culture-aware formatting for scalars and arrays (e.g., `{0}`, `{1}`)
-- DI integration (`IValidator<T>`) for use in endpoints and controllers
-- High-performance with metadata caching, no boilerplate
-- Fluent DSL configuration with discoverable chaining
-- Source Link + deterministic builds + `.snupkg` symbol publishing
+  * **Native Fluent API**: A custom-built, type-safe API for defining validation rules, offering superior control and readability.
+  * **Dynamic Validation**: Converts `[Required]`, `[EmailAddress]`, `[Range]`, and other annotations into runtime validation rules.
+  * **Conditional Logic**: The `When(...)` and `Otherwise(...)` methods enable complex, conditional rule sets for sophisticated validation flows.
+  * **Custom Rules**: The `Must(...)` method allows developers to easily embed custom predicate-based validation logic directly into the fluent chain.
+  * **Localization**: Supports localized error messages using `.resx` or static resource classes with conventional key-based resolution (`Property_Attribute`).
+  * **High Performance**: Leverages metadata caching to ensure no boilerplate code and minimal runtime overhead.
+  * **DI Integration**: Seamlessly integrates with ASP.NET Core DI via `IFluentValidator<T>`.
+  * **Complete Debug Support**: Includes full Source Link and step-through symbols for easy debugging.
 
----
+-----
 
 ## 📦 Installation
 
 Install via NuGet:
 
 | Package | Version | Command |
-|--------|---------|---------|
-| FluentAnnotationsValidator | 1.2.2 | `dotnet add package FluentAnnotationsValidator` |
+|---|---|---|
+| FluentAnnotationsValidator | 2.0.0-preview.2 | `dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2` |
 
----
+-----
 
 ## 🚀 Quickstart
 
-### 1. DTO Annotations
+### 1\. DTO Annotations
+
+Create your Data Transfer Object (DTO) and decorate properties with standard `System.ComponentModel.DataAnnotations`.
 
 ```csharp
 using FluentAnnotationsValidator.Metadata;
+using System.ComponentModel.DataAnnotations;
 
-[ValidationResource(typeof(ValidationMessages))] // optional; can be set via .WithValidationResource<T>()
-public class RegistrationDto
+public class BaseIdentityModel
 {
     [Required]
-    [EmailAddress]
-    public string Email { get; set; } = default!;
+    public virtual string Email { get; set; } = default!;
 
-    [Required]
-    [MinLength(6)]
-    public string Password { get; set; } = default!;
+    [Required, StringLength(20, MinimumLength = 6)]
+    public virtual string Password { get; set; } = default!;
+}
+
+[ValidationResource(typeof(FluentValidationMessages))]
+public class RegisterModel : BaseIdentityModel
+{
+    [StringLength(20)]
+    public string? PhoneNumber { get; set; }
+
+    [StringLength(50)]
+    public string? FirstName { get; set; }
+
+    [StringLength(50)]
+    public string? LastName { get; set; }
+
+    public DateTime? BirthDate { get; set; }
+}
+
+public class LoginModel : BaseIdentityModel
+{
+    public IList<string> Scopes { get; set; } = [];
 }
 ```
 
-### 2. Localized Messages (`.resx` or static class)
+### 2\. Localized Messages
+
+Use a `.resx` file to define localized validation messages with conventional keys (`Property_Attribute`).
 
 ```csharp
-public static class ValidationMessages
+public class FluentValidationMessages
 {
+    public static System.Globalization.CultureInfo? Culture { get; set; }
     public const string Email_Required = "Email is required.";
+    public const string Email_NotEmpty = "Email is cannot be empty.";
     public const string Email_EmailAddress = "Email format is invalid.";
     public const string Password_Required = "Password is required.";
-    public const string Password_MinLength = "Password must be at least {0} characters.";
+    public const string Password_StringLength = "The Password field must be a string with a minimum length of {0} and a maximum length of {1}.";
+    public const string Password_Must = "Password must contain at least one digit.";
 }
 ```
 
-### 3. Configuration
+### 3\. Configuration
 
-#### Basic Setup
-
-Using `AddFluentAnnotations()`:
+Use the `AddFluentAnnotations(...)` extension method in your `Startup.cs` or `Program.cs`.
 
 ```csharp
 using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Configuration;
 
-services.AddFluentAnnotations();
+public static partial class FluentValidationUtils
+{
+    public static IServiceCollection ConfigureFluentAnnotations(this IServiceCollection services)
+    {
+        services.AddFluentAnnotations(
+            // This factory makes the validation exclusively French
+            localizerFactory: factory => new(SharedResourceType: typeof(FluentValidationMessages), SharedCulture: CultureInfo.GetCultureInfo("fr")),
+            configure: config =>
+            {
+                // RegisterModel configuration
+                var registrationConfig = config.For<RegisterModel>();
+
+                // Add a preemptive rule that overrides any previous configuration for 'Email'
+                registrationConfig.Rule(x => x.Email)
+                    .Required()
+                    .EmailAddress();
+
+                // Add a non-preemptive rule for 'Email' that adds more rules to the property
+                registrationConfig.RuleFor(x => x.Email)
+                    .When(dto => dto.Email.EndsWith("@example.com"),
+                        rule => rule.Must(email => email.Any(char.IsDigit))
+                    );
+
+                // Add a preemptive rule that does NOT override previous configuration for 'Password'
+                registrationConfig.Rule(x => x.Password,
+                    must: BeComplexPassword,
+                    RuleDefinitionBehavior.Preserve);
+
+                registrationConfig.RuleFor(x => x.BirthDate)
+                    .When(x => x.BirthDate.HasValue, rule => rule.Must(BeAtLeast13));
+
+                registrationConfig.Build();
+
+                // LoginModel configuration
+                var loginConfig = config.For<LoginModel>();
+
+                // Non-preemptive rule that retains statically defined constraints (RequiredAttribute).
+                // Add a rule to distinguish between admins, and other users. This scenario is:
+                // "If the email does not contain the @ symbol, the Scopes collection must contain 'admin';
+                // otherwise, Scopes must be empty or contain 'user'."
+                loginConfig.RuleFor(x => x.Scopes)
+                    .When(IsNotBlankInvalidEmail, scopes => scopes.Must(ContainAdminScopes))
+                    .Otherwise(scopes => scopes.Must(BeEmptyOrContainUserScope));
+
+                // This Must(...) method is an alias for When(...) to make the intent clearer.
+                loginConfig.RuleFor(x => x.Email)
+                    .Must(BeValidEmailAddressIfNotAdmin, rule => rule.EmailAddress());
+
+                loginConfig.Build();
+            },
+            targetAssembliesTypes: [typeof(RegisterModel)]
+        );
+    }
+    
+    private static bool BeAtLeast13(DateTime? date) => DateTime.UtcNow.AddYears(-13) >= date;
+
+    private static bool BeComplexPassword(string password)
+    {
+        // A regular expression that checks for a complex password.
+        // (?=.*[a-z])   - Must contain at least one lowercase letter.
+        // (?=.*[A-Z])   - Must contain at least one uppercase letter.
+        // (?=.*\d)      - Must contain at least one digit.
+        // (?=.*[!@#$%^&*()_+=\[{\]};:\"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
+        // .             - Matches any character (except newline).
+
+        var passwordRegex = ComplexPasswordRegex();
+
+        return passwordRegex.IsMatch(password);
+    }
+
+    private static bool IsNotBlankInvalidEmail(LoginModel m) => !string.IsNullOrWhiteSpace(m.Email) && !m.Email.Contains('@');
+
+    private static bool ContainAdminScopes(HashSet<string> scopes) => scopes.Contains("admin") || scopes.Contains("superuser");
+
+    private static bool BeEmptyOrContainUserScope(HashSet<string> scopes) => scopes.Count == 0 || scopes.Contains("user");
+
+    private static bool BeValidEmailAddressIfNotAdmin(LoginModel user)
+    {
+        var email = user.Email;
+        if (string.IsNullOrWhiteSpace(email)) return true; // invalid, enacts the EmailAddress() validator
+
+        return
+            // if it contains an @ symbol, then it must be a valid email address
+            email.Contains('@') ||
+            // non-administrators definitely need a valid email address
+            !string.Equals(email, "admin", StringComparison.OrdinalIgnoreCase) && 
+            !string.Equals(email, "superuser", StringComparison.OrdinalIgnoreCase) &&
+            !user.Scopes.Contains("admin");
+    }
+
+    private static bool BeComplexPassword(string password)
+    {
+        // A regular expression that checks for a complex password.
+        // (?=.*[a-z])   - Must contain at least one lowercase letter.
+        // (?=.*[A-Z])   - Must contain at least one uppercase letter.
+        // (?=.*\d)      - Must contain at least one digit.
+        // (?=.*[!@#$%^&*()_+=\[{\]};:\"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
+        // .             - Matches any character (except newline).
+
+        var passwordRegex = ComplexPasswordRegex();
+
+        return passwordRegex.IsMatch(password);
+    }
+
+    [GeneratedRegex(@"(?:\+?224|00224)?[\s.-]?(?:\d{3}[\s.-]?\d{3}[\s.-]?\d{3}|\d{3}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2})")]
+    private static partial Regex GuineaPhoneNumberRegex();
+
+    [GeneratedRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).*$")]
+    private static partial Regex ComplexPasswordRegex();
+}
 ```
 
-#### Advanced Setup
+#### No `ValidationAttribute` annotation on model's member
 
-Using either:
+To make sure the library handles the case where a model's members don't contain any 
+`ValidationAttribute` annotation, the model must either implement the `IFluentValidatable`
+marker interface, or pass the `extraValidatableTypes` parameter to the extension method
+`IServiceCollection.AddFluentAnnotations(...)`.
 
-1. `AddFluentAnnotationsValidators(...)`:
+Declare types:
 
 ```csharp
-services.AddFluentAnnotationsValidators(typeof(LoginDto))
-    .UseFluentAnnotations()
-    .For<LoginDto>()
-        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-        .WithValidationResource<ValidationMessages>()
-    .Build();
+using FluentAnnotationsValidator.Abstractions;
+
+public class Product : IFluentValidatable
+{
+    public string ProductId { get; set; } = default!;
+    public string ProductName { get; set; } = default!;
+    public bool IsPhysicalProduct { get; set; }
+    public string ShippingAddress { get; set; } = string.Empty;
+}
+
+public class ProductOrder
+{
+    public string OrderId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public int Quantity { get; set; }
+}
 ```
 
-2. `AddFluentAnnotations(...)` with common behavior options configuration:
+Add validation rules:
 
 ```csharp
 services.AddFluentAnnotations(
-    configureBehavior: options =>
+    configure: config =>
     {
-        // common culture and resource type for all validation attributes
-        options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
-        options.CommonResourceType = typeof(ValidationMessages);
-    }
+        var productConfigurator = config.For<Product>();
+        // Configure Product and Build
+        productConfigurator.RuleFor(x => x.ShippingAddress)
+            .When(x => x.IsPhysicalProduct, rule =>
+            {
+                // These rules are evaluated if IsPhysicalProduct is true
+                rule.NotEmpty().MaximumLength(100);
+            })
+            .Otherwise(rule =>
+            {
+                // This rule will be evaluated if IsPhysicalProduct is false
+                rule.Must(address => address == "N/A")
+                    .WithMessage("The shipping address for non-physical products must be N/A.");
+            });
+
+        productConfigurator.Build();
+
+        // Configure ProductOrder and Build
+        var orderConfigurator = config.For<ProductOrder>();
+        
+        orderConfigurator.RuleFor(x => x.OrderId)
+            .NotEmpty()
+            .MinimumLength(8);
+
+        orderConfigurator.Build();
+    },
+    extraValidatableTypes: () => [typeof(ProductOrder)],
+    targetAssembliesTypes: [typeof(Product)]
 );
 ```
 
-3. `AddFluentAnnotations(...)` with scoped and common culture and resource types:
-```csharp
-services.AddFluentAnnotations(
-    builder =>
-        // Conditional Localization rule for German 
-        // culture and resource type scoped to LoginDto
-        builder.For<LoginDto>()
-            .When(x => x.LangCode == 'DE')
-            .WithCulture(CultureInfo.GetCultureInfo("de-DE"))
-            .WithValidationResource<AuthenticationMessages>()
-        .Build(),
-    configureBehavior: options =>
-    {
-        // common French culture and resource type for all validation rules
-        options.CommonCulture = CultureInfo.GetCultureInfo("fr-FR");
-        options.CommonResourceType = typeof(ValidationMessages);
-    }
-);
-```
+### 4\. Runtime Validation
 
-### 4. Runtime Validation
+Inject `IFluentValidator<T>` into your services, controllers, or Minimal API endpoints to validate your DTOs.
 
 ```csharp
-app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto> validator) =>
+app.MapPost("/register", async (RegisterModel dto, IFluentValidator<RegisterModel> validator) =>
 {
     var result = await validator.ValidateAsync(dto);
     if (!result.IsValid)
@@ -143,75 +294,40 @@ app.MapPost("/register", async (RegistrationDto dto, IValidator<RegistrationDto>
 });
 ```
 
----
+-----
 
 ## 🧪 Testing
 
-Inside `FluentAnnotationsValidator.Tests`:
+The library includes a comprehensive test suite covering all major features, including:
 
-- ✅ Unit tests for all `[ValidationAttribute]` types
-- ✅ Resolution of localized strings via `.resx` and static resources
-- ✅ Edge cases like multiple violations and fallback messages
-- ✅ All legacy use-case tests are passing
-- ✅ Deterministic build and workflow verification
+  * Unit tests for all `[ValidationAttribute]` types.
+  * Resolution of localized strings via `.resx` and static resources.
+  * Validation of edge cases like multiple violations and fallback messages.
+  * Full `Must(...)`, `When(...)`, and `Otherwise(...)` scenarios.
 
----
+-----
 
 ## 🗂️ Solution Structure
 
 | Project | Purpose |
-|--------|---------|
-| `FluentAnnotationsValidator` | Core validation engine, DSL, and culture-aware formatting |
-| `FluentAnnotationsValidator.Tests` | Complete test suite covering configuration, resolution, formatting |
+|---|---|
+| `FluentAnnotationsValidator` | The core validation engine, new fluent DSL, and extensibility points. |
+| `FluentAnnotationsValidator.Tests` | A complete test suite covering all configuration, resolution, and validation flows. |
 
-### 📁 Project Layout
-
-```
-src/
-├── FluentAnnotationsValidator/
-│   ├── Abstractions/       // Interfaces for config, resolvers
-│   ├── Configuration/      // DSL surface and options
-│   ├── Extensions/         // Service registration
-│   ├── Internals/Reflection // Metadata cache
-│   ├── Messages/           // Fallback + formatting logic
-│   ├── Metadata/           // Resource marker attribute
-│   ├── Results/            // Validation results
-│   └── Runtime/Validators  // Validator factories
-
-tests/
-├── FluentAnnotationsValidator.Tests/
-│   ├── Assertions/
-│   ├── Configuration/
-│   ├── Messages/
-│   ├   └── Resolutions/
-│   ├── Models/
-│   ├── Resources/
-│   ├── Results/
-│   ├── Validators/
-│   ├── DIRegistrationTests.cs
-│   └── TestHelpers.cs
-```
-
----
+-----
 
 ## 📘 Documentation
 
-Explore advanced flows in the [`docs`](docs/index.md):
+More detailed documentation will be available in the `docs` directory with the full release.
 
-- [Architecture](docs/architecture.md)
-- [Localization](docs/localization.md)
-- [Extensibility](docs/customization.md)
-- [Validation flow](docs/validation-flow.md)
-- [Fluent DSL config](docs/configuration/fluent.md)
-
----
+-----
 
 ## 📄 License
 
 Licensed under the MIT License.
 
----
+-----
 
 ## 🤝 Contributing
 
-Ideas welcome — from resource strategies to DSL ergonomics. Submit pull requests, file issues, and join the mission to make validation intuitive and multilingual.
+We welcome your feedback and contributions\! Feel free to submit pull requests or file issues to help improve the library.

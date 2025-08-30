@@ -6,6 +6,50 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0-preview.2] - 2025-08-28
+
+This release introduces a new, more expressive **fluent API**, marking a significant 
+architectural shift. This API enhances flexibility for complex and conditional 
+validation, providing a more intuitive and powerful developer experience.
+
+---
+
+### Added
+
+* **Conditional Validation with `When` and `Otherwise`**: The `RuleFor(...)` builder 
+now supports a powerful conditional flow.
+    * `When(condition, configureRules)`: This method enables you to encapsulate multiple
+    validation rules that are only executed when a specified `condition` is met.
+    * `Otherwise(configureRules)`: Paired with `When`, this method defines a set of rules
+    that are applied if the initial condition evaluates to `false`, creating a clear 
+    `if/else` validation structure.
+
+* **Custom Validation with `Must`**: A key addition to the `IValidationRuleBuilder<T, TProp>`
+is the `Must(predicate)` method, which allows developers to define custom validation
+logic using a predicate (`Func<TProp, bool>`) that operates directly on the member's
+value. This method fully integrates into the fluent chain, enabling complex rules that 
+extend beyond standard data annotations.
+
+---
+
+### Changed
+
+* **Preemptive `Rule(...)` Overload**: The existing `Rule(...)` method has been enhanced.
+It now accepts an optional `RuleDefinitionBehavior` enum, which by default causes it to 
+preemptively replace all previously registered rules for the specified member before 
+adding the new ones. This behavior makes it ideal for explicitly overriding previous 
+configurations.
+
+* **Non-preemptive `RuleFor(...)`**: This new method provides a non-destructive way to 
+add rules. It returns a new, type-safe builder (`IValidationRuleBuilder<T, TProp>`), 
+allowing you to chain validation methods and conditional logic without overriding 
+existing rules for the same member.
+
+* **Dependency Removal**: The dependency on the `FluentValidation` package has been 
+removed. All references to `IValidator<T>` should be replaced with `IFluentValidator<T>`.
+
+---
+
 ## [v2.0.0-preview1] - 2025-07-25
 
 > ⚠️ This is a **preview** release. API surface and behavior may evolve in later stable builds.

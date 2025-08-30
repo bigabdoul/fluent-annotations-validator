@@ -377,6 +377,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.BeforeValidation(PreValidationValueProviderDelegate{T})"/>
+    public virtual ValidationTypeConfigurator<T> BeforeValidation(PreValidationValueProviderDelegate<T> configure)
+    {
+        ArgumentNullException.ThrowIfNull(_currentRule);
+
+        EnsureSinglePreValidationValueProvider(_currentRule.Member.GetMemberInfo());
+
+        _currentRule.ConfigureBeforeValidation = (instance, member, memberValue) =>
+            configure.Invoke((T)instance, member, memberValue);
+
+        return this;
+    }
+
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
     public virtual void Build()
     {
@@ -395,6 +408,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
                 foreach (var attr in rule.Attributes)
                 {
                     var newRule = rule.CreateRuleFromPending(member, attr, rule.Predicate);
+                    newRule.ConfigureBeforeValidation = rule.ConfigureBeforeValidation;
                     Options.AddRule(member, newRule);
                 }
             }
@@ -403,6 +417,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
                 parent.Register(opts =>
                 {
                     var newRule = rule.CreateRuleFromPending(member);
+                    newRule.ConfigureBeforeValidation = rule.ConfigureBeforeValidation;
                     opts.AddRule(member, newRule);
                 });
             }
@@ -491,6 +506,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.ClearRules()
         => ClearRules();
 
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.BeforeValidation(PreValidationValueProviderDelegate<T> configure)
+        => BeforeValidation(configure);
+
     #endregion
 
     /// <summary>
@@ -559,6 +577,18 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             _pendingRules.Add(_currentRule);
             _currentRule = null;
         }
+    }
+
+    protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member)
+    {
+        if (_pendingRules.Where(r => r.ConfigureBeforeValidation != null && AreSame(r.Member)).Any() ||
+            _validationRuleBuilders.Any(builder => builder.GetRules().Where(r => r.ConfigureBeforeValidation != null && AreSameMembers(r.Member)).Any()))
+            throw new InvalidOperationException("The pre-validation value provider " +
+                "delegate cannot be assigned more than once to any rule for the type " +
+                $"({typeof(T).Name}) and member ({member.Name}) being configured.");
+
+        bool AreSame(Expression member2) => member.AreSameMembers(member2.GetMemberInfo());
+        bool AreSameMembers(MemberInfo member2) => member.AreSameMembers(member2);
     }
 
     #region helpers

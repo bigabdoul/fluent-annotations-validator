@@ -139,8 +139,6 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
             attribute,
             currentRule.Predicate);
 
-        //rule.Message = attribute.FormatErrorMessage(member.Name);
-
         Rules.Add(rule);
 
         return this;
@@ -150,6 +148,14 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     public IValidationRuleBuilder<T, TProp> WithMessage(string? message)
     {
         Rules.Last().Message = message;
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.BeforeValidation(PreValidationValueProviderDelegate{T, TProp})"/>
+    public IValidationRuleBuilder<T, TProp> BeforeValidation(PreValidationValueProviderDelegate<T, TProp> configure)
+    {
+        Rules.Last().ConfigureBeforeValidation = (instance, member, memberValue) => 
+            configure.Invoke((T)instance, member, (TProp?)memberValue);
         return this;
     }
 

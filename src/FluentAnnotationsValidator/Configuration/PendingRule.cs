@@ -81,6 +81,11 @@ public sealed class PendingRule<T>(
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
+    /// <summary>
+    /// A delegate to perform custom instance configuration before validation occurs.
+    /// </summary>
+    public PreValidationValueProviderDelegate? ConfigureBeforeValidation { get; set; }
+    
     public override string ToString() => 
         $"Member: {Member.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
         string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));

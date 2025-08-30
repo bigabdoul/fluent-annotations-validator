@@ -84,4 +84,11 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// <param name="attribute">The <see cref="ValidationAttribute"/> to use for the validation rule.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute);
+
+    /// <summary>
+    /// Gives a rule a chance to gather the correct value for the specified member before validation occurs.
+    /// </summary>
+    /// <param name="configure">A delegate that configures the instance and member on pre-validation.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    IValidationRuleBuilder<T, TProp> BeforeValidation(PreValidationValueProviderDelegate<T, TProp> configure);
 }

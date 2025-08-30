@@ -223,6 +223,20 @@ public interface IValidationTypeConfigurator<T>
     IValidationTypeConfigurator<T> UseFallbackMessage(string fallbackMessage);
 
     /// <summary>
+    /// Configures a pre-validation value provider for the current type.
+    /// </summary>
+    /// <remarks>
+    /// This method allows you to provide a custom value provider delegate that will be invoked just 
+    /// before any validation rules are executed for properties of this type. It is useful for scenarios 
+    /// where you need to perform data preparation (like auto-generated values/identifiers) or value 
+    /// retrieval (e.g., from an external source) before validation.
+    /// </remarks>
+    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
+    /// <param name="configure">A delegate that provides a new value for the instance before validation.</param>
+    /// <returns>A reference to the current configurator instance for method chaining.</returns>
+    IValidationTypeConfigurator<T> BeforeValidation(PreValidationValueProviderDelegate<T> configure);
+
+    /// <summary>
     /// Finalizes the configuration by registering all buffered rules into the underlying options system.
     /// </summary>
     void Build();

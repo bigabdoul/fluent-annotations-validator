@@ -48,10 +48,14 @@ public static class ValidationResultAggregator
         var errors = new List<ValidationErrorResult>();
         var value = GetValue(member, instance);
         var context = new ValidationContext(instance) { MemberName = member.Name };
+        var preconfigurationInvoked = false;
 
         foreach (var rule in rules)
         {
             if (!rule.ShouldApply(instance)) continue;
+
+            if (!preconfigurationInvoked)
+                GetPrevalidationValue(rules, instance, member, ref value, ref preconfigurationInvoked);
 
             if (rule.Attribute is { } attr)
             {
@@ -74,6 +78,22 @@ public static class ValidationResultAggregator
         }
 
         return errors;
+    }
+
+    private static void GetPrevalidationValue(IEnumerable<ConditionalValidationRule> rules, 
+    object instance, MemberInfo member, ref object? value, ref bool preconfigurationInvoked)
+    {
+        // Find first rule that has a ConfigureBeforeValidation
+        // delegate and call that delegate once for this member.
+        var ruleWithPrevalidation = rules.SingleOrDefault(r => r.ConfigureBeforeValidation != null);
+
+        if (ruleWithPrevalidation != null)
+        {
+            value = ruleWithPrevalidation.ConfigureBeforeValidation!.Invoke(instance, member, value);
+        }
+        
+        // invoke once for this member
+        preconfigurationInvoked = true;
     }
 
     internal static object? GetValue(MemberInfo member, object instance)
