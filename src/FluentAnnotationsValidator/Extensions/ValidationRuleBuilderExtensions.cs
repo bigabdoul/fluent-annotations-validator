@@ -192,6 +192,43 @@ public static class ValidationRuleBuilderExtensions
         => builder.AddRuleFromAttribute(new EmailAddressAttribute());
 
     /// <summary>
+    /// Specifies that a property's value must be within a specified range of integer values.
+    /// </summary>
+    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The current builder instance.</param>
+    /// <param name="minimum">The minimum allowable integer value.</param>
+    /// <param name="maximum">The maximum allowable integer value.</param>
+    /// <returns>A reference to the current builder instance for method chaining.</returns>
+    public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        int minimum, int maximum) => builder.AddRuleFromAttribute(new RangeAttribute(minimum, maximum));
+
+    /// <summary>
+    /// Specifies that a property's value must be within a specified range of double values.
+    /// </summary>
+    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The current builder instance.</param>
+    /// <param name="minimum">The minimum allowable double value.</param>
+    /// <param name="maximum">The maximum allowable double value.</param>
+    /// <returns>A reference to the current builder instance for method chaining.</returns>
+    public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        double minimum, double maximum) => builder.AddRuleFromAttribute(new RangeAttribute(minimum, maximum));
+
+    /// <summary>
+    /// Specifies that a property's value must be within a specified range of values of a given type.
+    /// </summary>
+    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The current builder instance.</param>
+    /// <param name="type">The type of the object to be compared.</param>
+    /// <param name="minimum">The string representation of the minimum value.</param>
+    /// <param name="maximum">The string representation of the maximum value.</param>
+    /// <returns>A reference to the current builder instance for method chaining.</returns>
+    public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        Type type, string minimum, string maximum) => builder.AddRuleFromAttribute(new RangeAttribute(type, minimum, maximum));
+
+    /// <summary>
     /// Adds a rule by instantiating and attaching a specified <see cref="ValidationAttribute"/> to the rule builder.
     /// </summary>
     /// <typeparam name="T">The type of the object instance being validated.</typeparam>
