@@ -36,7 +36,8 @@ public class ConditionalValidationRule(
     Type? ResourceType = null,
     CultureInfo? Culture = null,
     string? FallbackMessage = null,
-    bool UseConventionalKeyFallback = true)
+    bool UseConventionalKeyFallback = true) : 
+    ValidationRuleBase(Message, Key, ResourceKey, ResourceType, Culture, FallbackMessage, UseConventionalKeyFallback)
 {
     private Func<object, bool>? _shouldApplyEvaluator;
 
@@ -44,36 +45,6 @@ public class ConditionalValidationRule(
     /// Gets or sets a function that evaluates when the rule is applied.
     /// </summary>
     public Func<object, bool> Predicate { get; set; } = Predicate;
-
-    /// <summary>
-    /// Gets or sets the validation error message.
-    /// </summary>
-    public string? Message { get; set; } = Message;
-
-    /// <summary>
-    /// Gets or sets the failure key used by the message resolver or diagnostics.
-    /// </summary>
-    public string? Key { get; set; } = Key;
-
-    /// <summary>
-    /// Gets or sets the resource manager's key for retrieving a localized error message.
-    /// </summary>
-    public string? ResourceKey { get; set; } = ResourceKey;
-
-    /// <summary>
-    /// Gets or sets the resource manager's type for localized error message.
-    /// </summary>
-    public Type? ResourceType { get; set; } = ResourceType;
-
-    /// <summary>
-    /// Gets or sets the culture to use in the resource manager.
-    /// </summary>
-    public CultureInfo? Culture { get; set; } = Culture;
-
-    /// <summary>
-    /// Gets or sets a fallback error message if resolution fails.
-    /// </summary>
-    public string? FallbackMessage { get; set; } = FallbackMessage;
 
     /// <summary>
     /// Gets or sets a value that indicates whether to use convention-based 
@@ -92,11 +63,6 @@ public class ConditionalValidationRule(
     /// Gets or sets the member this rule applies to.
     /// </summary>
     public MemberInfo Member { get; init; } = default!;
-
-    /// <summary>
-    /// A delegate to perform custom instance configuration before validation occurs.
-    /// </summary>
-    public PreValidationValueProviderDelegate? ConfigureBeforeValidation { get; set; }
 
     /// <summary>
     /// Determines whether the current rule should be evaluated.

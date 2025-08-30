@@ -28,7 +28,7 @@ public sealed class PendingRule<T>(
     CultureInfo? culture = null,
     string? fallbackMessage = null,
     bool? useConventionalKeys = true
-)
+) : ValidationRuleBase(message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys)
 {
     /// <summary>
     /// Gets or sets the member being configured.
@@ -40,52 +40,10 @@ public sealed class PendingRule<T>(
     /// </summary>
     public Func<T, bool> Predicate { get; set; } = predicate;
 
-    /// <summary>
-    /// Gets or sets the validation error message.
-    /// </summary>
-    public string? Message { get; set; } = message;
-
-    /// <summary>
-    /// Gets or sets the failure key used by the message resolver or diagnostics.
-    /// </summary>
-    public string? Key { get; set; } = key;
-
-    /// <summary>
-    /// Gets or sets the resource manager's key for retrieving a localized error message.
-    /// </summary>
-    public string? ResourceKey { get; set; } = resourceKey;
-
-    /// <summary>
-    /// Gets or sets the resource manager's type for localized error message.
-    /// </summary>
-    public Type? ResourceType { get; set; } = resourceType;
-
-    /// <summary>
-    /// Gets or sets the culture to use in the resource manager.
-    /// </summary>
-    public CultureInfo? Culture { get; set; } = culture;
-
-    /// <summary>
-    /// Gets or sets a fallback error message if resolution fails.
-    /// </summary>
-    public string? FallbackMessage { get; set; } = fallbackMessage;
-
-    /// <summary>
-    /// Gets or sets a value that indicates whether to use convention-based 
-    /// resource key names (e.g., Email_Required).
-    /// </summary>
-    public bool? UseConventionalKeys { get; set; } = useConventionalKeys;
-
-    /// <summary>
     /// Gets the list of dynamically added attributes via fluent rules.
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
-    /// <summary>
-    /// A delegate to perform custom instance configuration before validation occurs.
-    /// </summary>
-    public PreValidationValueProviderDelegate? ConfigureBeforeValidation { get; set; }
-    
     public override string ToString() => 
         $"Member: {MemberExpression.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
         string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));
