@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -89,7 +90,17 @@ public static class ValidationResultAggregator
 
         if (ruleWithPrevalidation != null)
         {
-            value = ruleWithPrevalidation.ConfigureBeforeValidation!.Invoke(instance, member, value);
+            var newvalue = ruleWithPrevalidation.ConfigureBeforeValidation!.Invoke(instance, member, value);
+            if (newvalue != value)
+            {
+                value = newvalue;
+                // Make sure the user didn't forget to update the member with the new value.
+                if (member.GetValue(instance) != newvalue)
+                {
+                    // try to synchronize the member's value
+                    member.TrySetValue(instance, newvalue);
+                }
+            }
         }
         
         // invoke once for this member
