@@ -40,7 +40,7 @@ public class Resolver_ConventionTests
         var options = new ValidationBehaviorOptions();
         var rule = new ConditionalValidationRule(
             dto => true,
-            useConventionalKeyFallback: false
+            useConventionalKeys: false
         );
 
         // Mock IStringLocalizerFactory, even though it won't be used in this test path
