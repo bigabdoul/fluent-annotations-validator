@@ -1,7 +1,9 @@
-﻿namespace FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Abstractions;
+
+namespace FluentAnnotationsValidator.Tests.Models;
 
 // Test DTO used for unit tests.
-public class BeforeValidationTestDto
+public class BeforeValidationTestDto : IFluentValidatable
 {
     // A property to be validated and to demonstrate pre-validation value modification.
     public int Id { get; set; }
