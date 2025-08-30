@@ -7,7 +7,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 using static TestHelpers;
@@ -44,13 +43,8 @@ public class ValidationTypeConfiguratorTests
             targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
         );
         
-        if (_mockOptions is null)
-        {
-            var provider = _services.BuildServiceProvider();
-            var options = provider.GetRequiredService<ValidationBehaviorOptions>();
-            _mockOptions = new(options);
-        }
-
+        ArgumentNullException.ThrowIfNull(_mockOptions);
+        
         _mockParentConfigurator = new(_mockOptions.Options);
 
         ArgumentNullException.ThrowIfNull(_configurator);
