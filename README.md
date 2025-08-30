@@ -214,7 +214,7 @@ public static partial class FluentValidationUtils
 }
 ```
 
-#### No `ValidationAttribute` annotation on model's member
+#### 3\.1 No `ValidationAttribute` annotation on model's member
 
 To make sure the library handles the case where a model's members don't contain any 
 `ValidationAttribute` annotation, the model must either implement the `IFluentValidatable`
@@ -277,6 +277,36 @@ services.AddFluentAnnotations(
     extraValidatableTypes: () => [typeof(ProductOrder)],
     targetAssembliesTypes: [typeof(Product)]
 );
+```
+
+#### 3\.2 Pre-Validation Value Providers
+
+Pre-validation value providers is a new mechanism to modify or retrieve a member's value before validation.
+This method is useful for data preparation, normalization, initialization, or fetching values from external sources.
+
+Example:
+
+```csharp
+services.AddFluentAnnotations(
+    configure: config =>
+    {
+        var productConfigurator = config.For<ProductModel>();
+
+        // BeforeValidation(...) can be called in any order, but only
+        // ONCE for this configurator, ProductModel, and ProductId.
+        productConfigurator.RuleFor(x => x.ProductId)
+            .BeforeValidation(EnsureProductIdInitialized)
+            .Required()
+            .NotEmpty()
+            .ExactLength(36);
+
+        productConfigurator.Build();
+    }
+);
+
+// Makes sure productId is not blank.
+static string? EnsureProductIdInitialized(ProductModel product, MemberInfo member, string? productId)
+    => product.ProductId = string.IsNullOrWhiteSpace(productId) ? Guid.NewGuid().ToString() : productId;
 ```
 
 ### 4\. Runtime Validation

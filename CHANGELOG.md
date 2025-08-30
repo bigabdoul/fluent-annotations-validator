@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
-## [v2.0.0-preview.2] - 2025-08-28
+## [v2.0.0-preview.2] - 2025-08-30
 
 This release introduces a new, more expressive **fluent API**, marking a significant 
 architectural shift. This API enhances flexibility for complex and conditional 
@@ -30,6 +30,11 @@ logic using a predicate (`Func<TProp, bool>`) that operates directly on the memb
 value. This method fully integrates into the fluent chain, enabling complex rules that 
 extend beyond standard data annotations.
 
+* **Pre-Validation Value Providers**: Introduced a new mechanism to modify or retrieve a member's value before validation. This is useful for data preparation, normalization, or fetching values from external sources.
+    * Added `PreValidationValueProviderDelegate` to define the value-gathering logic.
+    * Introduced the fluent methods `IValidationTypeConfigurator<T>.BeforeValidation(...)` and `IValidationRuleBuilder<T, TProp>.BeforeValidation(...)` to easily configure pre-validation logic.
+    * The `PendingRule<T>` and `ConditionalValidationRule` classes were updated with a `ConfigureBeforeValidation` property to support this feature.
+
 ---
 
 ### Changed
@@ -47,6 +52,24 @@ existing rules for the same member.
 
 * **Dependency Removal**: The dependency on the `FluentValidation` package has been 
 removed. All references to `IValidator<T>` should be replaced with `IFluentValidator<T>`.
+
+---
+
+### 🧪 Tests
+
+* **Comprehensive Unit Tests**: Added a full suite of unit tests to validate the functionality of the new `BeforeValidation` methods, covering correct delegate assignment, value modification, and duplicate configuration error handling.
+
+### ⚙️ Other
+
+* **Added MemberInfo Extensions**:
+    * `GetValue()`: A new extension method to retrieve a member's value using reflection.
+    * `SetValue()`: A new extension method to set a member's value using reflection.
+    * `TrySetValue()`: A non-throwing version of `SetValue()`, which returns a boolean indicating success.
+
+### ♻️ Refactors
+
+* **Improved `EnsureSinglePreValidationValueProvider` Logic**: The method now uses a unified LINQ query to check for duplicate pre-validation delegates, which is more readable and efficient.
+* **Unified Rule Base Class**: Extracted common properties from `PendingRule<T>` and `ConditionalValidationRule` into a new `ValidationRuleBase` to reduce code duplication and improve maintainability.
 
 ---
 
