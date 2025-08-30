@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 using static TestHelpers;
@@ -18,11 +19,15 @@ public class ValidationTypeConfiguratorTests
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
     private ValidationTypeConfigurator<TestProductModel> _productConfigurator;
+    private ValidationTypeConfigurator<ProductOrderModel> _productOrderConfigurator;
 
     private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator => 
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ValidationTypeConfiguratorTestModel>>();
+    
     private IFluentValidator<TestProductModel> ProductValidator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<TestProductModel>>();
+    private IFluentValidator<ProductOrderModel> ProductOrderValidator =>
+        _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ProductOrderModel>>();
 
     public ValidationTypeConfiguratorTests()
     {
@@ -32,8 +37,10 @@ public class ValidationTypeConfiguratorTests
             {
                 _configurator = config.For<ValidationTypeConfiguratorTestModel>();
                 _productConfigurator = config.For<TestProductModel>();
+                _productOrderConfigurator = config.For<ProductOrderModel>();
             },
             configureBehavior: options => _mockOptions = new(options),
+            extraValidatableTypes: () => [typeof(ProductOrderModel)],
             targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
         );
         
@@ -48,6 +55,7 @@ public class ValidationTypeConfiguratorTests
 
         ArgumentNullException.ThrowIfNull(_configurator);
         ArgumentNullException.ThrowIfNull (_productConfigurator);
+        ArgumentNullException.ThrowIfNull (_productOrderConfigurator);
     }
 
     [Fact]
@@ -287,6 +295,65 @@ public class ValidationTypeConfiguratorTests
         var validationResult = ProductValidator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
         validationResult.Errors.Should().ContainSingle(e => e.PropertyName == "ShippingAddress" && e.ErrorMessage.Contains("must be N/A"));
+    }
+
+    [Theory]
+    [InlineData("o1234567", "p1234567", true)]
+    [InlineData("o1234567", "p1234", false)] // productId too short
+    [InlineData("o1234567", "", false)]      // productId empty
+    [InlineData(" ", "p123456790", false)]   // orderId empty
+    [InlineData("o1234", "p1234567", false)] // orderId too short
+    public void ExtraValidatableTypes_ShouldBeIncluded_IntoValidationPipeline(string orderId, string productId, bool validResult)
+    {
+        // Arrange
+        var configurator = _productOrderConfigurator;
+
+        var productOrder = new ProductOrderModel
+        {
+            OrderId = orderId,
+            ProductId = productId,
+            Quantity = 2,
+        };
+
+        // Act
+        configurator.RuleFor(x => x.OrderId)
+            .Required()         // Rule 1
+            //.BeforeValidation((order, member, orderId) => string.IsNullOrWhiteSpace(orderId) ? Guid.NewGuid().ToString() : orderId)
+            .NotEmpty()         // Rule 2
+            .MinimumLength(8);  // Rule 3
+
+        configurator.RuleFor(x => x.ProductId)
+            .Required()         // Rule 4
+            .MinimumLength(8);  // Rule 5
+
+        configurator.Build();
+
+        // Assert
+        var validationResult = ProductOrderValidator.Validate(productOrder);
+
+        if (validResult)
+        {
+            validationResult.IsValid.Should().BeTrue();
+        }
+        else
+        {
+            validationResult.IsValid.Should().BeFalse();
+        }
+
+        var addedRules = _mockOptions.GetAddedRules<ProductOrderModel>();
+        addedRules.Should().HaveCount(5);
+
+        addedRules.Should().Contain(r =>
+            r.Member.Name == nameof(ProductOrderModel.OrderId) &&
+            r.Rule.Attribute != null &&
+            (r.Rule.Attribute.GetType() == typeof(NotEmptyAttribute) || r.Rule.Attribute.GetType() == typeof(MinLengthAttribute))
+        );
+
+        addedRules.Should().Contain(r =>
+            r.Member.Name == nameof(ProductOrderModel.ProductId) &&
+            r.Rule.Attribute != null &&
+            (r.Rule.Attribute.GetType() == typeof(RequiredAttribute) || r.Rule.Attribute.GetType() == typeof(MinLengthAttribute))
+        );
     }
 
     [Fact]

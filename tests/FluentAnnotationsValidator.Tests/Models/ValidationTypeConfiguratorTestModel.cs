@@ -20,6 +20,15 @@ public class ValidationTypeConfiguratorTestModel
 
 public class TestProductModel : IFluentValidatable
 {
+    public string ProductId { get; set; } = default!;
+    public string ProductName { get; set; } = default!;
     public bool IsPhysicalProduct { get; set; }
     public string ShippingAddress { get; set; } = string.Empty;
+}
+
+public class ProductOrderModel
+{
+    public string OrderId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public int Quantity { get; set; }
 }
