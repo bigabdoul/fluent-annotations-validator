@@ -42,7 +42,7 @@ public static class ValidationAttributeAdapter
 
         void AddRule(string uniqueKey, ValidationAttribute? attr)
         {
-            var rule = new ConditionalValidationRule(Predicate: _ => true) // always validate, unless fluent overrides occur
+            var rule = new ConditionalValidationRule(predicate: _ => true) // always validate, unless fluent overrides occur
             {
                 Member = member,
                 Attribute = attr,

@@ -20,9 +20,9 @@ public class Resolver_CultureTests
 
         var rule = new ConditionalValidationRule(
             dto => true,
-            ResourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
-            ResourceType: typeof(ValidationMessages),
-            Culture: frenchCulture
+            resourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
+            resourceType: typeof(ValidationMessages),
+            culture: frenchCulture
         );
 
         var (min, max) = (6, 20);

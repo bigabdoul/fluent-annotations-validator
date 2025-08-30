@@ -27,7 +27,7 @@ public class Resolver_PriorityTests
     {
         var rule = new ConditionalValidationRule(
             dto => true,
-            Message: "Override wins"
+            message: "Override wins"
         );
 
         var attr = new RequiredAttribute();
@@ -42,8 +42,8 @@ public class Resolver_PriorityTests
     {
         var rule = new ConditionalValidationRule(
             dto => true,
-            ResourceKey: nameof(ValidationMessages.EmailRequired),
-            ResourceType: typeof(ValidationMessages)
+            resourceKey: nameof(ValidationMessages.EmailRequired),
+            resourceType: typeof(ValidationMessages)
         );
 
         var attr = new RequiredAttribute { ErrorMessageResourceName = nameof(WrongMessages.WrongKey), ErrorMessageResourceType = typeof(WrongMessages) };
@@ -98,9 +98,9 @@ public class Resolver_PriorityTests
     {
         var rule = new ConditionalValidationRule(
             dto => true,
-            ResourceKey: "MissingKey",
-            ResourceType: typeof(WrongMessages),
-            FallbackMessage: "Use this instead"
+            resourceKey: "MissingKey",
+            resourceType: typeof(WrongMessages),
+            fallbackMessage: "Use this instead"
         );
 
         var attr = new RequiredAttribute();

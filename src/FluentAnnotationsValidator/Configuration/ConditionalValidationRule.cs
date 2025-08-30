@@ -9,48 +9,48 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Represents a conditional validation rule that applies a predicate function 
 /// to determine whether a validation constraint should be enforced on a property.
 /// </summary>
-/// <param name="Predicate">
+/// <param name="predicate">
 /// A delegate that takes the model instance and returns <see langword="true"/> if the condition is met;
 /// otherwise, <see langword="false"/>. This is used to conditionally trigger validation logic.
 /// </param>
-/// <param name="Message">
+/// <param name="message">
 /// An optional custom error message to display when the validation fails.
 /// </param>
-/// <param name="Key">
+/// <param name="key">
 /// An optional key to identify the rule, which can be used for logging, debugging, or tracking.
 /// </param>
-/// <param name="ResourceKey">
+/// <param name="resourceKey">
 /// An optional localization resource key to resolve the validation message.
 /// </param>
-/// <param name="ResourceType">
+/// <param name="resourceType">
 /// An optional localization resource type to resolve the validation message.
 /// </param>
-/// <param name="Culture">An optional culture-specific format provider.</param>
-/// <param name="FallbackMessage">Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.</param>
-/// <param name="UseConventionalKeyFallback">Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).</param>
+/// <param name="culture">An optional culture-specific format provider.</param>
+/// <param name="fallbackMessage">Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.</param>
+/// <param name="useConventionalKeyFallback">Explicitly disables "Property_Attribute" fallback lookup - for projects relying solely on .WithKey(...).</param>
 public class ConditionalValidationRule(
-    Func<object, bool> Predicate,
-    string? Message = null,
-    string? Key = null,
-    string? ResourceKey = null,
-    Type? ResourceType = null,
-    CultureInfo? Culture = null,
-    string? FallbackMessage = null,
-    bool UseConventionalKeyFallback = true) : 
-    ValidationRuleBase(Message, Key, ResourceKey, ResourceType, Culture, FallbackMessage, UseConventionalKeyFallback)
+    Func<object, bool> predicate,
+    string? message = null,
+    string? key = null,
+    string? resourceKey = null,
+    Type? resourceType = null,
+    CultureInfo? culture = null,
+    string? fallbackMessage = null,
+    bool useConventionalKeyFallback = true) : 
+    ValidationRuleBase(message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeyFallback)
 {
     private Func<object, bool>? _shouldApplyEvaluator;
 
     /// <summary>
     /// Gets or sets a function that evaluates when the rule is applied.
     /// </summary>
-    public Func<object, bool> Predicate { get; set; } = Predicate;
+    public Func<object, bool> Predicate { get; set; } = predicate;
 
     /// <summary>
     /// Gets or sets a value that indicates whether to use convention-based 
     /// resource key names (e.g., Email_Required).
     /// </summary>
-    public bool UseConventionalKeyFallback { get; set; } = UseConventionalKeyFallback;
+    public bool UseConventionalKeyFallback { get; set; } = useConventionalKeyFallback;
 
     /// <summary>
     /// The validation attribute associated to the rule.

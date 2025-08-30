@@ -62,7 +62,7 @@ public class ValidationMessageResolverTests
         // Arrange
         var attr = new RequiredAttribute();
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
-        var rule = new ConditionalValidationRule(Predicate: null!, Message: "Overridden message");
+        var rule = new ConditionalValidationRule(predicate: null!, message: "Overridden message");
         var resolver = GetResolver();
 
         // Act
@@ -79,9 +79,9 @@ public class ValidationMessageResolverTests
         var attr = new StringLengthAttribute(5);
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
 
-        var rule = new ConditionalValidationRule(Predicate: null!,
-            ResourceKey: nameof(ValidationMessages.PasswordRequired),
-            ResourceType: typeof(ValidationMessages));
+        var rule = new ConditionalValidationRule(predicate: null!,
+            resourceKey: nameof(ValidationMessages.PasswordRequired),
+            resourceType: typeof(ValidationMessages));
 
         var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.PasswordRequired);
 
@@ -100,9 +100,9 @@ public class ValidationMessageResolverTests
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
         var attribute = new RequiredAttribute();
 
-        var rule = new ConditionalValidationRule(Predicate: null!,
-            ResourceKey: nameof(ConventionValidationMessages.Email_Required),
-            ResourceType: typeof(ConventionValidationMessages));
+        var rule = new ConditionalValidationRule(predicate: null!,
+            resourceKey: nameof(ConventionValidationMessages.Email_Required),
+            resourceType: typeof(ConventionValidationMessages));
 
         var resolver = GetMessageResolver<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
