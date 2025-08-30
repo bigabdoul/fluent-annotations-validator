@@ -9,7 +9,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Represents a temporary rule being configured for a given type <typeparamref name="T"/>.
 /// </summary>
 /// <typeparam name="T">The type containing the member being being configured.</typeparam>
-/// <param name="member">The member being configured.</param>
+/// <param name="memberExpression">The member being configured.</param>
 /// <param name="predicate">A function that evaluates when the rule is applied.</param>
 /// <param name="message">The validation error message.</param>
 /// <param name="key">The failure key used by the message resolver or diagnostics.</param>
@@ -19,7 +19,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// <param name="fallbackMessage">A fallback error message if resolution fails.</param>
 /// <param name="useConventionalKeys">Indicates whether to use convention-based resource key names (e.g., Email_Required).</param>
 public sealed class PendingRule<T>(
-    Expression member,
+    Expression memberExpression,
     Func<T, bool> predicate,
     string? message = null,
     string? key = null,
@@ -33,7 +33,7 @@ public sealed class PendingRule<T>(
     /// <summary>
     /// Gets or sets the member being configured.
     /// </summary>
-    public Expression Member { get; set; } = member;
+    public Expression MemberExpression { get; set; } = memberExpression;
 
     /// <summary>
     /// Gets or sets a function that evaluates when the rule is applied.
@@ -87,13 +87,13 @@ public sealed class PendingRule<T>(
     public PreValidationValueProviderDelegate? ConfigureBeforeValidation { get; set; }
     
     public override string ToString() => 
-        $"Member: {Member.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
+        $"Member: {MemberExpression.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
         string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));
 
-    public override int GetHashCode() => Member.GetMemberInfo().GetHashCode();
+    public override int GetHashCode() => MemberExpression.GetMemberInfo().GetHashCode();
 
     public override bool Equals(object? obj) => obj is PendingRule<T> other && Equals(other);
 
     public bool Equals(PendingRule<T>? other) => 
-        other != null && Member.GetMemberInfo().AreSameMembers(other.Member.GetMemberInfo());
+        other != null && MemberExpression.GetMemberInfo().AreSameMembers(other.MemberExpression.GetMemberInfo());
 }

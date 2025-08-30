@@ -185,7 +185,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         var memberInfo = member.GetMemberInfo();
 
         _ = Options.RemoveAll(mi => !memberInfo.AreSameMembers(mi));
-        _ = _pendingRules.RemoveWhere(rule => !memberInfo.AreSameMembers(rule.Member.GetMemberInfo()));
+        _ = _pendingRules.RemoveWhere(rule => !memberInfo.AreSameMembers(rule.MemberExpression.GetMemberInfo()));
         _ = _validationRuleBuilders.RemoveAll(builder => !memberInfo.AreSameMembers(builder.Member.GetMemberInfo()));
 
         return this;
@@ -194,7 +194,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.RemovePendingRules(MemberInfo)"/>
     public virtual ValidationTypeConfigurator<T> RemovePendingRules(MemberInfo memberInfo)
     {
-        _ = _pendingRules.RemoveWhere(rule => memberInfo.AreSameMembers(rule.Member.GetMemberInfo()));
+        _ = _pendingRules.RemoveWhere(rule => memberInfo.AreSameMembers(rule.MemberExpression.GetMemberInfo()));
         _ = _validationRuleBuilders.RemoveAll(builder => memberInfo.AreSameMembers(builder.Member.GetMemberInfo()));
         return this;
     }
@@ -208,7 +208,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         foreach (var rule in _pendingRules)
         {
-            if (!memberInfo.AreSameMembers(rule.Member.GetMemberInfo()))
+            if (!memberInfo.AreSameMembers(rule.MemberExpression.GetMemberInfo()))
                 continue;
 
 #if DEBUG
@@ -274,7 +274,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         // should only be applicable to the attribute being configured
 
         if (_currentRule.Attributes.Count == 0)
-            EnsureContainsAnyRule(_currentRule.Member);
+            EnsureContainsAnyRule(_currentRule.MemberExpression);
 
         _currentRule.Predicate = condition;
 
@@ -289,7 +289,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         MemberInfo memberInfo;
 
-        if (_currentRule is null || !_currentRule.Member.GetMemberInfo().AreSameMembers(memberInfo = member.GetMemberInfo()))
+        if (_currentRule is null || !_currentRule.MemberExpression.GetMemberInfo().AreSameMembers(memberInfo = member.GetMemberInfo()))
         {
             CommitCurrentRule();
             _currentRule = new PendingRule<T>(
@@ -382,7 +382,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         ArgumentNullException.ThrowIfNull(_currentRule);
 
-        EnsureSinglePreValidationValueProvider(_currentRule.Member.GetMemberInfo());
+        EnsureSinglePreValidationValueProvider(_currentRule.MemberExpression.GetMemberInfo());
 
         _currentRule.ConfigureBeforeValidation = (instance, member, memberValue) =>
             configure.Invoke((T)instance, member, memberValue);
@@ -397,7 +397,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         foreach (var rule in _pendingRules)
         {
-            var member = rule.Member.GetMemberInfo();
+            var member = rule.MemberExpression.GetMemberInfo();
 
             rule.ResourceType ??= Options.SharedResourceType;
             rule.Culture ??= Options.SharedCulture;
@@ -542,7 +542,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         var pendingRuleMembers = _pendingRules
             .Where(r => r.ConfigureBeforeValidation != null)
-            .Select(r => r.Member.GetMemberInfo());
+            .Select(r => r.MemberExpression.GetMemberInfo());
 
         var builderRuleMembers = _validationRuleBuilders
             .SelectMany(builder => builder.GetRules())

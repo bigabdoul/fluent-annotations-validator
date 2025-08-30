@@ -23,7 +23,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     protected internal List<ConditionalValidationRule> Rules { get; } = [];
 
     /// <inheritdoc cref="IValidationRuleBuilder.Member"/>
-    public Expression Member => currentRule.Member;
+    public Expression Member => currentRule.MemberExpression;
 
     /// <inheritdoc cref="IValidationRuleBuilder.GetRules"/>
     public IReadOnlyCollection<ConditionalValidationRule> GetRules() => Rules.AsReadOnly();
@@ -77,7 +77,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.Must(Func{TProp, bool})"/>
     public IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate)
     {
-        var member = currentRule.Member;
+        var member = currentRule.MemberExpression;
 
         // Create a new predicate that takes the full model and extracts the member's value
         bool composedPredicate(T model)
@@ -134,7 +134,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     public IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute)
     {
         //currentRule.Attributes.Add(attribute);
-        var member = currentRule.Member.GetMemberInfo();
+        var member = currentRule.MemberExpression.GetMemberInfo();
         var rule = currentRule.CreateRuleFromPending(member,
             attribute,
             currentRule.Predicate);
