@@ -593,6 +593,12 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    protected internal virtual void SetCurrentRule(PendingRule<T> pendingRule)
+    {
+        CommitCurrentRule();
+        _currentRule = pendingRule;
+    }
+
     /// <summary>
     /// Adds the currently pending rule to the rules to configure, and 
     /// dereferences it (by setting its value to <see langword="null"/>).
