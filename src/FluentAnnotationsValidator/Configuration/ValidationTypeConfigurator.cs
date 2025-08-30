@@ -531,6 +531,33 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     /// <summary>
+    /// Ensures that a pre-validation value provider delegate is not assigned more than once for a given member.
+    /// </summary>
+    /// <param name="member">The <see cref="MemberInfo"/> of the member being configured.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if a pre-validation value provider delegate has already been assigned to the specified member,
+    /// either in a pending rule or within an existing validation rule builder.
+    /// </exception>
+    protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member)
+    {
+        var pendingRuleMembers = _pendingRules
+            .Where(r => r.ConfigureBeforeValidation != null)
+            .Select(r => r.Member.GetMemberInfo());
+
+        var builderRuleMembers = _validationRuleBuilders
+            .SelectMany(builder => builder.GetRules())
+            .Where(r => r.ConfigureBeforeValidation != null)
+            .Select(r => r.Member);
+
+        if (pendingRuleMembers.Union(builderRuleMembers).Any(m => m.AreSameMembers(member)))
+        {
+            throw new InvalidOperationException(
+                "The pre-validation value provider delegate cannot be assigned more than once to any rule for the type " +
+                $"({typeof(T).Name}) and member ({member.Name}) being configured.");
+        }
+    }
+
+    /// <summary>
     /// Adds the specified validation attribute to the collection of <see cref="PendingRule{T}.Attributes"/>
     /// and optionally sets a predicate that determines when the rule should be applied.
     /// </summary>
@@ -577,18 +604,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             _pendingRules.Add(_currentRule);
             _currentRule = null;
         }
-    }
-
-    protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member)
-    {
-        if (_pendingRules.Where(r => r.ConfigureBeforeValidation != null && AreSame(r.Member)).Any() ||
-            _validationRuleBuilders.Any(builder => builder.GetRules().Where(r => r.ConfigureBeforeValidation != null && AreSameMembers(r.Member)).Any()))
-            throw new InvalidOperationException("The pre-validation value provider " +
-                "delegate cannot be assigned more than once to any rule for the type " +
-                $"({typeof(T).Name}) and member ({member.Name}) being configured.");
-
-        bool AreSame(Expression member2) => member.AreSameMembers(member2.GetMemberInfo());
-        bool AreSameMembers(MemberInfo member2) => member.AreSameMembers(member2);
     }
 
     #region helpers
