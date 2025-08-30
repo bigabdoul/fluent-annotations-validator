@@ -11,7 +11,7 @@ public sealed class NotEmptyAttribute : FluentValidationAttribute
 
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
-        if (value is string s && string.IsNullOrWhiteSpace(s))
+        if (validationContext.ObjectType == typeof(string) && string.IsNullOrWhiteSpace((string?)value))
             return this.GetFailedValidationResult(validationContext, MessageResolver);
 
         if (!CountHelper.TryGetCount(value, out int length))
