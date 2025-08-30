@@ -1,5 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Extensions;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -24,6 +25,9 @@ public static class ValidationResultAggregator
         Type type, object instance, MemberInfo member,
         IValidationMessageResolver resolver)
     {
+        if (!rules.Any())
+            return [];
+
         // Determine if fluent rule applies for this member (i.e., any condition returns true)
         bool fluentConditionApplies = rules
             .Where(r => !r.HasAttribute)
@@ -45,10 +49,14 @@ public static class ValidationResultAggregator
         var errors = new List<ValidationErrorResult>();
         var value = GetValue(member, instance);
         var context = new ValidationContext(instance) { MemberName = member.Name };
+        var preconfigurationInvoked = false;
 
         foreach (var rule in rules)
         {
             if (!rule.ShouldApply(instance)) continue;
+
+            if (!preconfigurationInvoked)
+                GetPrevalidationValue(rules, instance, member, ref value, ref preconfigurationInvoked);
 
             if (rule.Attribute is { } attr)
             {
@@ -58,9 +66,11 @@ public static class ValidationResultAggregator
                     var message = resolver.ResolveMessage(type, member.Name, attr, rule);
                     errors.Add(new ValidationErrorResult
                     {
+                        AttemptedValue = value,
                         Member = member,
+                        Message = message ?? result?.ErrorMessage ?? "Validation failed.",
                         UniqueKey = rule.UniqueKey,
-                        Message = message ?? result?.ErrorMessage ?? "Validation failed."
+                        Attribute = attr,
                     });
                 }
             }
@@ -71,7 +81,33 @@ public static class ValidationResultAggregator
         return errors;
     }
 
-    private static object? GetValue(MemberInfo member, object instance)
+    private static void GetPrevalidationValue(IEnumerable<ConditionalValidationRule> rules, 
+    object instance, MemberInfo member, ref object? value, ref bool preconfigurationInvoked)
+    {
+        // Find first rule that has a ConfigureBeforeValidation
+        // delegate and call that delegate once for this member.
+        var ruleWithPrevalidation = rules.SingleOrDefault(r => r.ConfigureBeforeValidation != null);
+
+        if (ruleWithPrevalidation != null)
+        {
+            var newvalue = ruleWithPrevalidation.ConfigureBeforeValidation!.Invoke(instance, member, value);
+            if (newvalue != value)
+            {
+                value = newvalue;
+                // Make sure the user didn't forget to update the member with the new value.
+                if (member.GetValue(instance) != newvalue)
+                {
+                    // try to synchronize the member's value
+                    member.TrySetValue(instance, newvalue);
+                }
+            }
+        }
+        
+        // invoke once for this member
+        preconfigurationInvoked = true;
+    }
+
+    internal static object? GetValue(MemberInfo member, object instance)
     {
         return member switch
         {

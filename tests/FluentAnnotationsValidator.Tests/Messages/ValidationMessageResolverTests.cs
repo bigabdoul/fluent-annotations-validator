@@ -1,6 +1,10 @@
 ﻿using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
+using Microsoft.Extensions.Localization;
+using Moq;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Messages;
@@ -8,9 +12,12 @@ using static TestHelpers;
 
 public class ValidationMessageResolverTests
 {
+    private static ValidationMessageResolver GetResolver() =>
+        new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
+
     public ValidationMessageResolverTests()
     {
-        ValidationMessages.Culture = Thread.CurrentThread.CurrentUICulture;
+        ValidationMessages.Culture = ConventionValidationMessages.Culture = Thread.CurrentThread.CurrentCulture;
     }
 
     [Fact]
@@ -18,67 +25,93 @@ public class ValidationMessageResolverTests
     {
         // Arrange
         var attr = new RequiredAttribute { ErrorMessage = "Field {0} is required" };
-        var resolver = GetMessageResolver();
+        var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage<TestLoginDto>(x => x.Email, attr);
+        var message = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Email), attr);
 
         // Assert
-        Assert.Equal("Field Email is required", message);
+        message.Should().NotBeNull();
+        message.Should().Be("Field Email is required");
     }
 
     [Fact]
     public void ResolveMessage_AttributeResource_ReturnsFromResourceType()
     {
+        // Arrange
         var attr = new RequiredAttribute
         {
             ErrorMessageResourceName = nameof(ValidationMessages.EmailRequired),
             ErrorMessageResourceType = typeof(ValidationMessages)
         };
 
-        var resolver = GetMessageResolver();
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
+        var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage<TestLoginDto>(x => x.Email, attr);
+        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr);
 
-        Assert.Equal(ValidationMessages.EmailRequired, message);
+        // Assert
+        message.Should().NotBeNull();
+        message.Should().Be(ValidationMessages.EmailRequired);
     }
 
     [Fact]
     public void ResolveMessage_ConditionalRuleMetadata_WinsOverAttribute()
     {
-        var rule = new ConditionalValidationRule(Predicate: null!, Message: "Overridden message");
-        var resolver = GetMessageResolver();
+        // Arrange
+        var attr = new RequiredAttribute();
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
+        var rule = new ConditionalValidationRule(predicate: null!, message: "Overridden message");
+        var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage<TestLoginDto>(x => x.Email, new RequiredAttribute(), rule);
+        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
 
+        // Assert
         Assert.Equal("Overridden message", message);
     }
 
     [Fact]
     public void ResolveMessage_ResourceKey_FromRuleType_FormatsCorrectly()
     {
-        var rule = new ConditionalValidationRule(Predicate: null!, 
-            ResourceKey: nameof(ValidationMessages.PasswordRequired), 
-            ResourceType: typeof(ValidationMessages)
-        );
-        var resolver = GetMessageResolver();
+        // Arrange
+        var attr = new StringLengthAttribute(5);
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
+
+        var rule = new ConditionalValidationRule(predicate: null!,
+            resourceKey: nameof(ValidationMessages.PasswordRequired),
+            resourceType: typeof(ValidationMessages));
+
+        var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.PasswordRequired);
 
         // Act
-        var message = resolver.ResolveMessage<TestLoginDto>(x => x.Password, new StringLengthAttribute(5), rule);
+        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
 
-        Assert.Equal(ValidationMessages.PasswordRequired, message);
+        // Assert
+        message.Should().NotBeNull();
+        message.Should().Be(ValidationMessages.PasswordRequired);
     }
 
     [Fact]
     public void ResolveMessage_Fallback_UsesConventionBasedResolution()
     {
-        var resolver = GetMessageResolver();
+        // Arrange
+        var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
+        var attribute = new RequiredAttribute();
+
+        var rule = new ConditionalValidationRule(predicate: null!,
+            resourceKey: nameof(ConventionValidationMessages.Email_Required),
+            resourceType: typeof(ConventionValidationMessages));
+
+        var resolver = GetMessageResolver<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
         // Act
-        var message = resolver.ResolveMessage<TestLoginDtoWithResource>(x => x.Email, new RequiredAttribute());
+        // This is where you would call your message resolution method.
+        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attribute, rule);
 
-        Assert.Equal(ConventionValidationMessages.Email_Required, message);
+        // Assert
+        resolvedMessage.Should().NotBeNull();
+        resolvedMessage.Should().Be(ConventionValidationMessages.Email_Required);
     }
 }

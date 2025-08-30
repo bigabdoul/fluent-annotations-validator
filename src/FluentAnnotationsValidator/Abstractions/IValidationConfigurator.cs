@@ -9,28 +9,25 @@ namespace FluentAnnotationsValidator.Abstractions;
 public interface IValidationConfigurator
 {
     /// <summary>
-    /// Sets the common resource type for message resolutions that will 
-    /// be applied to all models to configure via <see cref="For{T}"/>.
+    /// Sets the default resource type for localization lookups in this configuration chain.
     /// </summary>
-    /// <typeparam name="TResource">The type of the localized resource to use.</typeparam>
+    /// <typeparam name="TResource">The type parameter of the validation resource type to use.</typeparam>
     /// <returns>The current configurator for further chaining.</returns>
     IValidationConfigurator WithValidationResource<TResource>();
 
     /// <summary>
-    /// Sets the common resource type for message resolutions that will 
-    /// be replied to all models to configure via <see cref="For{T}"/>.
+    /// Sets the default resource type for localization lookups in this configuration chain.
     /// </summary>
-    /// <param name="resourceType">The type of the localized resource to use. Can be null.</param>
+    /// <param name="resourceType">The validation resource type to use. Can be null.</param>
     /// <returns>The current configurator for further chaining.</returns>
     IValidationConfigurator WithValidationResource(Type? resourceType);
 
     /// <summary>
-    /// Sets the common culture information for message resolutions that will
-    /// be applied to all models to configure via <see cref="For{T}"/>.
+    /// Sets the culture used during error message resolution.
     /// </summary>
-    /// <param name="culture">The culture to apply. Can be null.</param>
+    /// <param name="culture">The culture information to set.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationConfigurator WithCulture(CultureInfo? culture);
+    IValidationConfigurator WithCulture(CultureInfo culture);
 
     /// <summary>
     /// Begins configuring validation rules for the specified model type.

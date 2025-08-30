@@ -2,36 +2,44 @@
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Linq.Expressions;
-using System.Reflection;
+using Microsoft.Extensions.Localization;
+using Moq;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Tests;
 
-internal static class TestHelpers
+internal static partial class TestHelpers
 {
     internal static FluentAnnotationsBuilder CreateBuilder(Action<ValidationBehaviorOptions>? configure = null) =>
         new ServiceCollection().AddFluentAnnotationsValidators(configure, typeof(TestLoginDto));
 
-    /// <summary>
-    /// Creates a <see cref="FluentAnnotationsBuilder"/>, configures it by setting the 
-    /// <see cref="ValidationBehaviorOptions.CurrentTestName"/> property value to the
-    /// test that called this method, proceeds to either configure the builder using
-    /// the <paramref name="configure"/> action, if any, or builds it.
-    /// Finally, it returns a resolved <see cref="IValidator{T}"/> service.
-    /// </summary>
-    /// <typeparam name="T">The type of the model to validate.</typeparam>
-    /// <param name="configure">A function used to configure the created builder.</param>
-    /// <param name="testName">
-    /// The name of the test that called this method.
-    /// If not specified, the name is inferred from the method caller.</param>
-    /// <returns></returns>
-    internal static IValidator<T> GetValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
+    internal static IFluentValidator<T> GetValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
+        [CallerMemberName] string? testName = null)
+    {
+        var builder = CreateBuilder(options =>
+        {
+            options.CurrentTestName = testName;
+        });
+        
+        var services = builder.Services;
+
+        var fluent = builder.UseFluentAnnotations();
+        
+        if (configure != null)
+        {
+            configure(fluent).Build();
+        }
+        else
+        {
+            fluent.Build();
+        }
+        
+        return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
+    }
+
+    internal static IFluentValidator<T> GetFluentValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
         [CallerMemberName] string? testName = null)
     {
         var builder = CreateBuilder(configure: options => options.CurrentTestName = testName);
@@ -43,31 +51,43 @@ internal static class TestHelpers
         }
         else
         {
-            validationConfigurator.Build();
+            fluent.Build();
         }
-
-        return builder.Services.BuildServiceProvider().GetRequiredService<IValidator<T>>();
+        return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }
 
-    internal static IValidator<T> GetValidator<T>(this IServiceCollection services)
+    internal static bool BeComplexPassword(string password)
     {
-        var provider = services.BuildServiceProvider();
-        return provider.GetRequiredService<IValidator<T>>();
+        // A regular expression that checks for a complex password.
+        // (?=.*[a-z])   - Must contain at least one lowercase letter.
+        // (?=.*[A-Z])   - Must contain at least one uppercase letter.
+        // (?=.*\d)      - Must contain at least one digit.
+        // (?=.*[!@#$%^&*()_+=\[{\]};:\"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
+        // .             - Matches any character (except newline).
+
+        var passwordRegex = ComplexPasswordRegex();
+
+        return passwordRegex.IsMatch(password);
     }
 
-    internal static string? GetValidationMessage<T, TAttribute>(Expression<Func<T, string?>> expression, string cultureName)
-        where TAttribute : ValidationAttribute
-        => GetValidationMessage<T, TAttribute>(expression, CultureInfo.GetCultureInfo(cultureName));
+    [GeneratedRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).*$")]
+    private static partial Regex ComplexPasswordRegex();
 
-    internal static string? GetValidationMessage<T, TAttribute>(Expression<Func<T, string?>> expression, CultureInfo culture)
-        where TAttribute : ValidationAttribute
+    internal static IStringLocalizerFactory MockStringLocalizerFactory<T>(string? localizedStringValue)
     {
-        var member = expression.GetMemberInfo();
-        string attributeShortName = typeof(TAttribute).Name.Replace("Attribute", string.Empty);
-        var resourceKey = $"{member.Name}_{attributeShortName}";
-        return ValidationMessages.ResourceManager.GetString(resourceKey, culture);
+        // 1. Mock the IStringLocalizer for the specific resource type
+        var localizerMock = new Mock<IStringLocalizer>();
+        localizerMock.Setup(l => l[It.IsAny<string>()])
+                     .Returns<string>(s => new LocalizedString(s, localizedStringValue ?? string.Empty, resourceNotFound: localizedStringValue is null));
+
+        // 2. Mock the IStringLocalizerFactory to return the localizer mock for the specific resource type
+        var localizerFactoryMock = new Mock<IStringLocalizerFactory>();
+        localizerFactoryMock.Setup(f => f.Create(typeof(T)))
+                             .Returns(localizerMock.Object);
+
+        return localizerFactoryMock.Object;
     }
 
-    internal static ValidationMessageResolver GetMessageResolver(ValidationBehaviorOptions? options = null)
-        => new(options ?? new ValidationBehaviorOptions());
+    internal static ValidationMessageResolver GetMessageResolver<T>(string? localizedStringValue) =>
+        new(new ValidationBehaviorOptions(), MockStringLocalizerFactory<T>(localizedStringValue));
 }

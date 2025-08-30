@@ -1,5 +1,8 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Internals.Reflection;
 using System.Globalization;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -44,24 +47,29 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// </summary>
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>A <see cref="ValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
-    public ValidationTypeConfigurator<T> For<T>()
-        => new(this, options) { CommonCulture = _commonCulture, CommonResourceType = _commonResourceType };
+    public virtual ValidationTypeConfigurator<T> For<T>() => new(this, options);
 
     /// <summary>
-    /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.
+    /// Gets the validation behavior options.
     /// </summary>
-    /// <param name="config">The configuration action to apply.</param>
-    public void Register(Action<ValidationBehaviorOptions> config)
-        => _registrations.Add(config);
+    public ValidationBehaviorOptions Options => options;
 
-    /// <summary>
-    /// Applies all registered validation configurations to the service collection.
-    /// Should be called after all rules have been configured.
-    /// </summary>
-    public void Build()
+    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource{TResource}()"/>
+    public ValidationConfigurator WithValidationResource<TResource>() => WithValidationResource(typeof(TResource));
+
+    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource(Type?)"/>
+    public ValidationConfigurator WithValidationResource(Type? resourceType)
     {
-        foreach (var action in _registrations)
-            action(options);
+        options.SharedResourceType = resourceType;
+        AssignCultureTo(resourceType);
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationConfigurator.WithCulture(CultureInfo)"/>
+    public ValidationConfigurator WithCulture(CultureInfo culture)
+    {
+        options.SharedCulture = culture;
+        return this;
     }
 
     /// <summary>
@@ -70,8 +78,31 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// </summary>
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>An <see cref="IValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
-    IValidationTypeConfigurator<T> IValidationConfigurator.For<T>() 
-        => For<T>();
+    IValidationTypeConfigurator<T> IValidationConfigurator.For<T>() => For<T>();
+
+    /// <summary>
+    /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.
+    /// </summary>
+    /// <param name="config">The configuration action to apply.</param>
+    public virtual void Register(Action<ValidationBehaviorOptions> config)
+        => _registrations.Add(config);
+
+    /// <summary>
+    /// Applies all registered validation configurations to the service collection.
+    /// Should be called after all rules have been configured.
+    /// </summary>
+    public virtual void Build()
+    {
+        foreach (var action in _registrations)
+            action(options);
+    }
+
+    private void AssignCultureTo(Type? type)
+    {
+        type.TrySetResourceManagerCulture(options.SharedCulture, fallbackToType: true);
+    }
+
+    #region IValidationConfigurator
 
     IValidationConfigurator IValidationConfigurator.WithValidationResource<TResource>()
         => WithValidationResource<TResource>();
@@ -79,10 +110,10 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     IValidationConfigurator IValidationConfigurator.WithValidationResource(Type? resourceType)
         => WithValidationResource(resourceType);
 
-    IValidationConfigurator IValidationConfigurator.WithCulture(CultureInfo? culture)
+    IValidationConfigurator IValidationConfigurator.WithCulture(CultureInfo culture)
         => WithCulture(culture);
 
-    void IValidationConfigurator.Build() => Build();
+    #endregion
 }
 
 

@@ -1,17 +1,21 @@
 ﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Tests.Assertions;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
+
 public class ValidationTypeConfiguratorTests
 {
     private static ValidationTypeConfigurator<TestLoginDto> GetConfigurator()
     {
-        var options = new ValidationBehaviorOptions();
-        var validationConfigurator = new ValidationConfigurator(options);
-        return new(validationConfigurator, options);
+        return new ServiceCollection()
+            .AddFluentAnnotationsValidators()
+            .UseFluentAnnotations()
+            .For<TestLoginDto>();
     }
 
     [Fact]
@@ -19,16 +23,20 @@ public class ValidationTypeConfiguratorTests
     {
         // Arrange
         var configurator = GetConfigurator();
+        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
 
         // Act
         var result = configurator.WithValidationResource<ValidationMessages>();
 
         // Assert
-        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
+        property.Should().NotBeNull();
 
-        var value = property?.GetValue(configurator);
-        Assert.Equal(typeof(ValidationMessages), value);
-        Assert.Same(configurator, result); // fluent chaining
+        var propertyValue = property.GetValue(configurator);
+
+        propertyValue.Should().NotBeNull();
+        propertyValue.Should().BeEquivalentTo(typeof(ValidationMessages));
+
+        configurator.Should().BeSameAs(result);
     }
 
     [Fact]
@@ -45,10 +53,8 @@ public class ValidationTypeConfiguratorTests
         _ = configurator.Options.TryGetRules<TestLoginDto>(x => x.Email, out var rules);
 
         // Assert
-        Assert.Multiple
-        (
-            () => Assert.NotEmpty(rules),
-            () => Assert.Contains(rules, r => r.ResourceType == typeof(ValidationMessages)));
+        rules.Should().NotBeEmpty();
+        rules.Should().Contain(r => r.ResourceType == typeof(ValidationMessages));
     }
 
     [Fact]
@@ -57,7 +63,10 @@ public class ValidationTypeConfiguratorTests
         var configurator = GetConfigurator();
         configurator.When(x => x.Email, dto => dto.Role == "Admin").Build();
 
-        Assert.True(configurator.Options.Contains<TestLoginDto>(x => x.Email));
+        configurator.Options
+            .Contains<TestLoginDto>(x => x.Email)
+            .Should()
+            .BeTrue();
     }
 
     [Fact]
@@ -66,7 +75,11 @@ public class ValidationTypeConfiguratorTests
         var configurator = GetConfigurator();
         configurator.And(x => x.Password, dto => dto.Role != "Guest").Build();
 
-        Assert.True(configurator.Options.Contains<TestLoginDto>(x => x.Password));
+        // Assert
+        configurator.Options
+            .Contains<TestLoginDto>(x => x.Password)
+            .Should()
+            .BeTrue();
     }
 
     [Fact]
@@ -76,7 +89,9 @@ public class ValidationTypeConfiguratorTests
         configurator.AlwaysValidate(x => x.Password).Build();
         var rule = GetRule(x => x.Password, configurator.Options);
 
-        rule.ShouldMatch(predicateArg: new TestLoginDto("a", "b", "c"));
+        rule.Predicate.Should().NotBeNull();
+        rule.Predicate.Target.Should().NotBeNull();
+        rule.Predicate.Invoke(new TestLoginDto("a", "b", "c")).Should().BeTrue();
     }
 
     [Fact]
@@ -89,7 +104,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Custom error");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Custom error");
     }
 
     [Fact]
@@ -102,7 +118,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedKey: "Email.AdminRequired");
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.AdminRequired");
     }
 
     [Fact]
@@ -115,7 +132,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedResource: "Admin_Email_Required");
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Admin_Email_Required");
     }
 
     [Fact]
@@ -138,8 +156,11 @@ public class ValidationTypeConfiguratorTests
         var emailr = GetRule(x => x.Email, configurator.Options);
         var passwr = GetRule(x => x.Password, configurator.Options);
 
-        emailr.ShouldMatch(expectedMessage: "Must validate email");
-        passwr.ShouldMatch(expectedMessage: "Must validate password");
+        emailr.Message.Should().NotBeNull();
+        emailr.Message.Should().Match("Must validate email");
+
+        passwr.Message.Should().NotBeNull();
+        passwr.Message.Should().Match("Must validate password");
     }
 
     [Fact]
@@ -154,9 +175,14 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Required",
-            expectedKey: "Email.Required",
-            expectedResource: "Email_Required_Localized");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Required");
+
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.Required");
+
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Email_Required_Localized");
     }
 
     [Fact]
@@ -170,7 +196,8 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Email required");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Email required");
     }
 
     [Fact]
@@ -186,9 +213,14 @@ public class ValidationTypeConfiguratorTests
 
         var rule = GetRule(x => x.Email, configurator.Options);
 
-        rule.ShouldMatch(expectedMessage: "Custom message",
-            expectedKey: "Email.Required",
-            expectedResource: "Email_Required");
+        rule.Message.Should().NotBeNull();
+        rule.Message.Should().Match("Custom message");
+
+        rule.Key.Should().NotBeNull();
+        rule.Key.Should().Match("Email.Required");
+
+        rule.ResourceKey.Should().NotBeNull();
+        rule.ResourceKey.Should().Match("Email_Required");
     }
 
     private static ConditionalValidationRule GetRule(Expression<Func<TestLoginDto, string?>> property, ValidationBehaviorOptions options)

@@ -1,5 +1,5 @@
 ﻿using FluentAnnotationsValidator.Tests.Models;
-using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Results;
 using static TestHelpers;

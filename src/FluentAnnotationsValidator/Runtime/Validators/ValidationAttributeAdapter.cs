@@ -1,5 +1,5 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Messages;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -15,34 +15,40 @@ public static class ValidationAttributeAdapter
     /// Parses all validation attributes from a property,
     /// creating one or more <see cref="ConditionalValidationRule"/> entries.
     /// </summary>
-    /// <param name="declaringType">The target model type.</param>
-    /// <param name="member">The property or field to inspect belonging to <paramref name="declaringType"/>.</param>
-    /// <param name="options">The validation behavior options used to apply common configuration to parsed rules.</param>
+    /// <param name="instanceType">The target model type.</param>
+    /// <param name="member">The property or field to inspect belonging to <paramref name="instanceType"/>.</param>
     /// <returns>A list of conditional validation rules for the member.</returns>
-    public static List<ConditionalValidationRule> ParseRules(Type declaringType, MemberInfo member, ValidationBehaviorOptions? options = null)
+    public static List<ConditionalValidationRule> ParseRules(Type instanceType, MemberInfo member)
     {
         ValidationAttribute[] attributes = [..member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
-        if (attributes.Length == 0) return [];
-
         var rules = new List<ConditionalValidationRule>();
 
-        foreach (var attr in attributes)
+        if (attributes.Length == 0)
         {
-            var uniqueKey = $"[{attr.GetType().Name}:{attr.TypeId}]{declaringType.Namespace}.{declaringType.Name}.{member.Name}";
-            var rule = new ConditionalValidationRule(Predicate: _ => true) // always validate, unless fluent overrides occur
+            if (typeof(IFluentValidatable).IsAssignableFrom(instanceType))
+                AddRule($"{instanceType.Namespace}.{instanceType.Name}.{member.Name}", null);
+        }
+        else
+        {
+            foreach (var attr in attributes)
+            {
+                var uniqueKey = $"[{attr.GetType().Name}:{attr.TypeId}]{instanceType.Namespace}.{instanceType.Name}.{member.Name}";
+                AddRule(uniqueKey, attr);
+            }
+        }
+
+        return rules;
+
+        void AddRule(string uniqueKey, ValidationAttribute? attr)
+        {
+            var rule = new ConditionalValidationRule(predicate: _ => true) // always validate, unless fluent overrides occur
             {
                 Member = member,
                 Attribute = attr,
                 UniqueKey = uniqueKey,
-                Culture = options?.CommonCulture,
-                ResourceType = options?.CommonResourceType,
-                UseConventionalKeyFallback = options?.UseConventionalKeyFallback ?? true,
-                ResourceKey = ValidationMessageResolver.GetConventionalKey(member.Name, attr),
             };
             rules.Add(rule);
         }
-
-        return rules;
     }
 }

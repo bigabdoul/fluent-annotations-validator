@@ -1,9 +1,10 @@
 using FluentAnnotationsValidator.Extensions;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using static FluentAnnotationsValidator.Internals.Reflection.TypeUtils;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -12,24 +13,24 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Stores conditional validation rules mapped to each property or field.
 /// Supports multiple validation attributes per member.
 /// </summary>
-public sealed class ValidationBehaviorOptions
+public class ValidationBehaviorOptions
 {
-    private static InvalidOperationException NoMatchingRule =>
+    private static readonly InvalidOperationException NoMatchingRule =
         new("Found no rule matching the specified expression.");
 
-    private ConcurrentDictionary<MemberInfo, ConcurrentBag<ConditionalValidationRule>> RuleRegistry { get; } = new();
+    private readonly ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> _ruleRegistry = new();
 
     #region properties
 
     /// <summary>
     /// Optional common or fallback resource type used for localization.
     /// </summary>
-    public Type? CommonResourceType { get; set; }
+    public Type? SharedResourceType { get; set; }
 
     /// <summary>
     /// Optional common or fallback culture to use for error messages and formatting.
     /// </summary>
-    public CultureInfo? CommonCulture { get; set; }
+    public CultureInfo? SharedCulture { get; set; }
 
     /// <summary>
     /// When true, uses conventional resource key naming (e.g. MemberName_Attribute).
@@ -37,15 +38,25 @@ public sealed class ValidationBehaviorOptions
     public bool UseConventionalKeyFallback { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the delegate to retrieve the conventional key aspect.
+    /// </summary>
+    public ConventionalKeyDelegate? ConventionalKeyGetter { get; set; }
+
+    /// <summary>
     /// Used when running tests.
     /// </summary>
     public string? CurrentTestName { get; set; }
 
+    /// <summary>
+    /// Determines whether fluent configurations are checked for consistency.
+    /// </summary>
+    public bool ConfigurationEnforcementDisabled { get; set; }
+
     #endregion
 
-    internal void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
+    protected internal virtual void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
-        _ = RuleRegistry.GetOrAdd(member, _ => [.. rules]);
+        _ruleRegistry.AddOrUpdate(member, rules, (_, _) => rules);
     }
 
     /// <summary>
@@ -54,11 +65,21 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The target property or field.</param>
     /// <param name="rule">The conditional validation rule to apply.</param>
-    public void AddRule(MemberInfo member, ConditionalValidationRule rule)
+    public virtual void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        RuleRegistry
-            .GetOrAdd(member, _ => [])
-            .Add(rule);
+        _ruleRegistry.AddOrUpdate(
+            member,
+            _ => [rule],
+            (_, rules) =>
+            {
+                var index = rules.IndexOf(rule);
+                if (index == -1)
+                    rules.Add(rule);
+                else
+                    rules[index] = rule;
+                return rules;
+            }
+        );
     }
 
     /// <summary>
@@ -66,8 +87,8 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <param name="member">The property or field to inspect.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
-    public IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
-        => RuleRegistry.TryGetValue(member, out var rules)
+    public virtual IReadOnlyList<ConditionalValidationRule> GetRules(MemberInfo member)
+        => _ruleRegistry.TryGetValue(member, out var rules)
             ? rules.ToList()
             : [];
 
@@ -80,7 +101,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>A read-only list of matching rules.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no rule matches the expression.</exception>
-    public IReadOnlyList<ConditionalValidationRule> GetRules<T>(
+    public virtual IReadOnlyList<ConditionalValidationRule> GetRules<T>(
         Expression<Func<T, string?>> expression,
         Func<ConditionalValidationRule, bool>? predicate = null)
         => FindRules(expression, predicate) ?? throw NoMatchingRule;
@@ -94,7 +115,7 @@ public sealed class ValidationBehaviorOptions
     /// <param name="rules">The resulting rule list (empty if none).</param>
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>True if matching rules were found, false otherwise.</returns>
-    public bool TryGetRules<T>(
+    public virtual bool TryGetRules<T>(
         Expression<Func<T, string?>> expression,
         out IReadOnlyList<ConditionalValidationRule> rules,
         Func<ConditionalValidationRule, bool>? predicate = null)
@@ -102,7 +123,7 @@ public sealed class ValidationBehaviorOptions
         try
         {
             rules = FindRules(expression, predicate);
-            return true;
+            return rules?.Count > 0;
         }
         catch
         {
@@ -114,13 +135,11 @@ public sealed class ValidationBehaviorOptions
     /// <summary>
     /// Determines if any rule exists for the given expression.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the property.</typeparam>
-    /// <param name="expression">Expression referencing the property.</param>
+    /// <typeparam name="T">Declaring type of the member.</typeparam>
+    /// <param name="expression">Expression referencing the member.</param>
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>True if at least one matching rule exists, false otherwise.</returns>
-    public bool Contains<T>(
-        Expression<Func<T, string?>> expression,
-        Func<ConditionalValidationRule, bool>? predicate = null)
+    public virtual bool Contains<T>(Expression<Func<T, string?>> expression, Func<ConditionalValidationRule, bool>? predicate = null)
     {
         try
         {
@@ -133,35 +152,45 @@ public sealed class ValidationBehaviorOptions
     }
 
     /// <summary>
+    /// Determines if any rule exists for the given member using a predicate to test each one,
+    /// and returns true as soon as the first rule satisfies the predicate; otherwise false.
+    /// </summary>
+    /// <typeparam name="T">The declaring type of the member.</typeparam>
+    /// <param name="member">The member information to look up.</param>
+    /// <param name="predicate">A function that tests each rule.</param>
+    /// <returns>
+    /// <see langword="true"/> as soon as the first rule satisfies the 
+    /// <paramref name="predicate"/>; otherwise <see langword="false"/>.
+    /// </returns>
+    public virtual bool ContainsAny<T>(MemberInfo member, Func<ConditionalValidationRule, bool> predicate)
+    {
+        var rules = GetRules(member);
+        foreach (var rule in rules)
+        {
+            if (predicate(rule)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Finds all rules for a given member access expression.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the property.</typeparam>
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
-        Expression<Func<T, string?>> expression,
-        Func<ConditionalValidationRule, bool>? predicate = null)
-        => FindRules<T>(expression.GetMemberInfo(), predicate);
+    public IReadOnlyList<ConditionalValidationRule> FindRules(Expression expression, Func<ConditionalValidationRule, bool>? predicate = null)
+        => FindRules(expression.GetMemberInfo(), predicate);
 
     /// <summary>
     /// Finds all rules for a given <see cref="MemberInfo"/> and optional filter.
     /// </summary>
-    /// <typeparam name="T">Declaring type of the member.</typeparam>
     /// <param name="member">The member to look up.</param>
     /// <param name="predicate">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public IReadOnlyList<ConditionalValidationRule> FindRules<T>(
-        MemberInfo member,
-        Func<ConditionalValidationRule, bool>? predicate = null)
+    public virtual IReadOnlyList<ConditionalValidationRule> FindRules(MemberInfo member, Func<ConditionalValidationRule, bool>? predicate = null)
     {
         var rules = GetRules(member);
-
-        return [.. rules.Where(r =>
-                r.Member.DeclaringType == typeof(T) &&
-                r.Member.Name == member.Name &&
-                (predicate?.Invoke(r) ?? true))
-        ];
+        return [.. rules.Where(r => member.AreSameMembers(r.Member) && (predicate?.Invoke(r) ?? true))];
     }
 
     public ConditionalValidationRule FindRule<T, TAttribute>(Expression<Func<T, string?>> expression)
@@ -191,18 +220,152 @@ public sealed class ValidationBehaviorOptions
     /// </summary>
     /// <typeparam name="T">The declaring type to filter by.</typeparam>
     /// <returns>A list of tuples (MemberInfo, Rule List) for each matched member.</returns>
-    public List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
+    public virtual List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
     {
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
-
-        foreach (var (member, bag) in RuleRegistry)
+        foreach (var (member, rules) in _ruleRegistry)
         {
-            if (member.DeclaringType == typeof(T))
+            if (IsAssignableFrom(member.ReflectedType, typeof(T)))
             {
-                result.Add((member, bag.ToList()));
+                result.Add((member, rules.ToList()));
             }
         }
-
         return result;
     }
+
+    /// <summary>
+    /// Removes all rules registered for the specified member.
+    /// </summary>
+    /// <param name="member">The member whose rules should be removed.</param>
+    /// <returns>True if any rules were removed, false otherwise.</returns>
+    public bool RemoveAll(MemberInfo member)
+    {
+        return member.DeclaringType != null
+            ? RemoveAllForType(member.DeclaringType, m => m.Name == member.Name) > 0
+            : _ruleRegistry.Remove(member, out _);
+    }
+
+    /// <summary>
+    /// Removes all rules associated with the specified type.
+    /// </summary>
+    /// <param name="type">The type whose members' rules should be removed.</param>
+    /// <param name="predicate">
+    /// An optional function that determines whether a key should be 
+    /// removed from the registry when a compatible type is matched.
+    /// </param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAllForType(Type type, Func<MemberInfo, bool>? predicate = null)
+    {
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (IsAssignableFrom(member.DeclaringType, type) &&
+                (predicate is null || predicate(member)) &&
+                _ruleRegistry.TryRemove(member, out _)
+            )
+            {
+                removedCount++;
+            }
+        }
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules matching the specified predicate from all members.
+    /// </summary>
+    /// <param name="predicate">
+    /// A function that takes a MemberInfo and returns true if the rule should be removed.
+    /// </param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll(Func<MemberInfo, bool> predicate)
+    {
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (predicate(member) && _ruleRegistry.TryRemove(member, out _))
+                removedCount++;
+        }
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules associated with the specified attribute type for a given member.
+    /// </summary>
+    /// <typeparam name="TAttribute">The type of validation attribute to filter by.</typeparam>
+    /// <param name="key">The member whose rules should be removed.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll<TAttribute>(MemberInfo key) where TAttribute : ValidationAttribute
+        => RemoveAll<TAttribute>((member, _) => key.AreSameMembers(member));
+
+    /// <summary>
+    /// Removes all rules associated with the specified attribute type for a given member.
+    /// </summary>
+    /// <param name="key">The member whose rules should be removed.</param>
+    /// <param name="attributeType">The type of validation attribute to filter by.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll(MemberInfo key, Type attributeType)
+    {
+        int removedCount = 0;
+        var members = GetMembers(key.AreSameMembers);
+        foreach (var member in members)
+        {
+            if (!_ruleRegistry.TryGetValue(member, out var rules))
+                continue;
+
+            // Use pooled list to reduce allocations if performance-critical
+            var updatedRules = new List<ConditionalValidationRule>(rules.Count);
+
+            foreach (var rule in rules)
+            {
+                if (rule.Attribute is { } attr && attr.GetType() == attributeType)
+                {
+                    removedCount++;
+                    continue;
+                }
+                updatedRules.Add(rule);
+            }
+
+            if (removedCount > 0)
+                _ruleRegistry[member] = updatedRules;
+        }
+        return removedCount;
+    }
+
+    /// <summary>
+    /// Removes all rules matching the specified predicate for a given attribute type.
+    /// </summary>
+    /// <typeparam name="TAttribute">The type of validation attribute to filter by.</typeparam>
+    /// <param name="predicate">A function that takes a MemberInfo and an attribute instance.</param>
+    /// <returns>The number of rules removed.</returns>
+    public int RemoveAll<TAttribute>(Func<MemberInfo, TAttribute, bool> predicate) where TAttribute : ValidationAttribute
+    {
+        int removedCount = 0;
+        foreach (var member in GetMembers())
+        {
+            if (!_ruleRegistry.TryGetValue(member, out var rules))
+                continue;
+
+            // Use pooled list to reduce allocations if performance-critical
+            var updatedRules = new List<ConditionalValidationRule>(rules.Count);
+
+            foreach (var rule in rules)
+            {
+                if (rule.Attribute is TAttribute attr && predicate(member, attr))
+                {
+                    removedCount++;
+                    continue;
+                }
+                updatedRules.Add(rule);
+            }
+
+            if (removedCount > 0)
+                _ruleRegistry[member] = updatedRules;
+        }
+        return removedCount;
+    }
+
+    private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) =>
+        predicate is null
+            ? [.. _ruleRegistry.Keys]
+            : [.. _ruleRegistry.Keys.Where(predicate)];
 }

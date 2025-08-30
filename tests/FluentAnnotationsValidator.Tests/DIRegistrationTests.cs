@@ -1,5 +1,4 @@
 ﻿using FluentAnnotationsValidator.Tests.Models;
-using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests;
@@ -10,7 +9,7 @@ public class DIRegistrationTests
     public void Should_ResolveValidatorForAnnotatedType()
     {
         var provider = TestHelpers.CreateBuilder().Services.BuildServiceProvider();
-        var validator = provider.GetService<IValidator<TestLoginDto>>();
+        var validator = provider.GetService<IFluentValidator<TestLoginDto>>();
         Assert.NotNull(validator);
     }
 }

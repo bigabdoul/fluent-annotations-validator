@@ -6,23 +6,72 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
-## [v2.0.0-preview2] - 2025-07-25
+## [v2.0.0-preview.2] - 2025-08-30
+
+This release introduces a new, more expressive **fluent API**, marking a significant 
+architectural shift. This API enhances flexibility for complex and conditional 
+validation, providing a more intuitive and powerful developer experience.
+
+---
 
 ### Added
-- Introduced resource-scoped fluent DSL for localized validation
-- Added support for culture isolation and contextual message flow
-- Fallback generation for attributes lacking explicit conditions
+
+* **Conditional Validation with `When` and `Otherwise`**: The `RuleFor(...)` builder 
+now supports a powerful conditional flow.
+    * `When(condition, configureRules)`: This method enables you to encapsulate multiple
+    validation rules that are only executed when a specified `condition` is met.
+    * `Otherwise(configureRules)`: Paired with `When`, this method defines a set of rules
+    that are applied if the initial condition evaluates to `false`, creating a clear 
+    `if/else` validation structure.
+
+* **Custom Validation with `Must`**: A key addition to the `IValidationRuleBuilder<T, TProp>`
+is the `Must(predicate)` method, which allows developers to define custom validation
+logic using a predicate (`Func<TProp, bool>`) that operates directly on the member's
+value. This method fully integrates into the fluent chain, enabling complex rules that 
+extend beyond standard data annotations.
+
+* **Pre-Validation Value Providers**: Introduced a new mechanism to modify or retrieve a member's value before validation. This is useful for data preparation, normalization, or fetching values from external sources.
+    * Added `PreValidationValueProviderDelegate` to define the value-gathering logic.
+    * Introduced the fluent methods `IValidationTypeConfigurator<T>.BeforeValidation(...)` and `IValidationRuleBuilder<T, TProp>.BeforeValidation(...)` to easily configure pre-validation logic.
+    * The `PendingRule<T>` and `ConditionalValidationRule` classes were updated with a `ConfigureBeforeValidation` property to support this feature.
+
+---
 
 ### Changed
-- Removed legacy DI extensions and consolidated test infrastructure
-- Unified test project under `FluentAnnotationsValidator.Tests` with clearer structure and naming
-- Refactored `TestHelpers.cs` and resource utilities for isolated validation environments
 
-### Fixed
-- Improved conditional rule gating using `.When(...)` and `.And(...)` semantics
-- Validated multi-attribute evaluation in complex edge cases
-- Ensured deterministic behavior and culture-aware validation across pipeline stages
+* **Preemptive `Rule(...)` Overload**: The existing `Rule(...)` method has been enhanced.
+It now accepts an optional `RuleDefinitionBehavior` enum, which by default causes it to 
+preemptively replace all previously registered rules for the specified member before 
+adding the new ones. This behavior makes it ideal for explicitly overriding previous 
+configurations.
 
+* **Non-preemptive `RuleFor(...)`**: This new method provides a non-destructive way to 
+add rules. It returns a new, type-safe builder (`IValidationRuleBuilder<T, TProp>`), 
+allowing you to chain validation methods and conditional logic without overriding 
+existing rules for the same member.
+
+* **Dependency Removal**: The dependency on the `FluentValidation` package has been 
+removed. All references to `IValidator<T>` should be replaced with `IFluentValidator<T>`.
+
+---
+
+### 🧪 Tests
+
+* **Comprehensive Unit Tests**: Added a full suite of unit tests to validate the functionality of the new `BeforeValidation` methods, covering correct delegate assignment, value modification, and duplicate configuration error handling.
+
+### ⚙️ Other
+
+* **Added MemberInfo Extensions**:
+    * `GetValue()`: A new extension method to retrieve a member's value using reflection.
+    * `SetValue()`: A new extension method to set a member's value using reflection.
+    * `TrySetValue()`: A non-throwing version of `SetValue()`, which returns a boolean indicating success.
+
+### ♻️ Refactors
+
+* **Improved `EnsureSinglePreValidationValueProvider` Logic**: The method now uses a unified LINQ query to check for duplicate pre-validation delegates, which is more readable and efficient.
+* **Unified Rule Base Class**: Extracted common properties from `PendingRule<T>` and `ConditionalValidationRule` into a new `ValidationRuleBase` to reduce code duplication and improve maintainability.
+
+---
 
 ## [v2.0.0-preview1] - 2025-07-25
 
