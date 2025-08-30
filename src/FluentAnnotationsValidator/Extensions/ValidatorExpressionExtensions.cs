@@ -33,8 +33,29 @@ public static class ValidatorExpressionExtensions
     /// <returns>The value of the property, field, or method invocation result.</returns>
     /// <exception cref="NotSupportedException">The specified <paramref name="expression"/> is not supported.</exception>
     public static object? GetMemberValue(this Expression expression, object instance)
+        => expression.GetMemberInfo().GetValue(instance);
+
+    /// <summary>
+    /// Retrieves the value of a member (property, field, or parameterless method) from an object instance.
+    /// </summary>
+    /// <remarks>
+    /// This extension method uses pattern matching to dynamically get the value based on the type of the <see cref="MemberInfo"/>.
+    /// It supports:
+    /// <list type="bullet">
+    /// <item><term><see cref="PropertyInfo"/></term><description>Gets the property's value using <see cref="PropertyInfo.GetValue(object)"/></description></item>
+    /// <item><term><see cref="FieldInfo"/></term><description>Gets the field's value using <see cref="FieldInfo.GetValue(object)"/></description></item>
+    /// <item><term><see cref="MethodInfo"/></term><description>Invokes a parameterless method and returns its result.</description></item>
+    /// </list>
+    /// </remarks>
+    /// <param name="member">The member whose value to get.</param>
+    /// <param name="instance">The object instance from which to get the value.</param>
+    /// <returns>The value of the member, or <see langword="null"/> if the member's value is null.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown if the <paramref name="member"/> is not a supported type (PropertyInfo, FieldInfo, or a parameterless MethodInfo).
+    /// </exception>
+    public static object? GetValue(this MemberInfo member, object instance)
     {
-        return expression.GetMemberInfo() switch
+        return member switch
         {
             PropertyInfo prop => prop.GetValue(instance),
             FieldInfo field => field.GetValue(instance),
@@ -43,6 +64,66 @@ public static class ValidatorExpressionExtensions
             //ConstructorInfo => null,
             _ => throw new NotSupportedException("The specified expression is not supported.")
         };
+    }
+
+    /// <summary>
+    /// Sets the value of a member (property or field) on an object instance.
+    /// </summary>
+    /// <remarks>
+    /// This extension method uses pattern matching to dynamically set the value based on the type of the <see cref="MemberInfo"/>.
+    /// It supports:
+    /// <list type="bullet">
+    /// <item><term><see cref="PropertyInfo"/></term><description>Sets the property's value using <see cref="PropertyInfo.SetValue(object, object)"/></description></item>
+    /// <item><term><see cref="FieldInfo"/></term><description>Sets the field's value using <see cref="FieldInfo.SetValue(object, object)"/></description></item>
+    /// </list>
+    /// This method does not support setting values on methods, constructors, or other member types.
+    /// </remarks>
+    /// <param name="member">The member whose value to set.</param>
+    /// <param name="instance">The object instance on which to set the value.</param>
+    /// <param name="value">The value to set the member to.</param>
+    /// <exception cref="NotSupportedException">
+    /// Thrown if the <paramref name="member"/> is not a supported type (PropertyInfo or FieldInfo).
+    /// </exception>
+    public static void SetValue(this MemberInfo member, object instance, object? value)
+    {
+        switch (member)
+        {
+            case PropertyInfo prop:
+                prop.SetValue(instance, value);
+                break;
+            case FieldInfo field:
+                field.SetValue(instance, value);
+                break;
+            default:
+                throw new NotSupportedException($"The specified member type ({member.MemberType}) is not supported for setting a value.");
+        }
+    }
+
+    /// <summary>
+    /// Attempts to set the value of a member (property or field) on an object instance without throwing an exception.
+    /// </summary>
+    /// <remarks>
+    /// This method calls the <see cref="SetValue(MemberInfo, object, object?)"/> extension method inside a try-catch block.
+    /// It is a non-throwing alternative to <see cref="SetValue(MemberInfo, object, object?)"/> for scenarios where you need to gracefully
+    /// handle cases where a value cannot be set, such as when a member is read-only, not a property or field, or the provided value is incompatible.
+    /// </remarks>
+    /// <param name="member">The member whose value to set. This should be a <see cref="PropertyInfo"/> or <see cref="FieldInfo"/>.</param>
+    /// <param name="instance">The object instance on which to set the value.</param>
+    /// <param name="value">The value to set the member to.</param>
+    /// <returns>
+    /// <see langword="true"/> if the value was set successfully; otherwise, <see langword="false"/>.
+    /// </returns>
+    public static bool TrySetValue(this MemberInfo member, object instance, object? value)
+    {
+        try
+        {
+            member.SetValue(instance, value);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
