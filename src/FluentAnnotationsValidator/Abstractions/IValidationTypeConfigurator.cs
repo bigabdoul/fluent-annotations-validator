@@ -258,7 +258,7 @@ public interface IValidationTypeConfigurator<T>
     IValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null);
 
     /// <summary>
-    /// Finalizes the configuration by registering all buffered rules into the underlying options system.
+    /// Finalizes the configuration of validation rules for the type <typeparamref name="T"/>.
     /// </summary>
     void Build();
 }

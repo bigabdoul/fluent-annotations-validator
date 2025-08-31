@@ -4,6 +4,7 @@ using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Validators;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
 
@@ -151,5 +152,90 @@ public class BeforeValidationConfigurationTests
         Assert.NotEmpty(result.Errors); // Validation should fail
         Assert.Single(result.Errors);
         Assert.Null(testDto.Name); // The value should be modified
+    }
+
+    [Fact]
+    public void BeforeValidation_OnSameMember_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var testDto = new BeforeValidationTestDto { Id = 1 };
+        var configurator = _configurator;
+        var ruleBuilder2 = configurator.RuleFor(x => x.Id).Required();
+
+        // Act
+        var ruleBuilder1 = configurator.RuleFor(x => x.Id)
+            .Required()
+            .BeforeValidation((i, m, v) => i.Id = 2);
+
+        // Attempt to assign a second delegate
+        ruleBuilder2.BeforeValidation((i, m, v) => i.Id = 3);
+
+        // Assert
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+        {
+            configurator.Build();
+        });
+
+        // Verify the exception message
+        Assert.Contains("A pre-validation value provider delegate can only be assigned once per member", exception.Message);
+    }
+
+    [Fact]
+    public void BeforeValidation_OnConfiguratorThenRuleBuilder_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        static object? configure(BeforeValidationTestDto instance, MemberInfo m, object? memberValue) 
+            => instance.Name = memberValue?.ToString()?.Trim();
+
+        // Act
+        // First, configure a delegate via the IValidationTypeConfigurator
+        _configurator.Rule(x => x.Name, RuleDefinitionBehavior.Preserve)
+            .Required()
+            .BeforeValidation(configure);
+
+        // Then, try to configure another delegate on the same member via a rule builder
+        _configurator.RuleFor(x => x.Name)
+            .Required()
+            .BeforeValidation((instance, m, memberValue) => instance.Name = memberValue?.ToString()?.ToUpper());
+
+        // Assert
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+        {
+            _configurator.Build();
+        });
+
+        Assert.Contains("A pre-validation value provider delegate can only be assigned once per member", exception.Message);
+    }
+
+    [Fact]
+    public void BeforeValidation_WhenAlreadyInRegistry_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var testDto = new BeforeValidationTestDto { Name = "Existing Name" };
+        var member = typeof(BeforeValidationTestDto).GetProperty(nameof(BeforeValidationTestDto.Name))!;
+
+        // Simulate a rule already existing in the registry with a pre-validation delegate
+        var existingRule = new ConditionalValidationRule(_ => true)
+        {
+            Member = member,
+            ConfigureBeforeValidation = (instance, member, memberValue) => "Modified Value"
+        };
+
+        // This is the core of the test, simulating a rule from a previous Build() call
+        _mockOptions.Options.AddRule(member, existingRule);
+
+        // Attempt to configure a new pre-validation delegate on the same member
+        _configurator.RuleFor(x => x.Name)
+            .Required()
+            .BeforeValidation((instance, m, memberValue) => "New Modified Value");
+
+        // Act
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+        {
+            _configurator.Build();
+        });
+
+        // Assert
+        Assert.Contains("A pre-validation value provider delegate can only be assigned once per member", exception.Message);
     }
 }

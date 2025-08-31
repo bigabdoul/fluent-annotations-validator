@@ -3,6 +3,7 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
@@ -403,59 +404,74 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         ArgumentNullException.ThrowIfNull(_currentRule);
 
-        EnsureSinglePreValidationValueProvider(_currentRule.MemberExpression.GetMemberInfo());
-
-        _currentRule.ConfigureBeforeValidation = (instance, member, memberValue) =>
+        object? onPreValidation(object instance, MemberInfo member, object? memberValue) =>
             configure.Invoke((T)instance, member, memberValue);
+
+        EnsureSinglePreValidationValueProvider(_currentRule.MemberExpression.GetMemberInfo(), onPreValidation);
+
+        _currentRule.ConfigureBeforeValidation = onPreValidation;
 
         return this;
     }
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.Build"/>
+    /// <summary>
+    /// Finalizes the configuration of validation rules for the type <typeparamref name="T"/>.
+    /// </summary>
+    /// <remarks>
+    /// This method resolves all pending rules and rule builders, registers them with the
+    /// central validation behavior options, and performs final checks for consistency.
+    /// </remarks>
     public virtual void Build()
     {
         CommitCurrentRule();
 
-        foreach (var rule in _pendingRules)
+        // A single, unified list to collect all rules before registration
+        var allRulesToRegister = new List<ConditionalValidationRule>();
+
+        // Step 1: Process and transform rules from pending rule collection
+        foreach (var pendingRule in _pendingRules)
         {
-            var member = rule.MemberExpression.GetMemberInfo();
+            var member = pendingRule.MemberExpression.GetMemberInfo();
 
-            rule.ResourceType ??= Options.SharedResourceType;
-            rule.Culture ??= Options.SharedCulture;
-            rule.UseConventionalKeys ??= Options.UseConventionalKeys;
-
-            if (rule.Attributes.Count > 0)
+            if (pendingRule.Attributes.Count > 0)
             {
-                foreach (var attr in rule.Attributes)
+                foreach (var attr in pendingRule.Attributes)
                 {
-                    var newRule = rule.CreateRuleFromPending(member, attr, rule.Predicate);
-                    newRule.ConfigureBeforeValidation = rule.ConfigureBeforeValidation;
-                    Options.AddRule(member, newRule);
+                    var newRule = pendingRule.CreateRuleFromPending(member, attr, pendingRule.Predicate);
+                    newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
+                    allRulesToRegister.Add(newRule);
                 }
             }
             else
             {
-                parent.Register(opts =>
-                {
-                    var newRule = rule.CreateRuleFromPending(member);
-                    newRule.ConfigureBeforeValidation = rule.ConfigureBeforeValidation;
-                    opts.AddRule(member, newRule);
-                });
+                var newRule = pendingRule.CreateRuleFromPending(member);
+                newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
+                allRulesToRegister.Add(newRule);
             }
         }
 
+        // Step 2: Add rules from the rule builders
         foreach (var builder in _validationRuleBuilders)
         {
-            foreach (var rule in builder.GetRules())
-            {
-                Options.AddRule(rule.Member, rule);
-            }
+            allRulesToRegister.AddRange(builder.GetRules());
         }
 
+        // Step 3: Register all rules, performing consistency checks
+        foreach (var rule in allRulesToRegister)
+        {
+            // Check for duplicate pre-validation delegates using the dedicated method.
+            if (rule.ConfigureBeforeValidation != null)
+            {
+                EnsureSinglePreValidationValueProvider(rule.Member, rule.ConfigureBeforeValidation);
+            }
+
+            // Add rule to the main registry
+            Options.AddRule(rule.Member, rule);
+        }
+
+        // Clear the temporary collections
         _pendingRules.Clear();
         _validationRuleBuilders.Clear();
-
-        parent.Build();
     }
 
     #region IValidationTypeConfigurator<T>
@@ -560,35 +576,34 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// Ensures that a pre-validation value provider delegate is not assigned more than once for a given member.
     /// </summary>
     /// <param name="member">The <see cref="MemberInfo"/> of the member being configured.</param>
+    /// <param name="providerDelegate">The current delegate being checked.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown if a pre-validation value provider delegate has already been assigned to the specified member,
     /// either in a pending rule or within an existing validation rule builder.
     /// </exception>
-    protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member)
+    protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member, PreValidationValueProviderDelegate? providerDelegate)
     {
         // Check for pre-validation delegates in the pending rules
         var pendingRuleMembers = _pendingRules
-            .Where(r => r.ConfigureBeforeValidation != null)
+            .Where(r => r.ConfigureBeforeValidation != null && r.ConfigureBeforeValidation != providerDelegate)
             .Select(r => r.MemberExpression.GetMemberInfo());
 
         // Check for pre-validation delegates in the fluent rule builders
         var builderRuleMembers = _validationRuleBuilders
             .SelectMany(builder => builder.GetRules())
-            .Where(r => r.ConfigureBeforeValidation != null)
+            .Where(r => r.ConfigureBeforeValidation != null && r.ConfigureBeforeValidation != providerDelegate)
             .Select(r => r.Member);
 
         // Check for pre-validation delegates in the central rule registry within ValidationBehaviorOptions
         var registryMembers = Options.GetRegistryForMember(member)
             .SelectMany(kvp => kvp.Value)
-            .Where(rule => rule.ConfigureBeforeValidation != null)
+            .Where(r => r.ConfigureBeforeValidation != null && r.ConfigureBeforeValidation != providerDelegate)
             .Select(rule => rule.Member);
 
         // Combine all member lists and check for an existing delegate on the current member.
         if (pendingRuleMembers.Union(builderRuleMembers).Union(registryMembers).Any(m => m.AreSameMembers(member)))
         {
-            throw new InvalidOperationException(
-                "A pre-validation value provider delegate can only be assigned once per member " +
-                $"({member.Name}) on type '{typeof(T).Name}'.");
+            ThrowPreValidationError(member.Name);
         }
     }
 
@@ -658,6 +673,13 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         var oldType = ValidationResourceType;
         ValidationResourceType = type;
         (type ?? oldType).TrySetResourceManagerCulture(Culture, fallbackToType: true);
+    }
+
+    private static void ThrowPreValidationError(string memberName)
+    {
+        throw new InvalidOperationException(
+                "A pre-validation value provider delegate can only be assigned once per member " +
+                $"({memberName}) on type '{typeof(T).Name}'.");
     }
 
     #endregion

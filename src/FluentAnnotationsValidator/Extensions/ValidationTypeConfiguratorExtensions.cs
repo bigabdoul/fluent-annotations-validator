@@ -242,6 +242,7 @@ public static class ValidationTypeConfiguratorExtensions
         {
             Member = member,
             Attribute = attribute,
+            ConfigureBeforeValidation = rule.ConfigureBeforeValidation,
         };
 
         return conditionalRule;
