@@ -354,6 +354,30 @@ public class ValidationBehaviorOptions
         return removedCount;
     }
 
+    /// <summary>
+    /// Gets a deep copy of the internal rule registry for the specified member.
+    /// </summary>
+    /// <param name="member">The <see cref="MemberInfo"/> of the member to retrieve.</param>
+    /// <remarks>
+    /// This method provides a snapshot of the current state of the rule registry,
+    /// preventing external code from directly modifying the validator's internal configuration.
+    /// </remarks>
+    /// <returns>A new <see cref="ConcurrentDictionary{TKey, TValue}"/> containing copies
+    /// of the member-rule mappings.</returns>
+    protected internal ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> GetRegistryForMember(MemberInfo member)
+    {
+        // Returns a new ConcurrentDictionary with deep-copied lists of rules.
+        return new ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>>(
+            _ruleRegistry.Where(kvp => member.AreSameMembers(kvp.Key))
+            .Select(kvp =>
+                new KeyValuePair<MemberInfo, List<ConditionalValidationRule>>(
+                    kvp.Key,
+                    [.. kvp.Value]
+                )
+            )
+        );
+    }
+
     private List<MemberInfo> GetMembers(Func<MemberInfo, bool>? predicate = null) =>
         predicate is null
             ? [.. _ruleRegistry.Keys]

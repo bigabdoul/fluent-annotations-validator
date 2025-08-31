@@ -566,20 +566,29 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// </exception>
     protected virtual void EnsureSinglePreValidationValueProvider(MemberInfo member)
     {
+        // Check for pre-validation delegates in the pending rules
         var pendingRuleMembers = _pendingRules
             .Where(r => r.ConfigureBeforeValidation != null)
             .Select(r => r.MemberExpression.GetMemberInfo());
 
+        // Check for pre-validation delegates in the fluent rule builders
         var builderRuleMembers = _validationRuleBuilders
             .SelectMany(builder => builder.GetRules())
             .Where(r => r.ConfigureBeforeValidation != null)
             .Select(r => r.Member);
 
-        if (pendingRuleMembers.Union(builderRuleMembers).Any(m => m.AreSameMembers(member)))
+        // Check for pre-validation delegates in the central rule registry within ValidationBehaviorOptions
+        var registryMembers = Options.GetRegistryForMember(member)
+            .SelectMany(kvp => kvp.Value)
+            .Where(rule => rule.ConfigureBeforeValidation != null)
+            .Select(rule => rule.Member);
+
+        // Combine all member lists and check for an existing delegate on the current member.
+        if (pendingRuleMembers.Union(builderRuleMembers).Union(registryMembers).Any(m => m.AreSameMembers(member)))
         {
             throw new InvalidOperationException(
-                "The pre-validation value provider delegate cannot be assigned more than once to any rule for the type " +
-                $"({typeof(T).Name}) and member ({member.Name}) being configured.");
+                "A pre-validation value provider delegate can only be assigned once per member " +
+                $"({member.Name}) on type '{typeof(T).Name}'.");
         }
     }
 
