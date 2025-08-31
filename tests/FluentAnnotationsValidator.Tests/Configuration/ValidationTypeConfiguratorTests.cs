@@ -23,7 +23,8 @@ public class ValidationTypeConfiguratorTests
     {
         // Arrange
         var configurator = GetConfigurator();
-        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty("ValidationResourceType");
+        var propertyName = nameof(ValidationTypeConfigurator<TestLoginDto>.ValidationResourceType);
+        var property = typeof(ValidationTypeConfigurator<TestLoginDto>).GetProperty(propertyName);
 
         // Act
         var result = configurator.WithValidationResource<ValidationMessages>();
