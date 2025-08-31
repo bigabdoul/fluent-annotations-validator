@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
-## [v2.0.0-preview.2] - 2025-08-30
+## [v2.0.0-preview.2.2] - 2025-08-31
 
 This release introduces a new, more expressive **fluent API**, marking a significant 
 architectural shift. This API enhances flexibility for complex and conditional 
