@@ -75,7 +75,7 @@ public static class ValidationTypeConfiguratorExtensions
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> ExactLength<T>(this ValidationTypeConfigurator<T> configurator,
         int length, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new ExactLengthAttribute(length));
+        => configurator.AttachAttribute(new ExactLengthAttribute(length), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member has a minimum length.
