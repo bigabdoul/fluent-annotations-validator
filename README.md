@@ -2,7 +2,8 @@
 
 [![NuGet - FluentAnnotationsValidator](https://img.shields.io/nuget/v/FluentAnnotationsValidator.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator)
 [![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
-[![Tests](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build-test.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build-test.yml)
+[![Build](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml)
+[![Test](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
 A powerful and lightweight library that bridges `System.ComponentModel.DataAnnotations` and a new, highly expressive fluent validation API. This new approach offers a seamless, feature-rich enhancement for any .NET API or ASP.NET Core backend, with support for conditional rules, custom logic, and localized error messages.
