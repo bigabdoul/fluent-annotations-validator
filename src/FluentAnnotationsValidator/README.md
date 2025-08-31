@@ -122,7 +122,7 @@ services.AddFluentAnnotations(
 ## Installation
 
 ```bash
-dotnet add package FluentAnnotationsValidator --version 2.0.0-preview1
+dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2.2
 ```
 
 ---
