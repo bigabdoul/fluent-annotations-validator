@@ -111,6 +111,54 @@ public static class ValidationRuleBuilderExtensions
         => builder.AddRuleFromAttribute(new Length2Attribute(min, max));
 
     /// <summary>
+    /// Specifies that a string property must have a length within a specified range.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="StringLengthAttribute"/> to the property,
+    /// providing a fluent syntax for length validation. This is useful for ensuring that
+    /// a string value meets specific length constraints.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <param name="maximumLength">The maximum length of the string.</param>
+    /// <param name="minimumLength">The minimum length of the string. Defaults to 0.</param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> StringLength<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        int maximumLength, int minimumLength = 0)
+        => builder.AddRuleFromAttribute(new StringLengthAttribute(maximumLength) { MinimumLength = minimumLength });
+
+    /// <summary>
+    /// Specifies that a string property must match a regular expression pattern.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="RegularExpressionAttribute"/> to the property,
+    /// providing a fluent syntax for complex pattern matching validation.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <param name="pattern">The regular expression pattern to match.</param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> RegularExpression<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        string pattern) => builder.AddRuleFromAttribute(new RegularExpressionAttribute(pattern));
+
+    /// <summary>
+    /// Specifies that a string property must be a valid credit card number.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="CreditCardAttribute"/> to the property,
+    /// providing a fluent syntax for credit card number validation. The validation
+    /// checks for a valid format and checksum.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> CreditCard<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
+        => builder.AddRuleFromAttribute(new CreditCardAttribute());
+
+    /// <summary>
     /// Adds a rule that ensures the property's value is not null or empty.
     /// </summary>
     /// <typeparam name="T">The type of the object instance being validated.</typeparam>
@@ -190,6 +238,57 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> EmailAddress<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
         => builder.AddRuleFromAttribute(new EmailAddressAttribute());
+
+    /// <summary>
+    /// Specifies that a string property must be a valid phone number.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="PhoneAttribute"/> to the property,
+    /// providing a fluent syntax for validating that a string represents a valid
+    /// phone number format.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> Phone<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
+        => builder.AddRuleFromAttribute(new PhoneAttribute());
+
+    /// <summary>
+    /// Specifies that a string property must be a valid URL.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="UrlAttribute"/> to the property,
+    /// providing a fluent syntax for validating that a string represents a well-formed
+    /// and absolute URL.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> Url<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
+        => builder.AddRuleFromAttribute(new UrlAttribute());
+
+    /// <summary>
+    /// Specifies that a string property must have a file extension that is in a specified list.
+    /// </summary>
+    /// <remarks>
+    /// This extension method applies a <see cref="FileExtensionsAttribute"/> to the property,
+    /// providing a fluent syntax for validating file extensions. The attribute checks if the
+    /// string value (representing a file name) has an extension that matches one of the
+    /// provided extensions.
+    /// </remarks>
+    /// <typeparam name="T">The type of the model being configured.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated. Must be a string.</typeparam>
+    /// <param name="builder">The validation rule builder instance.</param>
+    /// <param name="extensions">
+    /// An optional comma-separated string of valid file extensions (e.g., "png,jpg,jpeg").
+    /// If not specified, the attribute will use its default behavior.
+    /// </param>
+    /// <returns>The same builder instance so that multiple rules can be chained.</returns>
+    public static IValidationRuleBuilder<T, TProp> FileExtensions<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
+        string? extensions = null)
+        => builder.AddRuleFromAttribute(new FileExtensionsAttribute() { Extensions = extensions ?? string.Empty });
 
     /// <summary>
     /// Specifies that a property's value must be within a specified range of integer values.
