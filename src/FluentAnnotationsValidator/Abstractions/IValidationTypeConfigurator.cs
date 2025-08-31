@@ -250,6 +250,14 @@ public interface IValidationTypeConfigurator<T>
     IValidationTypeConfigurator<T> BeforeValidation(PreValidationValueProviderDelegate<T> configure);
 
     /// <summary>
+    /// Conditionally attaches a validation attribute to the current validation configuration.
+    /// </summary>
+    /// <param name="attribute">The validation attribute instance to attach.</param>
+    /// <param name="when">A function that determines when the rule should be applied.</param>
+    /// <returns>The current <see cref="IValidationTypeConfigurator{T}"/> instance for fluent chaining.</returns>
+    IValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null);
+
+    /// <summary>
     /// Finalizes the configuration by registering all buffered rules into the underlying options system.
     /// </summary>
     void Build();

@@ -526,6 +526,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.BeforeValidation(PreValidationValueProviderDelegate<T> configure)
         => BeforeValidation(configure);
 
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when)
+        => AttachAttribute(attribute, when);
+
     #endregion
 
     /// <summary>
@@ -582,7 +585,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <param name="when">A function that determines when the rule should be applied.</param>
     /// <returns>The current configurator for further chaining.</returns>
     /// <exception cref="InvalidOperationException">There's no pending rule to attach the attribute to.</exception>
-    protected internal ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
+    public virtual ValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null)
     {
         if (_currentRule is null)
             throw new InvalidOperationException($"No pending rule to attach the attribute {attribute.GetType().Name} to.");
@@ -596,7 +599,6 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
             if (usage != null && !usage.AllowMultiple)
             {
-                //var mi = _currentRule.Member.GetMemberInfo();
                 Debug.WriteLine($"The current rule already contains an attribute of the same type.");
                 return this;
             }
