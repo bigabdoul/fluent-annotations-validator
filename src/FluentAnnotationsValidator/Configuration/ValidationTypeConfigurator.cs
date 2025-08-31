@@ -376,18 +376,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    /// <summary>
-    /// Configures whether configuration enforcement is enabled for the model type.
-    /// </summary>
-    /// <remarks>
-    /// When configuration enforcement is disabled, the validation engine will not apply
-    /// any rules that were configured via the fluent API for this model type, effectively
-    /// reverting to only using rules defined by <see cref="System.ComponentModel.DataAnnotations.ValidationAttribute"/>s.
-    /// </remarks>
-    /// <param name="disableConfigurationEnforcement">
-    /// A boolean value. Set to <c>true</c> to disable configuration enforcement, or <c>false</c> to enable it.
-    /// </param>
-    /// <returns>The current <see cref="ValidationTypeConfigurator{T}"/> instance for fluent chaining.</returns>
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.DisableConfigurationEnforcement(bool)"/>
     public virtual ValidationTypeConfigurator<T> DisableConfigurationEnforcement(bool disableConfigurationEnforcement)
     {
         _disableConfigurationEnforcement = disableConfigurationEnforcement;
@@ -495,9 +484,11 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.DisableConventionalKeys()
         => DisableConventionalKeys();
 
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.DisableConfigurationEnforcement(bool disableConfigurationEnforcement)
+        => DisableConfigurationEnforcement(disableConfigurationEnforcement);
+
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.UseFallbackMessage(string fallbackMessage)
         => UseFallbackMessage(fallbackMessage);
-
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member)
         => Rule(member);
