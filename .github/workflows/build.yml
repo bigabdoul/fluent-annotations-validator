@@ -23,7 +23,7 @@ jobs:
         run: dotnet restore
 
       - name: Build solution
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore -o ./build-output
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
