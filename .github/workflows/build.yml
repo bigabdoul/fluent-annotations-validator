@@ -1,14 +1,17 @@
 name: Build
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_call:
+    outputs:
+      build-path:
+        description: "Path to compiled output"
+        value: ${{ jobs.build.outputs.build-path }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      build-path: ${{ steps.upload.outputs.artifact-path }}
 
     steps:
       - name: Checkout repository
@@ -26,6 +29,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore -o ./build-output
 
       - name: Upload build artifacts
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: compiled-app

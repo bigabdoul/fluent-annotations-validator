@@ -1,13 +1,14 @@
 name: Test
 
 on:
-  workflow_run:
-    workflows: ["Build"]
-    types:
-      - completed
+  workflow_dispatch:
 
 jobs:
   test:
+    uses: ./.github/workflows/build.yml
+
+  run-tests:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +25,6 @@ jobs:
         with:
           name: compiled-app
           path: ./build-output
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Run tests
         run: dotnet test --configuration Release --no-build --verbosity normal
