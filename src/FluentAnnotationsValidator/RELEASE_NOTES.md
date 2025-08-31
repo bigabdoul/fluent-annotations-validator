@@ -1,6 +1,6 @@
 ## FluentAnnotationsValidator v2.0.0-preview.2.2
 
-**Release date:** 2025-08-30
+**Release date:** 2025-08-31
 
 This release, `v2.0.0-preview.2.2`, marks a major architectural shift with the introduction of a new, highly expressive **fluent API**. This new API provides a more powerful and intuitive way to define complex and conditional validation rules, moving beyond a simple attribute-based approach.
 
