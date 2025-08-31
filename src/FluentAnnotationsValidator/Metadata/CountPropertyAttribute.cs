@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace FluentAnnotationsValidator.Metadata;
+﻿namespace FluentAnnotationsValidator.Metadata;
 
 /// <summary>
 /// Indicates that a property should be used as the source of count-based validation

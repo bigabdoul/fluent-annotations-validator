@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace FluentAnnotationsValidator.Abstractions;
+﻿namespace FluentAnnotationsValidator.Abstractions;
 
 /// <summary>
 /// A marker interface to include types that don't have any 

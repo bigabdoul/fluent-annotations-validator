@@ -1,5 +1,4 @@
-﻿using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Configuration;
+﻿using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
@@ -76,7 +75,7 @@ public static class ValidationTypeConfiguratorExtensions
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> ExactLength<T>(this ValidationTypeConfigurator<T> configurator,
         int length, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new ExactLengthAttribute(length), when);
+        => configurator.AttachAttribute(new ExactLengthAttribute(length));
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member has a minimum length.
@@ -114,53 +113,6 @@ public static class ValidationTypeConfiguratorExtensions
     public static ValidationTypeConfigurator<T> Length<T>(this ValidationTypeConfigurator<T> configurator,
         int min, int max, Func<T, bool>? when = null)
         => configurator.AttachAttribute(new Length2Attribute(min, max), when);
-
-    /// <summary>
-    /// Attaches a <see cref="StringLengthAttribute"/> to a property to validate its length.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="StringLengthAttribute"/>
-    /// to a string property. It is used to ensure that a string value meets specified length constraints.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="maximumLength">The maximum allowed length of the string.</param>
-    /// <param name="minimumLength">The minimum allowed length of the string. Defaults to 0.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> StringLength<T>(this ValidationTypeConfigurator<T> configurator,
-        int maximumLength, int minimumLength = 0, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new StringLengthAttribute(maximumLength) { MinimumLength = minimumLength }, when);
-
-    /// <summary>
-    /// Attaches a <see cref="RegularExpressionAttribute"/> to a property to validate its value against a regular expression pattern.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method for applying a <see cref="RegularExpressionAttribute"/> to a string property
-    /// in a fluent manner. It is used for complex pattern-matching validation.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="pattern">The regular expression pattern to match.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> RegularExpression<T>(this ValidationTypeConfigurator<T> configurator,
-        string pattern, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new RegularExpressionAttribute(pattern), when);
-
-    /// <summary>
-    /// Attaches a <see cref="CreditCardAttribute"/> to a property to validate that it is a valid credit card number.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="CreditCardAttribute"/>
-    /// to a string property. The attribute performs validation based on a standard algorithm and format.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> CreditCard<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null) => configurator.AttachAttribute(new CreditCardAttribute(), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member is not null or empty.
@@ -249,111 +201,6 @@ public static class ValidationTypeConfiguratorExtensions
     public static ValidationTypeConfigurator<T> EmailAddress<T>(this ValidationTypeConfigurator<T> configurator,
         Func<T, bool>? when = null)
         => configurator.AttachAttribute(new EmailAddressAttribute(), when);
-
-    /// <summary>
-    /// Attaches a <see cref="PhoneAttribute"/> to a property to validate that it is a valid phone number.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="PhoneAttribute"/>
-    /// to a string property. The attribute performs validation based on a standard phone number format.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> Phone<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null) => configurator.AttachAttribute(new PhoneAttribute(), when);
-
-    /// <summary>
-    /// Attaches a <see cref="UrlAttribute"/> to a property to validate that it is a valid URL.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="UrlAttribute"/>
-    /// to a string property. The attribute validates that the string represents a well-formed
-    /// and absolute URL.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> Url<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null) => configurator.AttachAttribute(new UrlAttribute(), when);
-
-    /// <summary>
-    /// Attaches a <see cref="FileExtensionsAttribute"/> to a property to validate that a file has an allowed extension.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="FileExtensionsAttribute"/>
-    /// to a string property. The attribute checks if the string value (representing a file name)
-    /// has an extension that matches one of the provided extensions.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="extensions">
-    /// An optional comma-separated string of valid file extensions (e.g., "png,jpg,jpeg").
-    /// If not specified, the attribute will use its default behavior.
-    /// </param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> FileExtensions<T>(this ValidationTypeConfigurator<T> configurator,
-        string? extensions = null, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new FileExtensionsAttribute() { Extensions = extensions ?? string.Empty }, when);
-
-    /// <summary>
-    /// Attaches a <see cref="RangeAttribute"/> to a property to validate that its value is within a specified integer range.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="RangeAttribute"/>
-    /// to a property for integer values. The validation is performed at runtime by the
-    /// data annotation validation framework.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="minimum">The minimum inclusive value of the range.</param>
-    /// <param name="maximum">The maximum inclusive value of the range.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> Range<T>(this ValidationTypeConfigurator<T> configurator,
-        int minimum, int maximum, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new RangeAttribute(minimum, maximum), when);
-
-    /// <summary>
-    /// Attaches a <see cref="RangeAttribute"/> to a property to validate that its value is within a specified double range.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method that provides a fluent way to apply the <see cref="RangeAttribute"/>
-    /// to a property for double-precision floating-point values. The validation is performed at runtime by the
-    /// data annotation validation framework.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="minimum">The minimum inclusive value of the range.</param>
-    /// <param name="maximum">The maximum inclusive value of the range.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> Range<T>(this ValidationTypeConfigurator<T> configurator,
-        double minimum, double maximum, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new RangeAttribute(minimum, maximum), when);
-
-    /// <summary>
-    /// Attaches a <see cref="RangeAttribute"/> to a property to validate that its value is within a specified range
-    /// for a custom type, defined by string representations of the minimum and maximum values.
-    /// </summary>
-    /// <remarks>
-    /// This is a convenience method for applying the <see cref="RangeAttribute"/> to a property of a type
-    /// that is not an integer or double, such as <see cref="DateTime"/>. The strings for the minimum and maximum
-    /// values will be parsed into the specified <paramref name="type"/> at runtime.
-    /// </remarks>
-    /// <typeparam name="T">The type of the model being configured.</typeparam>
-    /// <param name="configurator">The configurator instance.</param>
-    /// <param name="type">The <see cref="Type"/> of the property to be validated (e.g., <c>typeof(DateTime)</c>).</param>
-    /// <param name="minimum">The string representation of the minimum inclusive value of the range.</param>
-    /// <param name="maximum">The string representation of the maximum inclusive value of the range.</param>
-    /// <param name="when">An optional condition to determine when the validation rule should be applied.</param>
-    /// <returns>The configurator instance for method chaining.</returns>
-    public static ValidationTypeConfigurator<T> Range<T>(this ValidationTypeConfigurator<T> configurator,
-        Type type, string minimum, string maximum, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new RangeAttribute(type, minimum, maximum), when);
 
     /// <summary>
     /// Attaches a custom validation attribute instance to the last-defined member in the fluent chain.

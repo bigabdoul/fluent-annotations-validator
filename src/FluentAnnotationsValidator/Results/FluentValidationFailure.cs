@@ -104,10 +104,8 @@ public class FluentValidationFailure
         return IsSameRule((_error.Member, _error.Attribute), (other._error.Member, other._error.Attribute));
     }
 
-    /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as FluentValidationFailure);
 
-    /// <inheritdoc/>
     public override int GetHashCode() => HashCode.Combine(_error?.Member.Name, _error?.Attribute?.GetType());
 
     static bool IsSameRule((MemberInfo, ValidationAttribute?) source, (MemberInfo, ValidationAttribute?) target)

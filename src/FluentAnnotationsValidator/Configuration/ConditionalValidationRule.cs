@@ -48,7 +48,7 @@ public class ConditionalValidationRule(
 
     /// <summary>
     /// The validation attribute associated to the rule.
-    /// If it is <see langword="null"/>, it may have been added
+    /// If it is <see cref="null"/>, it may have been added
     /// through fluent configuration.
     /// </summary>
     public ValidationAttribute? Attribute { get; set; }
@@ -88,25 +88,17 @@ public class ConditionalValidationRule(
     /// </summary>
     public string UniqueKey { get; set; } = Guid.NewGuid().ToString();
 
-    /// <inheritdoc cref="object.Equals(object?)"/>
     public override bool Equals(object? obj)
         => obj is ConditionalValidationRule other && Equals(other);
 
-    /// <summary>
-    /// Determines whether the specified object is equal to the current object.
-    /// </summary>
-    /// <param name="other">The object to compare with the current object.</param>
-    /// <returns><see langword="true"/> if the specified object is equal to the current object; otherwise, <see langword="false"/>.</returns>
-    public virtual bool Equals(ConditionalValidationRule? other) => 
+    public bool Equals(ConditionalValidationRule? other) => 
         other is not null &&
         Member.AreSameMembers(other.Member) &&
         Attribute?.GetType() == other.Attribute?.GetType();
 
-    /// <inheritdoc cref="object.GetHashCode"/>
     public override int GetHashCode()
         => HashCode.Combine(Member.Name, Attribute?.GetType());
 
-    /// <inheritdoc cref="object.ToString"/>
     public override string? ToString() => 
         (HasAttribute ? $"[{Attribute?.GetType().Name}]" : string.Empty) + 
         $"{Member.ReflectedType}.{Member.Name}";

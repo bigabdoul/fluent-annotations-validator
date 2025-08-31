@@ -40,33 +40,18 @@ public sealed class PendingRule<T>(
     /// </summary>
     public Func<T, bool> Predicate { get; set; } = predicate;
 
-    /// <summary>
     /// Gets the list of dynamically added attributes via fluent rules.
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];
 
-    /// <inheritdoc cref="object.ToString"/>
     public override string ToString() => 
         $"Member: {MemberExpression.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
         string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));
 
-    /// <inheritdoc cref="object.GetHashCode"/>
     public override int GetHashCode() => MemberExpression.GetMemberInfo().GetHashCode();
 
-    /// <inheritdoc cref="object.Equals(object?)"/>
     public override bool Equals(object? obj) => obj is PendingRule<T> other && Equals(other);
 
-    /// <summary>
-    /// Determines whether the specified <see cref="PendingRule{T}"/> object is equal to the current <see cref="PendingRule{T}"/> object.
-    /// </summary>
-    /// <remarks>
-    /// Equality is determined by comparing the underlying member expressions. Two <c>PendingRule</c> instances are considered
-    /// equal if their member expressions refer to the same class member (property or field).
-    /// </remarks>
-    /// <param name="other">The <see cref="PendingRule{T}"/> to compare with the current object.</param>
-    /// <returns>
-    /// <c>true</c> if the specified <see cref="PendingRule{T}"/> is equal to the current object; otherwise, <c>false</c>.
-    /// </returns>
-    public bool Equals(PendingRule<T>? other) =>
+    public bool Equals(PendingRule<T>? other) => 
         other != null && MemberExpression.GetMemberInfo().AreSameMembers(other.MemberExpression.GetMemberInfo());
 }
