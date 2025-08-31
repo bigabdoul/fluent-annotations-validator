@@ -36,7 +36,7 @@ public class ConditionalValidationRule(
     Type? resourceType = null,
     CultureInfo? culture = null,
     string? fallbackMessage = null,
-    bool useConventionalKeys = true) : 
+    bool useConventionalKeys = true) :
     ValidationRuleBase(message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys)
 {
     private Func<object, bool>? _shouldApplyEvaluator;
@@ -65,7 +65,7 @@ public class ConditionalValidationRule(
     /// <returns>
     /// <see langword="true"/> if the rule should be evaluated; otherwise, <see langword="false"/>.
     /// </returns>
-    public virtual bool ShouldApply(object targetInstance) => 
+    public virtual bool ShouldApply(object targetInstance) =>
         (_shouldApplyEvaluator ?? Predicate)(targetInstance);
 
     /// <summary>
@@ -91,7 +91,12 @@ public class ConditionalValidationRule(
     public override bool Equals(object? obj)
         => obj is ConditionalValidationRule other && Equals(other);
 
-    public bool Equals(ConditionalValidationRule? other) => 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current object.
+    /// </summary>
+    /// <param name="other">The object to compare with the current object.</param>
+    /// <returns><see langword="true"/> if the specified object is equal to the current object; otherwise, <see langword="false"/>.</returns>
+    public virtual bool Equals(ConditionalValidationRule? other) =>
         other is not null &&
         Member.AreSameMembers(other.Member) &&
         Attribute?.GetType() == other.Attribute?.GetType();
@@ -99,7 +104,8 @@ public class ConditionalValidationRule(
     public override int GetHashCode()
         => HashCode.Combine(Member.Name, Attribute?.GetType());
 
-    public override string? ToString() => 
-        (HasAttribute ? $"[{Attribute?.GetType().Name}]" : string.Empty) + 
+    /// <inheritdoc cref="object.ToString"/>
+    public override string? ToString() =>
+        (HasAttribute ? $"[{Attribute?.GetType().Name}]" : string.Empty) +
         $"{Member.ReflectedType}.{Member.Name}";
 }

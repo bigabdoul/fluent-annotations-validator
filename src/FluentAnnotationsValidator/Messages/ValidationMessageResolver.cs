@@ -7,9 +7,7 @@ using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Resources;
 
 namespace FluentAnnotationsValidator.Messages;
 
@@ -19,21 +17,12 @@ namespace FluentAnnotationsValidator.Messages;
 /// </summary>
 public class ValidationMessageResolver(ValidationBehaviorOptions options, IStringLocalizerFactory localizerFactory) : IValidationMessageResolver
 {
-    private const BindingFlags StaticPublicNonPublicFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-    private static readonly ConcurrentDictionary<Type, ResourceManager?> _resourceManagerCache = new();
-    private static readonly ConcurrentDictionary<(Type, string, string), string?> _localizedStringCache = new();
-
-    /// <inheritdoc cref="IValidationMessageResolver.ResolveMessage{T}(Expression{Func{T, string?}}, ValidationAttribute, ConditionalValidationRule?)"/>
-    public string? ResolveMessage<T>(Expression<Func<T, string?>> expression, ValidationAttribute attr, ConditionalValidationRule? rule = null)
-        => ResolveMessage(typeof(T), expression.GetMemberInfo().Name, attr, rule);
-
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
     /// </summary>
     /// <param name="declaringType">
-    /// The metadata container for the property, or field being validated, 
-    /// including its <see cref="MemberInfo"/> and target model type.
+    /// The metadata container for the property, field, or parameter being validated, including its <see cref="PropertyInfo"/> and target model type.
     /// </param>
     /// <param name="memberName">The name of the member being validated.</param>
     /// <param name="attr">
@@ -143,9 +132,9 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             return false;
 
         culture ??= CultureInfo.CurrentCulture;
-        
+
         var raw = resourceType.GetResourceValue(resourceKey, culture);
-        
+
         if (string.IsNullOrWhiteSpace(raw))
             return false;
 
@@ -200,10 +189,6 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
 
         message = localizedString.Value;
         return true;
-    }
-
-        _localizedStringCache[stringKey] = value; // Cache resolved value
-        return value;
     }
 
     /// <summary>

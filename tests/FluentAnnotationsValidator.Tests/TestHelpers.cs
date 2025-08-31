@@ -22,11 +22,11 @@ internal static partial class TestHelpers
         {
             options.CurrentTestName = testName;
         });
-        
+
         var services = builder.Services;
 
         var fluent = builder.UseFluentAnnotations();
-        
+
         if (configure != null)
         {
             configure(fluent).Build();
@@ -35,19 +35,22 @@ internal static partial class TestHelpers
         {
             fluent.Build();
         }
-        
+
         return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }
 
     internal static IFluentValidator<T> GetFluentValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
         [CallerMemberName] string? testName = null)
     {
-        var builder = CreateBuilder(configure: options => options.CurrentTestName = testName);
-        var validationConfigurator = builder.UseFluentAnnotations();
-
+        var builder = CreateBuilder(options =>
+        {
+            options.CurrentTestName = testName;
+        });
+        var services = builder.Services;
+        var fluent = builder.UseFluentAnnotations();
         if (configure != null)
         {
-            configure(validationConfigurator).Build();
+            configure(fluent).Build();
         }
         else
         {

@@ -11,11 +11,6 @@ public class RegistrationValidatorTests
         return TestHelpers.GetValidator<TestRegistrationDto>();
     }
 
-    public RegistrationValidatorTests()
-    {
-        ValidationMessages.Culture = Thread.CurrentThread.CurrentUICulture;
-    }
-
     [Fact]
     public void ValidDto_ShouldPass()
     {

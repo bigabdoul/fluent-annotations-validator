@@ -23,19 +23,19 @@ public class ValidationBehaviorOptions
     #region properties
 
     /// <summary>
-    /// Optional common or fallback resource type used for localization.
+    /// Optional common resource type used for localization.
     /// </summary>
     public Type? SharedResourceType { get; set; }
 
     /// <summary>
-    /// Optional common or fallback culture to use for error messages and formatting.
+    /// Optional culture to use for error messages and formatting.
     /// </summary>
     public CultureInfo? SharedCulture { get; set; }
 
     /// <summary>
     /// When true, uses conventional resource key naming (e.g. MemberName_Attribute).
     /// </summary>
-    public bool UseConventionalKeyFallback { get; set; } = true;
+    public bool UseConventionalKeys { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the delegate to retrieve the conventional key aspect.
@@ -191,27 +191,6 @@ public class ValidationBehaviorOptions
     {
         var rules = GetRules(member);
         return [.. rules.Where(r => member.AreSameMembers(r.Member) && (predicate?.Invoke(r) ?? true))];
-    }
-
-    public ConditionalValidationRule FindRule<T, TAttribute>(Expression<Func<T, string?>> expression)
-    {
-        var rule = FindRules(expression, rule => rule.HasAttribute && rule.Attribute!.GetType() == typeof(TAttribute))[0];
-        return rule;
-    }
-
-    public bool TryFindRule<T, TAttribute>(Expression<Func<T, string?>> expression, 
-        [NotNullWhen(true)] out ConditionalValidationRule? rule)
-    {
-        try
-        {
-            rule = FindRule<T, TAttribute>(expression);
-            return true;
-        }
-        catch
-        {
-            rule = null;
-            return false;
-        }
     }
 
     /// <summary>

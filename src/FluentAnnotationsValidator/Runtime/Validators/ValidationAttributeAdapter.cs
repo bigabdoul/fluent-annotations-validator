@@ -20,7 +20,7 @@ public static class ValidationAttributeAdapter
     /// <returns>A list of conditional validation rules for the member.</returns>
     public static List<ConditionalValidationRule> ParseRules(Type instanceType, MemberInfo member)
     {
-        ValidationAttribute[] attributes = [..member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
+        ValidationAttribute[] attributes = [.. member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
         var rules = new List<ConditionalValidationRule>();
 

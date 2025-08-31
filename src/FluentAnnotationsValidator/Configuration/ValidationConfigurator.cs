@@ -1,8 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Internals.Reflection;
 using System.Globalization;
-using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -18,29 +16,6 @@ namespace FluentAnnotationsValidator.Configuration;
 public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
     private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
-    private Type? _commonResourceType;
-    private CultureInfo? _commonCulture;
-
-    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource{TResource}()"/>
-    public ValidationConfigurator WithValidationResource<TResource>()
-    {
-        _commonResourceType = typeof(TResource);
-        return this;
-    }
-
-    /// <inheritdoc cref="IValidationConfigurator.WithValidationResource(Type?)"/>
-    public ValidationConfigurator WithValidationResource(Type? resourceType)
-    {
-        _commonResourceType = resourceType;
-        return this;
-    }
-
-    /// <inheritdoc cref="IValidationConfigurator.WithCulture(CultureInfo)"/>
-    public ValidationConfigurator WithCulture(CultureInfo? culture)
-    {
-        _commonCulture = culture;
-        return this;
-    }
 
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.

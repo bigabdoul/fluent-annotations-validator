@@ -81,7 +81,7 @@ public static class ValidationResultAggregator
         return errors;
     }
 
-    private static void GetPrevalidationValue(IEnumerable<ConditionalValidationRule> rules, 
+    private static void GetPrevalidationValue(IEnumerable<ConditionalValidationRule> rules,
     object instance, MemberInfo member, ref object? value, ref bool preconfigurationInvoked)
     {
         // Find first rule that has a ConfigureBeforeValidation
@@ -102,7 +102,7 @@ public static class ValidationResultAggregator
                 }
             }
         }
-        
+
         // invoke once for this member
         preconfigurationInvoked = true;
     }

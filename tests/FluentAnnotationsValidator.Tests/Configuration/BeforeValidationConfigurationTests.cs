@@ -10,7 +10,7 @@ namespace FluentAnnotationsValidator.Tests.Configuration;
 public class BeforeValidationConfigurationTests
 {
     private static readonly Func<BeforeValidationTestDto, bool> AlwaysValidate = _ => true;
-    
+
     private readonly ServiceCollection _services = new();
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<BeforeValidationTestDto> _configurator;

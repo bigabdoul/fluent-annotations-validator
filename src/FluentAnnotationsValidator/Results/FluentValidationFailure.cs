@@ -64,7 +64,7 @@ public class FluentValidationFailure
     /// <summary>
     /// The property value that caused the failure.
     /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public virtual object? AttemptedValue { get; set; }
 
     /// <summary>
@@ -98,7 +98,7 @@ public class FluentValidationFailure
     /// <returns><see langword="true"/> if the specified object is equal to the current object; otherwise, <see langword="false"/>.</returns>
     public virtual bool Equals(FluentValidationFailure? other)
     {
-        if (other is null || _error is null || other._error is null) 
+        if (other is null || _error is null || other._error is null)
             return false;
 
         return IsSameRule((_error.Member, _error.Attribute), (other._error.Member, other._error.Attribute));

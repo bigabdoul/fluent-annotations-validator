@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -70,14 +71,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource{TResource}()"/>
     public virtual ValidationTypeConfigurator<T> WithValidationResource<TResource>()
     {
-        ValidationResourceType = typeof(TResource);
+        AssignCultureTo(typeof(TResource));
         return this;
     }
 
     /// <inheritdoc cref="IValidationTypeConfigurator{T}.WithValidationResource(Type?)"/>
     public virtual ValidationTypeConfigurator<T> WithValidationResource(Type? resourceType)
     {
-        ValidationResourceType = resourceType;
+        AssignCultureTo(resourceType);
         return this;
     }
 
@@ -462,7 +463,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithValidationResource(Type? resourceType)
         => WithValidationResource(resourceType);
 
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithCulture(CultureInfo? culture)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WithCulture(CultureInfo culture)
         => WithCulture(culture);
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.DisableConventionalKeys()
