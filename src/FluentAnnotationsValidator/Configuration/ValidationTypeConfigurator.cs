@@ -242,6 +242,20 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    /// <summary>
+    /// Clears all pending and registered validation rules for the current model type.
+    /// </summary>
+    /// <remarks>
+    /// This is a destructive operation that resets the configurator's state. It removes:
+    /// <list type="bullet">
+    ///     <item>All pending rules that have not yet been built.</item>
+    ///     <item>All validation rule builders associated with this configurator.</item>
+    ///     <item>All rules for this model type from the global options registry.</item>
+    /// </list>
+    /// This method is useful for scenarios where you need to completely redefine
+    /// the validation behavior for a type from scratch.
+    /// </remarks>
+    /// <returns>The current <see cref="ValidationTypeConfigurator{T}"/> instance for fluent chaining.</returns>
     public virtual ValidationTypeConfigurator<T> ClearRules()
     {
         _pendingRules.Clear();
@@ -362,6 +376,18 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    /// <summary>
+    /// Configures whether configuration enforcement is enabled for the model type.
+    /// </summary>
+    /// <remarks>
+    /// When configuration enforcement is disabled, the validation engine will not apply
+    /// any rules that were configured via the fluent API for this model type, effectively
+    /// reverting to only using rules defined by <see cref="System.ComponentModel.DataAnnotations.ValidationAttribute"/>s.
+    /// </remarks>
+    /// <param name="disableConfigurationEnforcement">
+    /// A boolean value. Set to <c>true</c> to disable configuration enforcement, or <c>false</c> to enable it.
+    /// </param>
+    /// <returns>The current <see cref="ValidationTypeConfigurator{T}"/> instance for fluent chaining.</returns>
     public virtual ValidationTypeConfigurator<T> DisableConfigurationEnforcement(bool disableConfigurationEnforcement)
     {
         _disableConfigurationEnforcement = disableConfigurationEnforcement;
@@ -593,6 +619,11 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
+    /// <summary>
+    /// This method is intended for internal use only and is exposed to the test project
+    /// via the <c>InternalsVisibleTo</c> attribute for unit testing purposes.
+    /// </summary>
+    /// <param name="pendingRule">The <see cref="PendingRule{T}"/> to set as the current rule.</param>
     protected internal virtual void SetCurrentRule(PendingRule<T> pendingRule)
     {
         CommitCurrentRule();

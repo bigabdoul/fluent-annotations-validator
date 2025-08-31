@@ -231,7 +231,6 @@ public interface IValidationTypeConfigurator<T>
     /// where you need to perform data preparation (like auto-generated values/identifiers) or value 
     /// retrieval (e.g., from an external source) before validation.
     /// </remarks>
-    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
     /// <param name="configure">A delegate that provides a new value for the instance before validation.</param>
     /// <returns>A reference to the current configurator instance for method chaining.</returns>
     IValidationTypeConfigurator<T> BeforeValidation(PreValidationValueProviderDelegate<T> configure);
