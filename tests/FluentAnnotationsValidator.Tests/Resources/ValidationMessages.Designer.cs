@@ -61,7 +61,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The e-mail address is invalid (convention)..
+        ///   Looks up a localized string similar to L&apos;adresse e-mail est invalide (convention)..
         /// </summary>
         internal static string Email_EmailAddress {
             get {
@@ -70,7 +70,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The e-mail address is required (convention)..
+        ///   Looks up a localized string similar to L&apos;adresse e-mail est requise (convention)..
         /// </summary>
         internal static string Email_Required {
             get {
@@ -79,7 +79,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Email is required..
+        ///   Looks up a localized string similar to Email est requis.
         /// </summary>
         internal static string EmailRequired {
             get {
@@ -88,7 +88,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Password should contain a maximum of {0} characters (convention)..
+        ///   Looks up a localized string similar to Mot de passe requis: {0} caractères maximum (convention)..
         /// </summary>
         internal static string Password_MaxLength {
             get {
@@ -97,7 +97,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Password should contain a minimum of {0} characters (convention)..
+        ///   Looks up a localized string similar to Mot de passe requis: {0} caractères minimum (convention)..
         /// </summary>
         internal static string Password_MinLength {
             get {
@@ -106,7 +106,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Password required between {0} and {1} characters (convention)..
+        ///   Looks up a localized string similar to Mot de passe requis entre {0} et {1} caractères (convention)..
         /// </summary>
         internal static string Password_Range {
             get {
@@ -115,7 +115,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password is required (convention)..
+        ///   Looks up a localized string similar to Le mot de passe est requis (convention)..
         /// </summary>
         internal static string Password_Required {
             get {
@@ -124,7 +124,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The password should have a minimum of {0} characters..
+        ///   Looks up a localized string similar to Le mot de passe doit avoir au minimum {0} caractères..
         /// </summary>
         internal static string PasswordMinLength {
             get {
@@ -133,7 +133,7 @@ namespace FluentAnnotationsValidator.Tests.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Password cannot be blank..
+        ///   Looks up a localized string similar to Mot de passe: ne peut être vide..
         /// </summary>
         internal static string PasswordRequired {
             get {

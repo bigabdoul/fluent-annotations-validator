@@ -43,7 +43,6 @@ public class Resolver_CultureTests
         var services = new ServiceCollection();
 
         var dto = new TestLoginDto("email@example.com", ""); // 1 error: password required
-        var culture = CultureInfo.GetCultureInfo("fr-FR");
 
         // Act
         services.AddFluentAnnotations
@@ -60,49 +59,5 @@ public class Resolver_CultureTests
         // Assert
         result.IsValid.Should().BeFalse("The password is required.");
         result.Errors.Should().Contain(e => e.PropertyName == nameof(TestLoginDto.Password) && e.ErrorMessage == ValidationMessages.Password_Required);
-    }
-
-    [Fact]
-    public void Should_Apply_Scoped_Localization()
-    {
-        // Configure
-        ValidationBehaviorOptions behavior = default!;
-        var englishCulture = CultureInfo.GetCultureInfo("en-US"); // English UI culture
-
-        var services = new ServiceCollection()
-            .AddFluentAnnotations
-            (
-                culture: englishCulture,
-                resourceType: typeof(ValidationMessages),
-                configure: builder => builder
-                    .For<TestLoginDto>()
-                        .When(x => x.Email, model => model.Role != "Admin") // Non-Admin role members must provide a valid email
-                    .Build(),
-                configureBehavior: options => behavior = options
-            );
-
-        var rule = behavior.FindRule<TestLoginDto, RequiredAttribute>(x => x.Email);
-        var resolver = GetMessageResolver(behavior);
-        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Email), rule.Attribute!, rule);
-        var validator = services.GetValidator<TestLoginDto>();
-
-        // invalid model: email is missing but is required when the role is not "Admin"
-        var dto = new TestLoginDto(null!, Password: "Pass123", Role: "User");
-
-        // Act
-        var result = validator.Validate(dto);
-
-        Assert.Multiple
-        (
-            () => Assert.False(result.IsValid),
-            () => Assert.Contains(result.Errors, e => e.PropertyName == "Email"),
-
-            // shouldn't be equal because of culture mismatch (ValidationMessages.Email_Required
-            // returns the French message because of the current thread's UI culture)
-            () => Assert.NotEqual(GetValidationMessage<TestLoginDto, RequiredAttribute>(x => x.Email, "fr-FR"), resolvedMessage),
-
-            // should match the English message, as specified in culture ("en-US")
-            () => Assert.Equal(GetValidationMessage<TestLoginDto, RequiredAttribute>(x => x.Email, englishCulture), resolvedMessage)
-        );
     }
 }

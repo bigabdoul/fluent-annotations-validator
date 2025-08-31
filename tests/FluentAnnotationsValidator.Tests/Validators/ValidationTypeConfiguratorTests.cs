@@ -20,9 +20,9 @@ public class ValidationTypeConfiguratorTests
     private ValidationTypeConfigurator<TestProductModel> _productConfigurator;
     private ValidationTypeConfigurator<ProductOrderModel> _productOrderConfigurator;
 
-    private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator => 
+    private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ValidationTypeConfiguratorTestModel>>();
-    
+
     private IFluentValidator<TestProductModel> ProductValidator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<TestProductModel>>();
     private IFluentValidator<ProductOrderModel> ProductOrderValidator =>
@@ -42,14 +42,14 @@ public class ValidationTypeConfiguratorTests
             extraValidatableTypes: () => [typeof(ProductOrderModel)],
             targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
         );
-        
+
         ArgumentNullException.ThrowIfNull(_mockOptions);
-        
+
         _mockParentConfigurator = new(_mockOptions.Options);
 
         ArgumentNullException.ThrowIfNull(_configurator);
-        ArgumentNullException.ThrowIfNull (_productConfigurator);
-        ArgumentNullException.ThrowIfNull (_productOrderConfigurator);
+        ArgumentNullException.ThrowIfNull(_productConfigurator);
+        ArgumentNullException.ThrowIfNull(_productOrderConfigurator);
     }
 
     [Fact]
@@ -86,8 +86,8 @@ public class ValidationTypeConfiguratorTests
         // Act
 
         // Initially one rule with 2 attributes: [Required, EmailAddress]
-        configurator.Rule(x => x.Email).Required().MaximumLength(50); 
-        
+        configurator.Rule(x => x.Email).Required().MaximumLength(50);
+
         configurator.Build();
 
         // Assert
@@ -243,7 +243,7 @@ public class ValidationTypeConfiguratorTests
                     .MaximumLength(100).WithMessage("The shipping address cannot exceed 100 characters.")
             )
             .Otherwise(rule => rule.Must(address => address == "N/A"));
-            //.Otherwise(rule => rule.NotEmpty()); // What does that mean?
+        //.Otherwise(rule => rule.NotEmpty()); // What does that mean?
 
         // What does this imply?
         //configurator.RuleFor(x => x.ShippingAddress).When(x => x.Age < 18, rule => rule.Empty());
@@ -312,7 +312,7 @@ public class ValidationTypeConfiguratorTests
         // Act
         configurator.RuleFor(x => x.OrderId)
             .Required()         // Rule 1
-            //.BeforeValidation((order, member, orderId) => string.IsNullOrWhiteSpace(orderId) ? Guid.NewGuid().ToString() : orderId)
+                                //.BeforeValidation((order, member, orderId) => string.IsNullOrWhiteSpace(orderId) ? Guid.NewGuid().ToString() : orderId)
             .NotEmpty()         // Rule 2
             .MinimumLength(8);  // Rule 3
 
@@ -412,8 +412,8 @@ public class ValidationTypeConfiguratorTests
         validationResult = Validator.Validate(model);
         validationResult.IsValid.Should().BeFalse();
 
-        _mockOptions.AddedRules.Should().Contain(r => 
-            r.Member.Name == nameof(model.Email) && 
+        _mockOptions.AddedRules.Should().Contain(r =>
+            r.Member.Name == nameof(model.Email) &&
             r.Rule.Attribute is RequiredAttribute);
     }
 

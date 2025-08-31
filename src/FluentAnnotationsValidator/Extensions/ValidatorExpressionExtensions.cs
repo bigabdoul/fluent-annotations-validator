@@ -1,9 +1,6 @@
 ﻿using FluentAnnotationsValidator.Internals.Reflection;
-using FluentAnnotationsValidator.Results;
-using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Reflection;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FluentAnnotationsValidator.Extensions;
 

@@ -1,11 +1,10 @@
-using FluentAnnotationsValidator.Abstractions;
+ï»¿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Runtime.Validators;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Extensions;
@@ -56,7 +55,7 @@ public static class ValidatorServiceCollectionExtensions
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
     Action<ValidationBehaviorOptions>? configure = null,
-    params Type[] targetAssembliesTypes) => 
+    params Type[] targetAssembliesTypes) =>
         services.AddFluentAnnotationsValidators(configure, extraValidatableTypes: null, targetAssembliesTypes);
 
     /// <summary>
@@ -71,8 +70,8 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
-    Action<ValidationBehaviorOptions>? configure = null, 
-    Func<IEnumerable<Type>>? extraValidatableTypes = null, 
+    Action<ValidationBehaviorOptions>? configure = null,
+    Func<IEnumerable<Type>>? extraValidatableTypes = null,
     params Type[] targetAssembliesTypes)
     {
         return services.AddFluentAnnotationsValidators(configure,
@@ -95,7 +94,7 @@ public static class ValidatorServiceCollectionExtensions
     /// <strong>Scanning Rationale:</strong>
     /// This method intentionally inspects property-level annotations rather than class-level
     /// attributes. Most validation attributes (e.g., <c>[Required]</c>, <c>[EmailAddress]</c>, 
-    /// <c>[StringLength]</c>) are designed to be applied directly to properties — not to types.
+    /// <c>[StringLength]</c>) are designed to be applied directly to properties ï¿½ not to types.
     /// </para>
     /// 
     /// <para>
@@ -120,8 +119,6 @@ public static class ValidatorServiceCollectionExtensions
     /// </para>
     /// </summary>
     /// <param name="services">The DI container to register validators into.</param>
-    /// <param name="culture">The common UI culture information to use.</param>
-    /// <param name="resourceType">The common localized resource type to use.</param>
     /// <param name="configure">An action to configure a <see cref="ValidationBehaviorOptions"/>.</param>
     /// <param name="configureLocalization">A delegate to invoke to further configure <see cref="LocalizationOptions"/>. Can be null.</param>
     /// <param name="localizerFactory">An action delegate to invoke to further configure <see cref="IStringLocalizerFactory"/>. Can be null.</param>
@@ -132,7 +129,7 @@ public static class ValidatorServiceCollectionExtensions
     /// </param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance.</returns>
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services,
-    Action<ValidationBehaviorOptions>? configure = null, 
+    Action<ValidationBehaviorOptions>? configure = null,
     Action<LocalizationOptions>? configureLocalization = null,
     Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
     Func<IEnumerable<Type>>? extraValidatableTypes = null,
@@ -163,12 +160,7 @@ public static class ValidatorServiceCollectionExtensions
             attributeDecoratedTypes = additionalTypes.Any() ? [.. attributeDecoratedTypes.Union(additionalTypes)] : attributeDecoratedTypes;
         }
 
-        var behaviorOptions = new ValidationBehaviorOptions()
-        {
-            CommonCulture = culture,
-            CommonResourceType = resourceType
-        };
-
+        var behaviorOptions = new ValidationBehaviorOptions();
         configure?.Invoke(behaviorOptions);
 
         var builder = new FluentAnnotationsBuilder(services, behaviorOptions);
@@ -262,6 +254,7 @@ public static class ValidatorServiceCollectionExtensions
             targetAssembliesTypes);
 
         var configurator = builder.UseFluentAnnotations();
+
         configure?.Invoke(configurator);
         return services;
     }

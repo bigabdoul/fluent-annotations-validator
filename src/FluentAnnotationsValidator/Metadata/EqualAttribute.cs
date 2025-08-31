@@ -9,11 +9,11 @@ namespace FluentAnnotationsValidator.Metadata;
 /// <remarks>
 /// This attribute validates that the value of the decorated property is equal to a provided
 /// expected value using the specified <see cref="IEqualityComparer{T}"/>, or the default
-/// comparer if one is not provided. It is a more flexible alternative to `System.ComponentModel.DataAnnotations.CompareAttribute`,
+/// comparer if one is not provided. It is a more flexible alternative to <see cref="CompareAttribute"/>,
 /// which is designed for comparing two properties on the same object.
 /// <para>
 /// This attribute does not validate against <see langword="null"/> values. Use the
-/// <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> for that purpose.
+/// <see cref="RequiredAttribute"/> for that purpose.
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]

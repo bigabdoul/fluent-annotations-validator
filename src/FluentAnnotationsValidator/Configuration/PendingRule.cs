@@ -46,7 +46,7 @@ public sealed class PendingRule<T>(
     public List<ValidationAttribute> Attributes { get; } = [];
 
     /// <inheritdoc cref="object.ToString"/>
-    public override string ToString() => 
+    public override string ToString() =>
         $"Member: {MemberExpression.GetMemberInfo().Name} | Attributes ({Attributes.Count}): " +
         string.Join(", ", Attributes.Select(a => $"[{a.GetType().Name}]"));
 

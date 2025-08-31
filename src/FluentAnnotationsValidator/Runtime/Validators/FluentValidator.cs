@@ -69,7 +69,7 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
     /// <inheritdoc cref="IFluentValidator.ValidateAsync(ValidationContext, CancellationToken)"/>
     public virtual Task<FluentValidationResult> ValidateAsync(ValidationContext context, CancellationToken cancellation = default) =>
         Task.FromResult(Validate(context));
-    
+
     /// <inheritdoc cref="IFluentValidator.CanValidateInstancesOfType(Type)"/>
     public virtual bool CanValidateInstancesOfType(Type type) => TypeUtils.IsAssignableFrom(typeof(T), type);
 }

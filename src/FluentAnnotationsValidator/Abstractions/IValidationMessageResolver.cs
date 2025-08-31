@@ -1,6 +1,5 @@
 using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Abstractions;
 

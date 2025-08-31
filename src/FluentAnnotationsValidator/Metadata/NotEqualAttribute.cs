@@ -11,7 +11,7 @@ namespace FluentAnnotationsValidator.Metadata;
 /// comparer if one is not provided.
 /// <para>
 /// This attribute does not validate against <see langword="null"/> values. Use the
-/// <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> for that purpose.
+/// <see cref="RequiredAttribute"/> for that purpose.
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
