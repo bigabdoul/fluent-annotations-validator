@@ -204,40 +204,46 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         ArgumentNullException.ThrowIfNull(validationAttributeType);
 
+        // A single counter to track the total number of removed attributes
         var attributesRemoved = 0;
 
+        // Remove attributes from the pending rules collection
         foreach (var rule in _pendingRules)
         {
-            if (!memberInfo.AreSameMembers(rule.MemberExpression.GetMemberInfo()))
-                continue;
+            // Only process rules for the specified member
+            if (memberInfo.AreSameMembers(rule.MemberExpression.GetMemberInfo()))
+            {
+                // Remove all attributes that match the specified type
+                var count = rule.Attributes.RemoveAll(attr => attr.GetType() == validationAttributeType);
+                attributesRemoved += count;
 
 #if DEBUG
-            var aspect = rule.ToString();
+                Debug.WriteLine($"Removed {count} attribute(s) from pending rule for member '{memberInfo.Name}'.");
 #endif
-            // Remove attributes of the specified type
-            var count = rule.Attributes.RemoveAll(attr =>
-                EqualityComparer<Type>.Default.Equals(attr.GetType(), validationAttributeType));
-
-            attributesRemoved += count;
-#if DEBUG
-            Debug.WriteLine($"Removed {count} attribute(s) from pending rule: {aspect}.");
-#endif
+            }
         }
 
+        // Remove attributes from the validation rule builders collection
         foreach (var builder in _validationRuleBuilders)
         {
-            if (!memberInfo.AreSameMembers(builder.Member.GetMemberInfo()))
-                continue;
+            // Only process builders for the specified member
+            if (memberInfo.AreSameMembers(builder.Member.GetMemberInfo()))
+            {
+                // Remove rules based on the presence and type of the attribute
+                var count = builder.RemoveRules(rule =>
+                    rule.HasAttribute && rule.Attribute!.GetType() == validationAttributeType);
 
-            var count = builder.RemoveRules(rule =>
-                rule.HasAttribute &&
-                EqualityComparer<Type>.Default.Equals(rule.Attribute!.GetType(), validationAttributeType));
+                attributesRemoved += count;
 
-            attributesRemoved += count;
-            Debug.WriteLine($"Removed {count} attribute(s) from validation rule builders.");
+#if DEBUG
+                Debug.WriteLine($"Removed {count} attribute(s) from validation rule builder for member '{memberInfo.Name}'.");
+#endif
+            }
         }
 
+#if DEBUG
         Debug.WriteLine($"Removed a total of {attributesRemoved} attribute(s) from all pending rules.");
+#endif
 
         return this;
     }
