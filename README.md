@@ -1,7 +1,7 @@
 # FluentAnnotationsValidator
 
 [![NuGet - FluentAnnotationsValidator](https://img.shields.io/nuget/v/FluentAnnotationsValidator.svg)](https://www.nuget.org/packages/FluentAnnotationsValidator)
-[![Build Status](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
+[![NuGet Publish](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
 [![Build](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml)
 [![Test](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
