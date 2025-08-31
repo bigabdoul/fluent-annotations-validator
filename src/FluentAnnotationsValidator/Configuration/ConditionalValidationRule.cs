@@ -48,7 +48,7 @@ public class ConditionalValidationRule(
 
     /// <summary>
     /// The validation attribute associated to the rule.
-    /// If it is <see cref="null"/>, it may have been added
+    /// If it is <see langword="null"/>, it may have been added
     /// through fluent configuration.
     /// </summary>
     public ValidationAttribute? Attribute { get; set; }
@@ -88,6 +88,7 @@ public class ConditionalValidationRule(
     /// </summary>
     public string UniqueKey { get; set; } = Guid.NewGuid().ToString();
 
+    /// <inheritdoc cref="object.Equals(object?)"/>
     public override bool Equals(object? obj)
         => obj is ConditionalValidationRule other && Equals(other);
 
@@ -101,6 +102,7 @@ public class ConditionalValidationRule(
         Member.AreSameMembers(other.Member) &&
         Attribute?.GetType() == other.Attribute?.GetType();
 
+    /// <inheritdoc cref="object.GetHashCode"/>
     public override int GetHashCode()
         => HashCode.Combine(Member.Name, Attribute?.GetType());
 

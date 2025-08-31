@@ -11,7 +11,7 @@ namespace FluentAnnotationsValidator.Metadata;
 /// comparer if one is not provided.
 /// <para>
 /// This attribute does not validate against <see langword="null"/> values. Use the
-/// <see cref="RequiredAttribute"/> for that purpose.
+/// <see cref="System.ComponentModel.DataAnnotations.RequiredAttribute"/> for that purpose.
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
@@ -20,8 +20,13 @@ public class NotEqualAttribute(object? unexpectedValue, IEqualityComparer<object
     : FluentValidationAttribute(errorMessage)
 {
     private readonly IEqualityComparer<object?> _comparer = equalityComparer ?? EqualityComparer<object?>.Default;
+
+    /// <summary>
+    /// Gets the unexpected value that the property or field must not equal.
+    /// </summary>
     public object? Unexpected => unexpectedValue;
 
+    /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is null)
@@ -39,14 +44,28 @@ public class NotEqualAttribute(object? unexpectedValue, IEqualityComparer<object
     }
 }
 
+/// <summary>
+/// A type-safe version of the <see cref="NotEqualAttribute"/> for a specific property type.
+/// </summary>
+/// <remarks>
+/// This generic attribute provides compile-time type checking for the unexpected value,
+/// ensuring that it matches the type of the property being validated. It also performs
+/// a runtime check to ensure the validated value is of the expected type before
+/// performing the inequality comparison.
+/// </remarks>
+/// <typeparam name="TProperty">The type of the property to validate.</typeparam>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
-public class NotEqualAttribute<TProperty>(TProperty unexpectedValue, IEqualityComparer<TProperty>? equalityComparer = null) 
+public class NotEqualAttribute<TProperty>(TProperty unexpectedValue, IEqualityComparer<TProperty>? equalityComparer = null)
     : NotEqualAttribute(unexpectedValue)
 {
     private readonly IEqualityComparer<TProperty> _comparer = equalityComparer ?? EqualityComparer<TProperty>.Default;
 
+    /// <summary>
+    /// Gets the type-safe unexpected value that the property or field must not equal.
+    /// </summary>
     public new TProperty? Unexpected => (TProperty?)base.Unexpected;
 
+    /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is null)

@@ -216,6 +216,20 @@ public interface IValidationTypeConfigurator<T>
     IValidationTypeConfigurator<T> DisableConventionalKeys();
 
     /// <summary>
+    /// Configures whether configuration enforcement is enabled for the model type.
+    /// </summary>
+    /// <remarks>
+    /// When configuration enforcement is disabled, the validation engine will not apply
+    /// any rules that were configured via the fluent API for this model type, effectively
+    /// reverting to only using rules defined by <see cref="ValidationAttribute"/>s.
+    /// </remarks>
+    /// <param name="disableConfigurationEnforcement">
+    /// A boolean value. Set to <see langword="true"/> to disable configuration enforcement, or <see langword="false"/> to enable it.
+    /// </param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> DisableConfigurationEnforcement(bool disableConfigurationEnforcement);
+
+    /// <summary>
     /// Specifies a message to fall back to if .Localized(...) lookup fails - avoids silent runtime fallback.
     /// </summary>
     /// <param name="fallbackMessage">The fallback message to use.</param>
@@ -231,7 +245,6 @@ public interface IValidationTypeConfigurator<T>
     /// where you need to perform data preparation (like auto-generated values/identifiers) or value 
     /// retrieval (e.g., from an external source) before validation.
     /// </remarks>
-    /// <typeparam name="T">The type of the object instance being validated.</typeparam>
     /// <param name="configure">A delegate that provides a new value for the instance before validation.</param>
     /// <returns>A reference to the current configurator instance for method chaining.</returns>
     IValidationTypeConfigurator<T> BeforeValidation(PreValidationValueProviderDelegate<T> configure);
