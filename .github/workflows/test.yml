@@ -23,7 +23,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: compiled-app
-          path: .
+          path: ./build-output
 
       - name: Run tests
         run: dotnet test --configuration Release --no-build --verbosity normal
