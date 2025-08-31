@@ -51,7 +51,7 @@ allowing you to chain validation methods and conditional logic without overridin
 existing rules for the same member.
 
 * **Dependency Removal**: The dependency on the `FluentValidation` package has been 
-removed. All references to `IValidator<T>` should be replaced with `IFluentValidator<T>`.
+removed. All references to `IFluentValidator<T>` should be replaced with `IFluentValidator<T>`.
 
 ---
 

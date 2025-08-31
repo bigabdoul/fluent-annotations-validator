@@ -18,7 +18,7 @@ A brand-new mechanism has been introduced to give you control over a member's va
 * **`RuleFor(...)`**: This new method provides a non-destructive way to add rules to a member, allowing you to chain validation logic without overwriting previous rules.
 
 #### Core Changes & Utilities
-* **Dependency Removal**: The dependency on the `FluentValidation` package has been removed entirely. All references to `IValidator<T>` should be updated to `IFluentValidator<T>`.
+* **Dependency Removal**: The dependency on the `FluentValidation` package has been removed entirely. All references to `IFluentValidator<T>` should be updated to `IFluentValidator<T>`.
 * **MemberInfo Extensions**: New utility methods (`GetValue`, `SetValue`, and `TrySetValue`) have been added to simplify dynamic access to object properties and fields using reflection.
 
 This version lays the groundwork for a more flexible, powerful, and maintainable validation framework.

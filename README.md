@@ -35,7 +35,7 @@ Install via NuGet:
 
 | Package | Version | Command |
 |---|---|---|
-| FluentAnnotationsValidator | 2.0.0-preview.2.2 | `dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2.2` |
+| FluentAnnotationsValidator | 2.0.0-preview.2.3 | `dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2.3` |
 
 -----
 

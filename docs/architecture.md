@@ -1,7 +1,7 @@
 ---
 title: Architecture Overview
 breadcrumb: FluentAnnotationsValidator > Documentation > Architecture Overview
-version: v2.0.0-preview.2
+version: v2.0.0-preview.2.3
 ---
 
 # 🏗️ Architecture Overview

@@ -1,7 +1,7 @@
 ---
 title: Localization Strategy
 breadcrumb: FluentAnnotationsValidator > Documentation > Localization Strategy
-version: v1.0.6
+version: v2.0.0-preview.2.3
 ---
 
 # 🧠 Localization Strategy

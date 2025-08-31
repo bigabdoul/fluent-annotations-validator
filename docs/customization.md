@@ -1,7 +1,7 @@
 ---
 title: Customization & Extensibility
 breadcrumb: FluentAnnotationsValidator > Documentation > Customization & Extensibility
-version: v1.0.6
+version: v2.0.0-preview.2.3
 ---
 
 # 🧩 Customization & Extensibility – Updated Extension Point
