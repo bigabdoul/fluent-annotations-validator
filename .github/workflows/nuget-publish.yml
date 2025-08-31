@@ -1,4 +1,4 @@
-name: NuGet Publish
+name: Publish NuGet package
 
 on:
   push:
@@ -14,23 +14,27 @@ jobs:
         dotnet-version: [ '8.0.x' ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup .NET SDK ${{ matrix.dotnet-version }}
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
-      - name: Restore
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Restore dependencies
         run: dotnet restore FluentAnnotationsValidator.sln
 
-      - name: Build
-        run: dotnet build FluentAnnotationsValidator.sln --configuration Release
+      - name: Build solution projects
+        run: dotnet build FluentAnnotationsValidator.sln --configuration Release --no-restore
 
       - name: Pack NuGet packages (with symbols, source, and deterministic metadata)
-        run: dotnet pack --configuration Release --output ./nupkg --include-symbols --include-source --property:ContinuousIntegrationBuild=true
+        run: dotnet pack --no-restore --configuration Release /p:Version=${{ env.VERSION }} --output ./nupkg --include-symbols --include-source --property:ContinuousIntegrationBuild=true
 
-      - name: Publish to NuGet
+      - name: Push to NuGet.org
         run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

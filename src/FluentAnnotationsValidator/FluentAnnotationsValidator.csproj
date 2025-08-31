@@ -21,7 +21,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <!-- Release version and notes -->
-    <Version>2.0.0-preview1</Version>
+    <Version>2.0.0-preview.2.1</Version>
     <PackageReleaseNotes>$(ReleaseNotesText)</PackageReleaseNotes>
 
     <!-- Build and diagnostics -->
@@ -32,6 +32,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 	
   <ItemGroup>

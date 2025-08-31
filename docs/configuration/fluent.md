@@ -1,157 +1,290 @@
 ---
 title: Fluent Configuration API
 breadcrumb: FluentAnnotationsValidator > Documentation > Fluent Configuration API
-version: v1.1.0
+version: v2.0.0-preview.2
 ---
 
 # Fluent Configuration API
 
-The fluent DSL (Domain-Specific Language) allows you to configure conditional validation per DTO and property using expressive, type-safe chaining.
+This release introduces a new, more expressive fluent API for configuring validation. It enhances flexibility for complex and conditional validation, providing a more intuitive and powerful developer experience.
 
-## Example
+## 🚀 Quickstart
 
-```csharp
-// targetAssembliesTypes: optional, helps boost performance 
-// at startup by scanning only assemblies of targeted types;
+### 1\. DTO Annotations
 
-// here, we provide two types (if they're in different asm);
-// if they're in the same asm, provide only one type.
-services.AddFluentAnnotationsValidators(targetAssembliesTypes: [typeof(LoginDto), typeof(RegistrationDto)]);
-
-services.UseFluentAnnotations()
-    .For<LoginDto>()
-        .When(x => x.Email, dto => dto.Role != null && dto.Role != "Admin")
-            .WithMessage("Non-admins must provide a valid email.")
-            .WithKey("Email.NonAdminRequired")
-            .Localized("NonAdmin_Email_Required")
-        .Except(x => x.Role)
-        .AlwaysValidate(x => x.Password)
-    .For<RegistrationDto>()
-        .When(x => x.Age, dto => dto.Age >= 18)
-    .Build();
-```
-
-## Available Methods
-
-| Method               | Description                                                  |
-|----------------------|--------------------------------------------------------------|
-| `For<T>()`           | Start configuring a specific model type                      |
-| `When(...)`          | Register a conditional rule for a property                   |
-| `And(...)`           | Alias for `.When(...)` on additional properties              |
-| `Except(...)`        | Skip validation for a specific property                      |
-| `AlwaysValidate(...)`| Force unconditional validation                               |
-| `WithMessage(...)`   | Set a custom error message                                   |
-| `WithKey(...)`       | Define a message key for diagnostics or resolvers            |
-| `Localized(...)`     | Provide a resource key for localization                      |
-| `Build()`            | Finalize and flush all configuration to the DI container     |
-
-## Runtime Behavior
-
-- Each condition is stored in `ValidationBehaviorOptions.PropertyConditions`
-- Metadata is forwarded to the message resolver
-- Fluent chaining supports deferred rule registration and late-bound overrides
-
-## ✅ Tips
-
-- Chain `.WithMessage(...)` etc. before `.For<T>()` or `.Build()` to apply metadata
-- Use lambda expressions for type safety and auto-completion
-
-## 🧩 Accessing Rules by Property
-
-After calling `.Build()`, your conditional rules are stored in the runtime pipeline and can be inspected or retrieved dynamically.
-
-Here’s your updated **API documentation** section for the rule lookup logic — incorporating the full `ValidationBehaviorOptions` interface with consistent formatting, descriptive guidance, and a usage example featuring `.WithValidationResource<T>()` 💡📘
-
----
-
-## 🔧 Rule Lookup API
-
-Once rules are registered via `.For<T>()...Build()`, you can inspect, retrieve, or verify rule presence through the `ValidationBehaviorOptions` container.
-
-### 🔍 Lookup Methods
-
-| Method | Description |
-|--------|-------------|
-| `Set(Type modelType, string propertyName, rule)` | Registers or replaces a rule using type + property string |
-| `Set<T>(Expression<Func<T, string?>> property, rule)` | Registers a rule using a strongly typed lambda |
-| `Get(Type modelType, string propertyName)` | Retrieves a rule or throws if missing |
-| `Get<T>(Expression<Func<T, string?>> property)` | Retrieves via lambda or throws if missing |
-| `TryGet(Type modelType, string propertyName, out rule)` | Attempts lookup by type + string name |
-| `TryGet<T>(Expression<Func<T, string?>> property, out rule)` | Attempts lookup via lambda expression |
-| `ContainsKey(Type modelType, string propertyName)` | Checks for existence using raw types and strings |
-| `ContainsKey<T>(Expression<Func<T, string?>> property)` | Checks existence via strongly typed lambda |
-
-All lambda-based overloads use a compiler-safe approach via `Expression<Func<T, ...>>`, promoting refactorable, discoverable DX.
-
----
-
-### 📘 Example with Resource Lookup
+You can continue to use standard `System.ComponentModel.DataAnnotations` on your Data Transfer Objects (DTOs).
 
 ```csharp
-// Always make sure to scan target assemblies on application start up.
-services.AddFluentAnnotationsValidators(typeof(LoginDto));
+using FluentAnnotationsValidator.Metadata;
+using System.ComponentModel.DataAnnotations;
 
-services.UseFluentAnnotations()
-    .For<LoginDto>()
-        .WithValidationResource<ValidationMessages>()
-        // or:
-        // .WithValidationResource(typeof(ValidationMessages))
-        .When(x => x.Email, dto => string.IsNullOrEmpty(dto.Email))
-            .Localized("Email_Required")
-        .Build();
-
-// Runtime lookup
-var options = services.BuildServiceProvider().GetRequiredService<IOptions<ValidationBehaviorOptions>>().Value;
-
-if (options.TryGet<LoginDto>(x => x.Email, out var rule))
+public class BaseIdentityModel
 {
-    Console.WriteLine($"Rule key: {rule.ResourceKey}");
-    Console.WriteLine($"Rule type: {rule.ResourceType?.Name}");
+    [Required]
+    public virtual string Email { get; set; } = default!;
+
+    [Required, StringLength(20, MinimumLength = 6)]
+    public virtual string Password { get; set; } = default!;
+}
+
+[ValidationResource(typeof(FluentValidationMessages))]
+public class RegisterModel : BaseIdentityModel
+{
+    [StringLength(20)]
+    public string? PhoneNumber { get; set; }
+
+    [StringLength(50)]
+    public string? FirstName { get; set; }
+
+    [StringLength(50)]
+    public string? LastName { get; set; }
+
+    public DateTime? BirthDate { get; set; }
+}
+
+public class LoginModel : BaseIdentityModel
+{
+    public IList<string> Scopes { get; set; } = [];
 }
 ```
 
-This example demonstrates fluent configuration with a scoped resource type, and rule inspection via the strongly typed lambda API.
+### 2\. Localized Messages
 
----
-
-## 🌍 Localization via Resource Scoping
-
-You can declaratively set the resource type for all `.Localized(...)` keys within a fluent configuration chain using `.WithValidationResource<T>()`.
-
-### 📘 Example
+Use a .resx file to define localized validation messages with conventional keys (Property_Attribute).
 
 ```csharp
-services.UseFluentAnnotations()
-    .For<LoginDto>()
-        .WithValidationResource(typeof(ValidationMessages))
-        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
-            .WithMessage("Password is missing.")
-            .Localized("Password_Required")
-        .Build();
+public class FluentValidationMessages
+{
+    public static System.Globalization.CultureInfo? Culture { get; set; }
+    public const string Email_Required = "Email is required.";
+    public const string Email_NotEmpty = "Email is cannot be empty.";
+    public const string Email_EmailAddress = "Email format is invalid.";
+    public const string Password_Required = "Password is required.";
+    public const string Password_StringLength = "The Password field must be a string with a minimum length of {0} and a maximum length of {1}.";
+    public const string Password_Must = "Password must contain at least one digit.";
+}
 ```
 
-This eliminates the need for `[ValidationResource(...)]` on your DTO — making localization more discoverable and intentional from configuration code.
+### 3\. Configuration
 
----
-
-### Culture and Fallbacks
-
-Your DSL now supports scoped culture and graceful fallback behavior:
+Use the AddFluentAnnotations(...) extension method in your Startup.cs or Program.cs to configure validation rules.
 
 ```csharp
-services.UseFluentAnnotations()
-    .For<LoginDto>()
-        .WithValidationResource<ValidationMessages>()
-        .WithCulture(CultureInfo.GetCultureInfo("fr-FR"))
-        .DisableConventionalKeys()
-        .When(x => x.Password, dto => string.IsNullOrEmpty(dto.Password))
-            .Localized("Password_Required")
-            .UseFallbackMessage("Mot de passe requis.")
-    .Build();
+using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Configuration;
+
+public static partial class FluentValidationUtils
+{
+    public static IServiceCollection ConfigureFluentAnnotations(this IServiceCollection services)
+    {
+        services.AddFluentAnnotations(
+            // This factory makes the validation exclusively French
+            localizerFactory: factory => new(SharedResourceType: typeof(FluentValidationMessages), SharedCulture: CultureInfo.GetCultureInfo("fr")),
+            configure: config =>
+            {
+                // RegisterModel configuration
+                var registrationConfig = config.For<RegisterModel>();
+
+                // Add a preemptive rule that overrides any previous configuration for 'Email'
+                registrationConfig.Rule(x => x.Email)
+                    .Required()
+                    .EmailAddress();
+
+                // Add a non-preemptive rule for 'Email' that adds more rules to the property
+                registrationConfig.RuleFor(x => x.Email)
+                    .When(dto => dto.Email.EndsWith("@example.com"),
+                        rule => rule.Must(email => email.Any(char.IsDigit))
+                    );
+
+                // Add a preemptive rule that does NOT override previous configuration for 'Password'
+                registrationConfig.Rule(x => x.Password,
+                    must: BeComplexPassword,
+                    RuleDefinitionBehavior.Preserve);
+
+                registrationConfig.RuleFor(x => x.BirthDate)
+                    .When(x => x.BirthDate.HasValue, rule => rule.Must(BeAtLeast13));
+
+                registrationConfig.Build();
+
+                // LoginModel configuration
+                var loginConfig = config.For<LoginModel>();
+
+                // Non-preemptive rule that retains statically defined constraints (RequiredAttribute).
+                // Add a rule to distinguish between admins, and other users. This scenario is:
+                // "If the email does not contain the @ symbol, the Scopes collection must contain 'admin';
+                // otherwise, Scopes must be empty or contain 'user'."
+                loginConfig.RuleFor(x => x.Scopes)
+                    .When(IsNotBlankInvalidEmail, scopes => scopes.Must(ContainAdminScopes))
+                    .Otherwise(scopes => scopes.Must(BeEmptyOrContainUserScope));
+
+                // This Must(...) method is an alias for When(...) to make the intent clearer.
+                loginConfig.RuleFor(x => x.Email)
+                    .Must(BeValidEmailAddressIfNotAdmin, rule => rule.EmailAddress());
+
+                loginConfig.Build();
+            },
+            targetAssembliesTypes: [typeof(RegisterModel)]
+        );
+    }
+    
+    private static bool BeAtLeast13(DateTime? date) => DateTime.UtcNow.AddYears(-13) >= date;
+
+    private static bool BeComplexPassword(string password)
+    {
+        // A regular expression that checks for a complex password.
+        // (?=.*[a-z])    - Must contain at least one lowercase letter.
+        // (?=.*[A-Z])    - Must contain at least one uppercase letter.
+        // (?=.*\d)       - Must contain at least one digit.
+        // (?=.*[!@#$%^&*()_+=[{\]};:"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
+        // .              - Matches any character (except newline).
+
+        var passwordRegex = ComplexPasswordRegex();
+
+        return passwordRegex.IsMatch(password);
+    }
+
+    private static bool IsNotBlankInvalidEmail(LoginModel m) => !string.IsNullOrWhiteSpace(m.Email) && !m.Email.Contains('@');
+
+    private static bool ContainAdminScopes(HashSet<string> scopes) => scopes.Contains("admin") || scopes.Contains("superuser");
+
+    private static bool BeEmptyOrContainUserScope(HashSet<string> scopes) => scopes.Count == 0 || scopes.Contains("user");
+
+    private static bool BeValidEmailAddressIfNotAdmin(LoginModel user)
+    {
+        var email = user.Email;
+        if (string.IsNullOrWhiteSpace(email)) return true; // invalid, enacts the EmailAddress() validator
+
+        return
+            // if it contains an @ symbol, then it must be a valid email address
+            email.Contains('@') ||
+            // non-administrators definitely need a valid email address
+            !string.Equals(email, "admin", StringComparison.OrdinalIgnoreCase) && 
+            !string.Equals(email, "superuser", StringComparison.OrdinalIgnoreCase) &&
+            !user.Scopes.Contains("admin");
+    }
+
+    private static bool BeComplexPassword(string password)
+    {
+        // A regular expression that checks for a complex password.
+        // (?=.*[a-z])    - Must contain at least one lowercase letter.
+        // (?=.*[A-Z])    - Must contain at least one uppercase letter.
+        // (?=.*\d)       - Must contain at least one digit.
+        // (?=.*[!@#$%^&*()_+=[{\]};:"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
+        // .              - Matches any character (except newline).
+
+        var passwordRegex = ComplexPasswordRegex();
+
+        return passwordRegex.IsMatch(password);
+    }
+
+    [GeneratedRegex(@"(?:\+?224|00224)?[\s.-]?(?:\d{3}[\s.-]?\d{3}[\s.-]?\d{3}|\d{3}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2})")]
+    private static partial Regex GuineaPhoneNumberRegex();
+
+    [GeneratedRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).*$")]
+    private static partial Regex ComplexPasswordRegex();
+}
 ```
 
-| Method | Description |
-|--------|-------------|
-| `WithCulture(CultureInfo)` | Specifies culture for formatting localized messages |
-| `UseFallbackMessage(string)` | Defines a message to use if localization fails |
-| `DisableConventionalKeys()` | Prevents fallback to `"Property_Attribute"` keys |
+#### 3\.1 No ValidationAttribute annotation on model's member
+To ensure the library handles cases where a model's members don't contain any ValidationAttribute annotation, the model must either implement the IFluentValidatable marker interface or pass the extraValidatableTypes parameter to the IServiceCollection.AddFluentAnnotations(...) extension method.
+
+Declare types:
+
+```csharp
+using FluentAnnotationsValidator.Abstractions;
+
+public class Product : IFluentValidatable
+{
+    public string ProductId { get; set; } = default!;
+    public string ProductName { get; set; } = default!;
+    public bool IsPhysicalProduct { get; set; }
+    public string ShippingAddress { get; set; } = string.Empty;
+}
+
+public class ProductOrder
+{
+    public string OrderId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public int Quantity { get; set; }
+}
+```
+
+Add validation rules:
+
+```csharp
+services.AddFluentAnnotations(
+    configure: config =>
+    {
+        var productConfigurator = config.For<Product>();
+        // Configure Product and Build
+        productConfigurator.RuleFor(x => x.ShippingAddress)
+            .When(x => x.IsPhysicalProduct, rule =>
+            {
+                // These rules are evaluated if IsPhysicalProduct is true
+                rule.NotEmpty().MaximumLength(100);
+            })
+            .Otherwise(rule =>
+            {
+                // This rule will be evaluated if IsPhysicalProduct is false
+                rule.Must(address => address == "N/A")
+                    .WithMessage("The shipping address for non-physical products must be N/A.");
+            });
+
+        productConfigurator.Build();
+
+        // Configure ProductOrder and Build
+        var orderConfigurator = config.For<ProductOrder>();
+        
+        orderConfigurator.RuleFor(x => x.OrderId)
+            .NotEmpty()
+            .MinimumLength(8);
+
+        orderConfigurator.Build();
+    },
+    extraValidatableTypes: () => [typeof(ProductOrder)],
+    targetAssembliesTypes: [typeof(Product)]
+);
+```
+
+#### 3\.2 Pre-Validation Value Providers
+Pre-validation value providers are a new mechanism to modify or retrieve a member's value before validation. This is useful for data preparation, normalization, initialization, or fetching values from external sources.
+
+Example:
+
+```csharp
+services.AddFluentAnnotations(
+    configure: config =>
+    {
+        var productConfigurator = config.For<ProductModel>();
+
+        // BeforeValidation(...) can be called in any order, but only
+        // ONCE for this configurator, ProductModel, and ProductId.
+        productConfigurator.RuleFor(x => x.ProductId)
+            .BeforeValidation(EnsureProductIdInitialized)
+            .Required()
+            .NotEmpty()
+            .ExactLength(36);
+
+        productConfigurator.Build();
+    }
+);
+
+// Makes sure productId is not blank.
+static string? EnsureProductIdInitialized(ProductModel product, MemberInfo member, string? productId)
+    => product.ProductId = string.IsNullOrWhiteSpace(productId) ? Guid.NewGuid().ToString() : productId;
+```
+
+### 4\. Runtime Validation
+
+Inject IFluentValidator<T> into your services, controllers, or Minimal API endpoints to validate your DTOs.
+
+```csharp
+app.MapPost("/register", async (RegisterModel dto, IFluentValidator<RegisterModel> validator) =>
+{
+    var result = await validator.ValidateAsync(dto);
+    if (!result.IsValid)
+        return Results.BadRequest(result.Errors);
+
+    // Proceed with registration
+});
+```

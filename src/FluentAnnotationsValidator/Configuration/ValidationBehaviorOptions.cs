@@ -54,6 +54,17 @@ public class ValidationBehaviorOptions
 
     #endregion
 
+    /// <summary>
+    /// Adds or updates a list of conditional validation rules for a specific member.
+    /// </summary>
+    /// <remarks>
+    /// This method is designed for internal and inherited use within the validation framework.
+    /// It uses a thread-safe approach to add or replace the rules associated with a given
+    /// <see cref="MemberInfo"/> in the internal rule registry. This ensures that new
+    /// rules can be added dynamically without risking concurrency issues.
+    /// </remarks>
+    /// <param name="member">The <see cref="MemberInfo"/> representing the property or field to which the rules apply.</param>
+    /// <param name="rules">The <see cref="List{T}"/> of <see cref="ConditionalValidationRule"/> instances to associate with the member.</param>
     protected internal virtual void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
         _ruleRegistry.AddOrUpdate(member, rules, (_, _) => rules);

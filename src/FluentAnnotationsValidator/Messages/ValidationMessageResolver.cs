@@ -174,6 +174,11 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// Optional: A specific <see cref="CultureInfo"/> to look up the resource key.
     /// If <see langword="null"/>, defaults to <see cref="CultureInfo.CurrentCulture"/>.
     /// </param>
+    /// <param name="formatArg">
+    /// An optional object or a collection of objects used to format the localized message.
+    /// The localized message string can be a format string (e.g., "The field {0} is required."),
+    /// and this parameter provides the values to be inserted into it.
+    /// </param>
     /// <returns>
     /// <see langword="true"/> if resolution succeeded and a non-null message was returned;
     /// otherwise, <see langword="false"/>.
@@ -184,8 +189,8 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// <see cref="TryResolveFromResource(Type, string, CultureInfo?, object?, out string?)"/>.
     /// </remarks>
     protected static bool TryResolveFromLocalizer(IStringLocalizerFactory localizerFactory,
-    string resourceKey, Type resourceType, CultureInfo? culture,
-    object? formatArg, [NotNullWhen(true)] out string? message)
+        string resourceKey, Type resourceType, CultureInfo? culture,
+        object? formatArg, [NotNullWhen(true)] out string? message)
     {
         if (TryResolveFromResource(resourceType, resourceKey, culture, formatArg, out message))
             return true;

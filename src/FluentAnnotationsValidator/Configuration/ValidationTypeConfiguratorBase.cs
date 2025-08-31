@@ -8,6 +8,16 @@ namespace FluentAnnotationsValidator.Configuration;
 /// </summary>
 public abstract class ValidationTypeConfiguratorBase
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationTypeConfiguratorBase"/> class for a specific target type.
+    /// </summary>
+    /// <remarks>
+    /// This constructor automatically registers the configurator instance with the global
+    /// <see cref="ValidationConfiguratorStore"/>. This ensures that the configurator is
+    /// discoverable by the validation framework, allowing the engine to retrieve and apply
+    /// fluent-defined rules for the specified <paramref name="targetType"/> at runtime.
+    /// </remarks>
+    /// <param name="targetType">The <see cref="Type"/> of the model for which this configurator will define validation rules.</param>
     protected ValidationTypeConfiguratorBase(Type targetType)
     {
         TargetType = targetType;
