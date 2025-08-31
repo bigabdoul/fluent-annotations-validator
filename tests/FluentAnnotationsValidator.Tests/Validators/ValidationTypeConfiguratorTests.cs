@@ -14,7 +14,6 @@ using static TestHelpers;
 public class ValidationTypeConfiguratorTests
 {
     private readonly ServiceCollection _services = new();
-    private readonly MockValidationConfigurator _mockParentConfigurator;
     private MockValidationBehaviorOptions _mockOptions;
     private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
     private ValidationTypeConfigurator<TestProductModel> _productConfigurator;
@@ -44,9 +43,6 @@ public class ValidationTypeConfiguratorTests
         );
 
         ArgumentNullException.ThrowIfNull(_mockOptions);
-
-        _mockParentConfigurator = new(_mockOptions.Options);
-
         ArgumentNullException.ThrowIfNull(_configurator);
         ArgumentNullException.ThrowIfNull(_productConfigurator);
         ArgumentNullException.ThrowIfNull(_productOrderConfigurator);
@@ -152,21 +148,6 @@ public class ValidationTypeConfiguratorTests
         nameRules.Should().NotContain(r => r.Rule.Attribute is RequiredAttribute);
         nameRules.Should().NotContain(r => r.Rule.Attribute is MinLengthAttribute);
         nameRules.Should().Contain(r => r.Rule.Attribute is Length2Attribute);
-    }
-
-    [Fact]
-    public void Build_ShouldNotRegisterFallbackRulesForOverriddenMembers()
-    {
-        // Arrange
-        var configurator = _configurator;
-        configurator.Rule(x => x.Email).NotEmpty();
-
-        // Act
-        configurator.Build();
-
-        // Assert
-        // The Build method should not register any fallback rules for the `Email` member because it was overridden.
-        _mockParentConfigurator.RegisteredActions.Should().BeEmpty();
     }
 
     [Fact]

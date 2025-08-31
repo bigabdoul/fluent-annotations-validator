@@ -37,14 +37,5 @@ public interface IValidationConfigurator
     /// An <see cref="IValidationTypeConfigurator{T}"/> for defining rules specific to <typeparamref name="T"/>.
     /// </returns>
     IValidationTypeConfigurator<T> For<T>();
-
-    /// <summary>
-    /// Finalizes and applies all registered validation configurations.
-    /// </summary>
-    /// <remarks>
-    /// This method is typically called once after all conditional rules have been defined.
-    /// It ensures the options are properly registered in the DI container.
-    /// </remarks>
-    void Build();
 }
 

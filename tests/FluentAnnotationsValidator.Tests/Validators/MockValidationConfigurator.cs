@@ -4,16 +4,6 @@ using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
-public class MockValidationConfigurator(ValidationBehaviorOptions options) : ValidationConfigurator(options)
-{
-    public List<Action<ValidationBehaviorOptions>> RegisteredActions { get; } = [];
-
-    public override void Register(Action<ValidationBehaviorOptions> action)
-    {
-        RegisteredActions.Add(action);
-    }
-}
-
 public class MockValidationBehaviorOptions(ValidationBehaviorOptions options)
 {
     public ValidationBehaviorOptions Options => options;

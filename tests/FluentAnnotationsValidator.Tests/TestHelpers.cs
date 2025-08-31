@@ -31,10 +31,6 @@ internal static partial class TestHelpers
         {
             configure(fluent).Build();
         }
-        else
-        {
-            fluent.Build();
-        }
 
         return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }
@@ -51,10 +47,6 @@ internal static partial class TestHelpers
         if (configure != null)
         {
             configure(fluent).Build();
-        }
-        else
-        {
-            fluent.Build();
         }
         return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }

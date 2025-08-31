@@ -12,7 +12,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Initializes a new instance of the <see cref="ValidationConfigurator"/> class
 /// with the specified service collection.
 /// </remarks>
-/// <param name="options">The validation behavior options used during <see cref="Build"/>.</param>
+/// <param name="options">The validation behavior options used during configuration.</param>
 public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
     private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
@@ -54,23 +54,6 @@ public class ValidationConfigurator(ValidationBehaviorOptions options) : IValida
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>An <see cref="IValidationTypeConfigurator{T}"/> to define rules for the specified type.</returns>
     IValidationTypeConfigurator<T> IValidationConfigurator.For<T>() => For<T>();
-
-    /// <summary>
-    /// Registers a configuration delegate that modifies the <see cref="ValidationBehaviorOptions"/>.
-    /// </summary>
-    /// <param name="config">The configuration action to apply.</param>
-    public virtual void Register(Action<ValidationBehaviorOptions> config)
-        => _registrations.Add(config);
-
-    /// <summary>
-    /// Applies all registered validation configurations to the service collection.
-    /// Should be called after all rules have been configured.
-    /// </summary>
-    public virtual void Build()
-    {
-        foreach (var action in _registrations)
-            action(options);
-    }
 
     private void AssignCultureTo(Type? type)
     {
