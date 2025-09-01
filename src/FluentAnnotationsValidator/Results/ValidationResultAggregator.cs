@@ -47,7 +47,7 @@ public static class ValidationResultAggregator
         }
 
         var errors = new List<ValidationErrorResult>();
-        var value = GetValue(member, instance);
+        var value = member.GetValue(instance);
         var context = new ValidationContext(instance) { MemberName = member.Name };
         var preconfigurationInvoked = false;
 
@@ -105,17 +105,5 @@ public static class ValidationResultAggregator
 
         // invoke once for this member
         preconfigurationInvoked = true;
-    }
-
-    internal static object? GetValue(MemberInfo member, object instance)
-    {
-        return member switch
-        {
-            PropertyInfo prop => prop.GetValue(instance),
-            FieldInfo field => field.GetValue(instance),
-            MethodInfo method when method.GetParameters().Length == 0 =>
-                method.Invoke(instance, null),
-            _ => null
-        };
     }
 }
