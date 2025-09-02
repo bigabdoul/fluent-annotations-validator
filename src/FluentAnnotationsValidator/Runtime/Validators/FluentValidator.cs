@@ -7,8 +7,16 @@ using System.ComponentModel.DataAnnotations;
 namespace FluentAnnotationsValidator.Runtime.Validators;
 
 /// <summary>
-/// Validates an object whose members are decorated with custom validation attributes, using rules mapped via the rule registry.
+/// A fluent validator that performs validation on an object of type <typeparamref name="T"/>.
 /// </summary>
+/// <remarks>
+/// This class serves as the core entry point for the validation process. It uses the
+/// configured rules from <see cref="ValidationBehaviorOptions"/> and resolves error
+/// messages using the <see cref="IValidationMessageResolver"/>.
+/// </remarks>
+/// <param name="options">The configured validation behavior options for the application.</param>
+/// <param name="resolver">The service responsible for resolving validation error messages.</param>
+/// <typeparam name="T">The type of the object instance to be validated.</typeparam>
 public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMessageResolver resolver) : IFluentValidator<T>
 {
     /// <summary>
