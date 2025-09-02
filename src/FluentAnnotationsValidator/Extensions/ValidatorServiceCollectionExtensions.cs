@@ -156,7 +156,7 @@ public static class ValidatorServiceCollectionExtensions
     public static FluentAnnotationsBuilder AddFluentAnnotationsValidators(this IServiceCollection services, ConfigurationOptions configurationOptions)
     {
         var targetAssembliesTypes = configurationOptions.TargetAssembliesTypes;
-        var assemblies = targetAssembliesTypes.Length > 0
+        var assemblies = targetAssembliesTypes?.Length > 0
             ? [.. targetAssembliesTypes.Select(t => t.Assembly)]
             : AppDomain.CurrentDomain.GetAssemblies();
 

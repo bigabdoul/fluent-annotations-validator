@@ -4,6 +4,8 @@ using Microsoft.Extensions.Localization;
 
 namespace FluentAnnotationsValidator.Configuration;
 using Extensions;
+using FluentAnnotationsValidator.Abstractions;
+using System.ComponentModel.DataAnnotations;
 
 /// <summary>
 /// Provides a single, unified container for configuring the Fluent Annotations Validator.
@@ -44,8 +46,8 @@ public class ConfigurationOptions
     /// Gets or sets a factory function for creating the string localizer.
     /// </summary>
     /// <remarks>
-    /// This provides a hook for advanced localization scenarios where a custom
-    /// <see cref="IStringLocalizerFactory"/> is required.
+    /// This function provides a hook for advanced localization scenarios 
+    /// where a custom <see cref="IStringLocalizerFactory"/> is required.
     /// </remarks>
     public Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? LocalizerFactory { get; set; }
 
@@ -53,8 +55,10 @@ public class ConfigurationOptions
     /// Gets or sets a function that provides additional types to be validated.
     /// </summary>
     /// <remarks>
-    /// This is useful for including types from dynamically loaded assemblies or
-    /// other sources not available at compile time.
+    /// This function is useful for including types from sources not available 
+    /// at compile time, such as dynamically loaded assemblies, or for adding 
+    /// validation to types that do not have any <see cref="ValidationAttribute"/>s,
+    /// and don't implement the <see cref="IFluentValidatable"/> marker interface.
     /// </remarks>
     public Func<IEnumerable<Type>>? ExtraValidatableTypesFactory { get; set; }
 
@@ -65,6 +69,6 @@ public class ConfigurationOptions
     /// The validator will scan the assemblies containing these types to discover
     /// and register validation rules based on attributes and other configurations.
     /// </remarks>
-    public Type[] TargetAssembliesTypes { get; set; } = [];
+    public Type[]? TargetAssembliesTypes { get; set; }
 }
 
