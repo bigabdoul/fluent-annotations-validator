@@ -41,6 +41,11 @@ public sealed class PendingRule<T>(
     public Func<T, bool> Predicate { get; set; } = predicate;
 
     /// <summary>
+    /// Gets or sets a function that evaluates when the rule is applied asynchronously.
+    /// </summary>
+    public Func<T, Task<bool>>? AsyncPredicate { get; set; }
+
+    /// <summary>
     /// Gets the list of dynamically added attributes via fluent rules.
     /// </summary>
     public List<ValidationAttribute> Attributes { get; } = [];

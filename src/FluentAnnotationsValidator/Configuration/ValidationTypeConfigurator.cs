@@ -276,12 +276,19 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     #region When
 
     /// <summary>
-    /// Applies to the predicate of a rule created with <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/>.
+    /// Applies a conditional predicate to the current rule. All subsequent validation rules
+    /// in the chain will only be executed if the specified condition is met.
     /// </summary>
-    /// <param name="condition">A function that evaluates when the rule is applied.</param>
+    /// <remarks>
+    /// This method acts as a logical scope for a group of rules. The condition is evaluated
+    /// against the entire model instance, and if it returns <c>false</c>, all
+    /// subsequent validation rules chained after this method will be skipped.
+    /// </remarks>
+    /// <param name="condition">A predicate function that determines whether the following rules should be executed.</param>
     /// <returns>The current configurator for further chaining.</returns>
     /// <exception cref="InvalidOperationException">
-    /// You must create a rule with the <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/> method.
+    /// Thrown if this method is not chained after a rule-creation method like <see cref="RuleFor{TMember}(Expression{Func{T, TMember}})"/>
+    /// or <see cref="Rule{TMember}(Expression{Func{T, TMember}})"/>.
     /// </exception>
     public virtual ValidationTypeConfigurator<T> When(Func<T, bool> condition)
     {
@@ -326,6 +333,50 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
         // continue configuration of the current rule
         _currentRule.Predicate = condition; // override the predicate, or compose?
+
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync(Func{T, Task{bool}})"/>
+    public virtual ValidationTypeConfigurator<T> WhenAsync(Func<T, Task<bool>> condition)
+    {
+        if (_currentRule is null)
+            throw new InvalidOperationException("You must create a rule with the .Rule(...) method.");
+
+        // .Rule(...) are attribute-based; therefore, the predicate
+        // should only be applicable to the attribute being configured
+
+        if (_currentRule.Attributes.Count == 0)
+            EnsureContainsAnyRule(_currentRule.MemberExpression);
+
+        _currentRule.AsyncPredicate = condition;
+
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync{TProp}(Expression{Func{T, TProp}}, Func{T, Task{bool}})"/>
+    public virtual ValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> member, Func<T, Task<bool>> condition)
+    {
+        if (_currentRule is null || _currentRule.Attributes.Count == 0)
+            EnsureContainsAnyRule(member);
+
+        MemberInfo memberInfo;
+
+        if (_currentRule is null || !_currentRule.MemberExpression.GetMemberInfo().AreSameMembers(memberInfo = member.GetMemberInfo()))
+        {
+            CommitCurrentRule();
+            _currentRule = new PendingRule<T>(
+                member,
+                predicate: TruePredicate,
+                resourceType: ValidationResourceType,
+                culture: Culture,
+                fallbackMessage: _fallbackMessage,
+                useConventionalKeys: _useConventionalKeys
+            );
+            return this;
+        }
+
+        _currentRule.AsyncPredicate = condition;
 
         return this;
     }
@@ -476,10 +527,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     #region IValidationTypeConfigurator<T>
 
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When(Func<T, bool> condition)
+        => When(condition);
+
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync(Func<T, Task<bool>> condition)
+        => WhenAsync(condition);
+
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, Task<bool>> condition)
+        => WhenAsync(property, condition);
+
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => And(property, condition);
+
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Except<TMember>(Expression<Func<T, TMember>> property)
         => Except(property);
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.AlwaysValidate<TMember>(Expression<Func<T, TMember>> property)
@@ -652,6 +714,14 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         CommitCurrentRule();
         _currentRule = pendingRule;
     }
+
+    /// <summary>
+    /// Returns the <see cref="PendingRule{T}"/> being currently configured.
+    /// This method is intended for internal use only and is exposed to the test project
+    /// via the <c>InternalsVisibleTo</c> attribute for unit testing purposes.
+    /// </summary>
+    /// <returns></returns>
+    protected internal virtual PendingRule<T>? GetCurrentRule() => _currentRule;
 
     /// <summary>
     /// Adds the currently pending rule to the rules to configure, and 

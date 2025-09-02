@@ -40,11 +40,17 @@ public class ConditionalValidationRule(
     ValidationRuleBase(message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys)
 {
     private Func<object, bool>? _shouldApplyEvaluator;
+    private Func<object, Task<bool>>? _shouldApplyAsyncEvaluator;
 
     /// <summary>
     /// Gets or sets a function that evaluates when the rule is applied.
     /// </summary>
     public Func<object, bool> Predicate { get; set; } = predicate;
+
+    /// <summary>
+    /// Gets or sets a function that evaluates when the rule is applied asynchronously.
+    /// </summary>
+    public Func<object, Task<bool>>? AsyncPredicate { get; set; }
 
     /// <summary>
     /// The validation attribute associated to the rule.
@@ -76,6 +82,35 @@ public class ConditionalValidationRule(
     /// </param>
     public void SetShouldApply(Func<object, bool> predicate) =>
         _shouldApplyEvaluator = predicate;
+
+    /// <summary>
+    /// Asynchronously determines whether the current rule should be evaluated.
+    /// </summary>
+    /// <param name="targetInstance">The target instance passed to the predicate.</param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> that resolves to <see langword="true"/> if the rule should be evaluated;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public virtual Task<bool> ShouldApplyAsync(object targetInstance)
+    {
+        var asyncPredicate = AsyncPredicate;
+
+        if (_shouldApplyAsyncEvaluator is null && asyncPredicate is null)
+            return Task.Run(() => ShouldApply(targetInstance));
+
+        return _shouldApplyAsyncEvaluator is not null
+            ? _shouldApplyAsyncEvaluator(targetInstance)
+            : asyncPredicate!(targetInstance);
+    }
+
+    /// <summary>
+    /// Sets the asynchronous function used to evaluate rule application.
+    /// </summary>
+    /// <param name="predicate">
+    /// An asynchronous function used to evaluate whether the current rule should be applied.
+    /// </param>
+    public void SetShouldApplyAsync(Func<object, Task<bool>> predicate)
+        => _shouldApplyAsyncEvaluator = predicate;
 
     /// <summary>
     /// Indicates whether the <see cref="Attribute"/> property is not <see langword="null"/>.

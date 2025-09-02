@@ -238,4 +238,23 @@ public class BeforeValidationConfigurationTests
         // Assert
         Assert.Contains("A pre-validation value provider delegate can only be assigned once per member", exception.Message);
     }
+
+    [Fact]
+    public void WhenAsync_SetsConditionCorrectly()
+    {
+        // Arrange
+        static async Task<bool> asyncCondition(BeforeValidationTestDto dto) => await Task.FromResult(dto.Name!.Length > 5);
+
+        // Act
+        _configurator.Rule(d => d.Name)
+            .Required()
+            .WhenAsync(asyncCondition);
+
+        var pendingRule = _configurator.GetCurrentRule();
+
+        // Assert
+        Assert.NotNull(pendingRule);
+        Assert.NotNull(pendingRule.AsyncPredicate);
+        Assert.Equal(asyncCondition, pendingRule.AsyncPredicate);
+    }
 }

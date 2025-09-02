@@ -155,6 +155,14 @@ public interface IValidationTypeConfigurator<T>
     IValidationTypeConfigurator<T> WithCulture(CultureInfo culture);
 
     /// <summary>
+    /// Adds a conditional validation rule that applies to the entire model instance.
+    /// All subsequent validation rules will only be executed if the specified condition is met.
+    /// </summary>
+    /// <param name="condition">A predicate that determines whether validation should execute.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> When(Func<T, bool> condition);
+
+    /// <summary>
     /// Adds a conditional validation rule for a given property.
     /// </summary>
     /// <typeparam name="TProp">The type of the property being validated.</typeparam>
@@ -162,6 +170,22 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="condition">A predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
     IValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition);
+
+    /// <summary>
+    /// Adds a conditional validation rule for a given property that supports asynchronous operations.
+    /// </summary>
+    /// <param name="condition">An asynchronous predicate that determines whether validation should execute.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> WhenAsync(Func<T, Task<bool>> condition);
+
+    /// <summary>
+    /// Adds a conditional validation rule for a given property that supports asynchronous operations.
+    /// </summary>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="property">An expression identifying the target property.</param>
+    /// <param name="condition">An asynchronous predicate that determines whether validation should execute.</param>
+    /// <returns>The current configurator for further chaining.</returns>
+    IValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, Task<bool>> condition);
 
     /// <summary>
     /// Adds an additional conditional rule for another property. Alias for <see cref="When{TProp}"/>.
