@@ -12,15 +12,15 @@ public interface IFluentValidator
 	/// Validates the specified instance.
 	/// </summary>
 	/// <param name="context">A ValidationContext</param>
-	/// <returns>A FluentValidationResult object contains any validation failures.</returns>
+	/// <returns>An initialized <see cref="FluentValidationResult"/> object contains any validation failures.</returns>
 	FluentValidationResult Validate(ValidationContext context);
 
     /// <summary>
     /// Validates the specified instance asynchronously.
     /// </summary>
     /// <param name="context">A ValidationContext</param>
-    /// <param name="cancellation">Cancellation token</param>
-    /// <returns>A FluentValidationResult object contains any validation failures.</returns>
+    /// <param name="cancellation">An object that propagates notification that operations should be canceled.</param>
+    /// <returns>A task whose result contains an initialized <see cref="FluentValidationResult"/> object contains any validation failures.</returns>
     Task<FluentValidationResult> ValidateAsync(ValidationContext context, CancellationToken cancellation = default);
 
     /// <summary>
@@ -39,7 +39,7 @@ public interface IFluentValidator<T> : IFluentValidator
 	/// Validates the specified instance.
 	/// </summary>
 	/// <param name="instance">The instance to validate</param>
-	/// <returns>A FluentValidationResult object containing any validation failures.</returns>
+	/// <returns>An initialized <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
 	FluentValidationResult Validate(T instance);
 
     /// <summary>
@@ -51,14 +51,14 @@ public interface IFluentValidator<T> : IFluentValidator
     /// <see langword="true"/> to throw an exception if no rules were configured 
     /// for <typeparamref name="T"/>; otherwise, <see langword="false"/>.
     /// </param>
-    /// <returns>A <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
+    /// <returns>An initialized <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
 	FluentValidationResult Validate(T instance, bool throwWhenNoRules);
 
     /// <summary>
     /// Validate the specified instance asynchronously
     /// </summary>
     /// <param name="instance">The instance to validate</param>
-    /// <param name="cancellation"></param>
-    /// <returns>A FluentValidationResult object containing any validation failures.</returns>
+    /// <param name="cancellation">An object that propagates notification that operations should be canceled.</param>
+    /// <returns>A task whose result contains an initialized <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
     Task<FluentValidationResult> ValidateAsync(T instance, CancellationToken cancellation = default);
 }
