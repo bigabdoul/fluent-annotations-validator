@@ -6,7 +6,6 @@ using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
-using System.Data;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 using static TestHelpers;
@@ -29,18 +28,18 @@ public class ValidationTypeConfiguratorTests
 
     public ValidationTypeConfiguratorTests()
     {
-        _services.AddFluentAnnotations
-        (
-            config =>
+        _services.AddFluentAnnotations(new ConfigurationOptions
+        {
+            ConfigureBehaviorOptions = options => _mockOptions = new(options),
+            ConfigureValidationConfigurator = validation =>
             {
-                _configurator = config.For<ValidationTypeConfiguratorTestModel>();
-                _productConfigurator = config.For<TestProductModel>();
-                _productOrderConfigurator = config.For<ProductOrderModel>();
+                _configurator = validation.For<ValidationTypeConfiguratorTestModel>();
+                _productConfigurator = validation.For<TestProductModel>();
+                _productOrderConfigurator = validation.For<ProductOrderModel>();
             },
-            configureBehavior: options => _mockOptions = new(options),
-            extraValidatableTypes: () => [typeof(ProductOrderModel)],
-            targetAssembliesTypes: typeof(ValidationTypeConfiguratorTestModel)
-        );
+            ExtraValidatableTypes = () => [typeof(ProductOrderModel)],
+            TargetAssembliesTypes = [typeof(ValidationTypeConfiguratorTestModel)],
+        });
 
         ArgumentNullException.ThrowIfNull(_mockOptions);
         ArgumentNullException.ThrowIfNull(_configurator);

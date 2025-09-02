@@ -18,21 +18,24 @@ public partial class RegistrationModelTests
         ConventionValidationMessages.Culture = Thread.CurrentThread.CurrentCulture;
 
         _serviceProvider = new ServiceCollection()
-            .AddFluentAnnotations(configure: config =>
+            .AddFluentAnnotations(new ConfigurationOptions
             {
-                // Rule for password complexity
-                var configurator = config.For<TestRegistrationDto>();
+                ConfigureValidationConfigurator = validation =>
+                {
+                    // Rule for password complexity
+                    var configurator = validation.For<TestRegistrationDto>();
 
-                // Non-preemptive rule (preserves all previously registered rules,
-                // including those hard-coded custom attributes applied to the
-                // TestRegistrationDto.Password property).
-                configurator.RuleFor(x => x.Password)
-                    .Must(BeComplexPassword)
-                    .WithMessage(ConventionValidationMessages.Password_Must);
+                    // Non-preemptive rule (preserves all previously registered rules,
+                    // including those hard-coded custom attributes applied to the
+                    // TestRegistrationDto.Password property).
+                    configurator.RuleFor(x => x.Password)
+                        .Must(BeComplexPassword)
+                        .WithMessage(ConventionValidationMessages.Password_Must);
 
-                configurator.Build();
-
-            }, targetAssembliesTypes: typeof(TestRegistrationDto))
+                    configurator.Build();
+                },
+                TargetAssembliesTypes = [typeof(TestRegistrationDto)],
+            })
             .AddTransient(provider =>
             {
                 var options = provider.GetRequiredService<ValidationBehaviorOptions>();
