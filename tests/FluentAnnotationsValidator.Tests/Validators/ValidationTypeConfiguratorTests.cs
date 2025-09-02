@@ -37,7 +37,7 @@ public class ValidationTypeConfiguratorTests
                 _productConfigurator = validation.For<TestProductModel>();
                 _productOrderConfigurator = validation.For<ProductOrderModel>();
             },
-            ExtraValidatableTypes = () => [typeof(ProductOrderModel)],
+            ExtraValidatableTypesFactory = () => [typeof(ProductOrderModel)],
             TargetAssembliesTypes = [typeof(ValidationTypeConfiguratorTestModel)],
         });
 

@@ -137,7 +137,7 @@ public static class ValidatorServiceCollectionExtensions
     {
         ConfigureBehaviorOptions = configure,
         ConfigureLocalization = configureLocalization,
-        ExtraValidatableTypes = extraValidatableTypes,
+        ExtraValidatableTypesFactory = extraValidatableTypes,
         LocalizerFactory = localizerFactory,
         TargetAssembliesTypes = targetAssembliesTypes,
     });
@@ -174,7 +174,7 @@ public static class ValidatorServiceCollectionExtensions
                 t.GetConstructors().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0)
             ).ToList();
 
-        var extraValidatableTypes = configurationOptions.ExtraValidatableTypes;
+        var extraValidatableTypes = configurationOptions.ExtraValidatableTypesFactory;
 
         if (extraValidatableTypes != null)
         {
@@ -273,7 +273,7 @@ public static class ValidatorServiceCollectionExtensions
         ConfigureBehaviorOptions = configureBehavior,
         ConfigureValidationConfigurator = configure,
         ConfigureLocalization = configureLocalization,
-        ExtraValidatableTypes = extraValidatableTypes,
+        ExtraValidatableTypesFactory = extraValidatableTypes,
         LocalizerFactory = localizerFactory,
         TargetAssembliesTypes = targetAssembliesTypes,
     });

@@ -56,7 +56,7 @@ public class ConfigurationOptions
     /// This is useful for including types from dynamically loaded assemblies or
     /// other sources not available at compile time.
     /// </remarks>
-    public Func<IEnumerable<Type>>? ExtraValidatableTypes { get; set; }
+    public Func<IEnumerable<Type>>? ExtraValidatableTypesFactory { get; set; }
 
     /// <summary>
     /// Gets or sets an array of types from the target assemblies to scan for validatable DTOs.
