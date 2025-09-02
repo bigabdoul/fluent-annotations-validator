@@ -20,6 +20,9 @@ Whether you're consuming the package or contributing to its internals, this docu
 
 Looking for a specific release? Here are direct links to notable versions:
 
+- [v2.0.0-preview.2.2](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v2.0.0-preview.2.2) — Introduces a new, more expressive **fluent API**, marking a significant architectural shift.
+- [v2.0.0-preview.2](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v2.0.0-preview.2) — Marks a major architectural shift with the introduction of a new, highly expressive fluent API, and provides a more powerful and intuitive way to define complex and conditional validation rules, moving beyond a simple attribute-based approach
+- [v2.0.0-preview1](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v2.0.0-preview1) — **Major preview** release shifting to version 2, and introducing breaking changes: API surface and behavior may evolve in later stable builds
 - [v1.1.0](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.1.0) — Introduced fluent validation DSL, conditional configuration, and message/localization chaining, and framework-neutral structure
 - [v1.0.6](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.0.6) — Core annotations adapter with localization and DI support
 - [v1.0.5](https://github.com/bigabdoul/fluent-annotations-validator/releases/tag/v1.0.5)
