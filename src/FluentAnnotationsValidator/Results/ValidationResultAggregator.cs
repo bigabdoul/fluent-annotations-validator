@@ -104,6 +104,12 @@ public static class ValidationResultAggregator
                     }
                 }
             }
+            else if (rule.Attribute is FluentRuleAttribute fluentRule)
+            {
+                var fluentRules = ruleRegistry.GetRulesForType(fluentRule.RulesContainer);
+                var fluentErrors = fluentRules.Validate(fluentRule.RulesContainer, instance, member, resolver, ruleRegistry);
+                errors.AddRange(fluentErrors);
+            }
             else if (rule.Attribute is { } attr)
             {
                 var result = attr.GetValidationResult(value, context);
@@ -217,6 +223,12 @@ public static class ValidationResultAggregator
                         index++;
                     }
                 }
+            }
+            else if (rule.Attribute is FluentRuleAttribute fluentRule)
+            {
+                var fluentRules = ruleRegistry.GetRulesForType(fluentRule.RulesContainer);
+                var fluentErrors = await fluentRules.ValidateAsync(fluentRule.RulesContainer, instance, member, resolver, ruleRegistry, cancellationToken);
+                errors.AddRange(fluentErrors);
             }
             else if (rule.Attribute is { } attr)
             {
