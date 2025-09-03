@@ -1,3 +1,4 @@
+using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
@@ -13,12 +14,13 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Stores conditional validation rules mapped to each property or field.
 /// Supports multiple validation attributes per member.
 /// </summary>
-public class ValidationBehaviorOptions
+public class ValidationBehaviorOptions : IRuleRegistry
 {
     private static readonly InvalidOperationException NoMatchingRule =
         new("Found no rule matching the specified expression.");
 
     private readonly ConcurrentDictionary<MemberInfo, List<ConditionalValidationRule>> _ruleRegistry = new();
+    private static readonly ConcurrentDictionary<Type, List<(MemberInfo Member, List<ConditionalValidationRule> Rules)>> _cachedRules = new();
 
     #region properties
 
@@ -53,6 +55,15 @@ public class ValidationBehaviorOptions
     public bool ConfigurationEnforcementDisabled { get; set; }
 
     #endregion
+
+    /// <summary>
+    /// Clears the internal cache of enumerated rules. This should be called if rules are
+    /// dynamically added or modified after initial configuration.
+    /// </summary>
+    public static void ClearCache()
+    {
+        _cachedRules.Clear();
+    }
 
     /// <summary>
     /// Adds or updates a list of conditional validation rules for a specific member.
@@ -211,17 +222,33 @@ public class ValidationBehaviorOptions
     /// <typeparam name="T">The declaring type to filter by.</typeparam>
     /// <returns>A list of tuples (MemberInfo, Rule List) for each matched member.</returns>
     public virtual List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules<T>()
+        => EnumerateRules(typeof(T));
+
+    /// <summary>
+    /// Enumerates all validation rules that apply to the specified type, organizing them by member.
+    /// The result is cached for subsequent lookups to improve performance.
+    /// </summary>
+    /// <param name="type">The type to enumerate rules for.</param>
+    /// <returns>
+    /// A list of tuples, where each tuple contains a <see cref="MemberInfo"/> and a list of
+    /// <see cref="ConditionalValidationRule"/> that apply to that member for the given type.
+    /// </returns>
+    public virtual List<(MemberInfo Member, List<ConditionalValidationRule> Rules)> EnumerateRules(Type type)
     {
         var result = new List<(MemberInfo, List<ConditionalValidationRule>)>();
         foreach (var (member, rules) in _ruleRegistry)
         {
-            if (IsAssignableFrom(member.ReflectedType, typeof(T)))
+            if (IsAssignableFrom(member.ReflectedType, type))
             {
                 result.Add((member, rules.ToList()));
             }
         }
         return result;
     }
+
+    /// <inheritdoc />
+    public virtual List<ConditionalValidationRule> GetRulesForType(Type type)
+        => [.. EnumerateRules(type).SelectMany(list => list.Rules)];
 
     /// <summary>
     /// Removes all rules registered for the specified member.

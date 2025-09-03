@@ -252,4 +252,33 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
             configure.Invoke((T)instance, member, (TProp?)memberValue);
         return this;
     }
+
+    /// <inheritdoc />
+    public IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<TProp, IEnumerable<TElement>>> member)
+    {
+        // Compose the new expression from the root object 'T' to the nested collection 'TElement'.
+        // This is necessary because the PendingRule must always be on the root type 'T'.
+        LambdaExpression expr = (LambdaExpression)currentRule.MemberExpression;
+        var parameter = expr.Parameters.Single();
+        var body = new ParameterReplacer(member.Parameters.Single(), expr.Body).Visit(member.Body);
+        var combinedExpression = Expression.Lambda<Func<T, IEnumerable<TElement>>>(body, parameter);
+
+        // Create a new PendingRule for the nested collection.
+        var newPendingRule = new PendingRule<T>(combinedExpression, currentRule.Predicate);
+        newPendingRule.Attributes.Add(new RuleForEachAttribute<TElement>());
+
+        // Return a new builder for the element type, starting a new rule chain.
+        return new ValidationRuleBuilder<T, TElement>(newPendingRule);
+    }
+
+    /// <summary>
+    /// A simple ExpressionVisitor to replace a parameter in an expression tree.
+    /// </summary>
+    private class ParameterReplacer(ParameterExpression oldParameter, Expression newExpression) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == oldParameter ? newExpression : base.VisitParameter(node);
+        }
+    }
 }

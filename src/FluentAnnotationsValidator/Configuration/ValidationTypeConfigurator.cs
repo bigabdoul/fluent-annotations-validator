@@ -137,7 +137,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     {
         CommitCurrentRule();
 
-        var rule = new PendingRule<T>(
+        var newPendingRule = new PendingRule<T>(
             member,
             predicate: DefaultAttributePredicate, // Always validate unless overridden by .When(...)
             resourceType: ValidationResourceType,
@@ -146,7 +146,21 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             useConventionalKeys: _useConventionalKeys
         );
 
-        var configurator = new ValidationRuleBuilder<T, TMember>(rule);
+        var configurator = new ValidationRuleBuilder<T, TMember>(newPendingRule);
+        _validationRuleBuilders.Add(configurator);
+
+        return configurator;
+    }
+
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.RuleForEach{TElement}(Expression{Func{T, IEnumerable{TElement}}})"/>
+    public IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<T, IEnumerable<TElement>>> member)
+    {
+        CommitCurrentRule();
+
+        var newPendingRule = new PendingRule<T>(member, TruePredicate);
+        newPendingRule.Attributes.Add(new RuleForEachAttribute<TElement>());
+
+        var configurator = new ValidationRuleBuilder<T, TElement>(newPendingRule);
         _validationRuleBuilders.Add(configurator);
 
         return configurator;
@@ -502,23 +516,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         }
 
         // Step 2: Add rules from the rule builders
-        foreach (var builder in _validationRuleBuilders)
-        {
-            allRulesToRegister.AddRange(builder.GetRules());
-        }
+        AddValidationRuleBuilders(allRulesToRegister);
 
         // Step 3: Register all rules, performing consistency checks
-        foreach (var rule in allRulesToRegister)
-        {
-            // Check for duplicate pre-validation delegates using the dedicated method.
-            if (rule.ConfigureBeforeValidation != null)
-            {
-                EnsureSinglePreValidationValueProvider(rule.Member, rule.ConfigureBeforeValidation);
-            }
-
-            // Add rule to the main registry
-            Options.AddRule(rule.Member, rule);
-        }
+        RegisterAllRules(allRulesToRegister);
 
         // Clear the temporary collections
         _pendingRules.Clear();
@@ -585,6 +586,9 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior)
         => Rule(member, must, behavior);
+
+    IValidationRuleBuilder<T, TElement> IValidationTypeConfigurator<T>.RuleForEach<TElement>(Expression<Func<T, IEnumerable<TElement>>> member)
+        => RuleForEach(member);
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.RemovePendingRules(MemberInfo memberInfo)
         => RemovePendingRules(memberInfo);
@@ -737,6 +741,29 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     }
 
     #region helpers
+
+    private void AddValidationRuleBuilders(List<ConditionalValidationRule> allRulesToRegister)
+    {
+        foreach (var builder in _validationRuleBuilders)
+        {
+            allRulesToRegister.AddRange(builder.GetRules());
+        }
+    }
+
+    private void RegisterAllRules(List<ConditionalValidationRule> allRulesToRegister)
+    {
+        foreach (var rule in allRulesToRegister)
+        {
+            // Check for duplicate pre-validation delegates using the dedicated method.
+            if (rule.ConfigureBeforeValidation != null)
+            {
+                EnsureSinglePreValidationValueProvider(rule.Member, rule.ConfigureBeforeValidation);
+            }
+
+            // Add rule to the main registry
+            Options.AddRule(rule.Member, rule);
+        }
+    }
 
     private void AssignCultureTo(Type? type)
     {

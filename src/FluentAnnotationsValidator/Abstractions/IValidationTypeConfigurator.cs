@@ -75,6 +75,17 @@ public interface IValidationTypeConfigurator<T>
     IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> member);
 
     /// <summary>
+    /// Defines a validation rule for each item in a collection property.
+    /// </summary>
+    /// <typeparam name="TElement">The type of the elements in the collection.</typeparam>
+    /// <param name="member">The expression that contains the collection property.</param>
+    /// <returns>
+    /// A new instance of a class that implements the <see cref="IValidationRuleBuilder{T, TProp}"/> interface 
+    /// for the specified type <typeparamref name="T"/>, and element type <typeparamref name="TElement"/>.
+    /// </returns>
+    IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<T, IEnumerable<TElement>>> member);
+
+    /// <summary>
     /// Removes all validation rules currently registered for the specified member.
     /// This includes both statically defined (attribute-based) rules and dynamically added fluent rules.
     /// </summary>

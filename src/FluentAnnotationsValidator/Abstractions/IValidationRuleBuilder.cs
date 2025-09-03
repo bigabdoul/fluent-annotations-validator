@@ -37,6 +37,23 @@ public interface IValidationRuleBuilder
 public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
 {
     /// <summary>
+    /// Defines a rule for each item in a nested collection.
+    /// </summary>
+    /// <remarks>
+    /// This method is designed to validate nested collections within a model. For top-level
+    /// collections, use the 
+    /// <see cref="IValidationTypeConfigurator{T}.RuleForEach{TElement}(Expression{Func{T, IEnumerable{TElement}}})"/>
+    /// method on the main configurator.
+    /// </remarks>
+    /// <typeparam name="TElement">The type of the elements in the nested collection.</typeparam>
+    /// <param name="member">The expression that contains the nested collection property.</param>
+    /// <returns>
+    /// A new instance of a class that implements the <see cref="IValidationRuleBuilder{T, TProp}"/> interface 
+    /// for the specified type <typeparamref name="T"/>, and element type <typeparamref name="TElement"/>.
+    /// </returns>
+    IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<TProp, IEnumerable<TElement>>> member);
+
+    /// <summary>
     /// Applies a conditional predicate to all subsequent rules in the chain.
     /// Rules added within the <paramref name="configure"/> action will only be executed
     /// if the <paramref name="predicate"/> is true.
