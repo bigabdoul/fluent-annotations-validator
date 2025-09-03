@@ -222,12 +222,20 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="member">The member to which the rule applies.</param>
     /// <param name="attribute">The validation attribute to associate with the rule.</param>
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
+    /// <param name="asyncPredicate">A function that evaluates when a rule is applied asynchronously.</param>
     /// <returns>A new <see cref="ConditionalValidationRule"/> instance.</returns>
-    internal static ConditionalValidationRule CreateRuleFromPending<T>(this PendingRule<T> rule, MemberInfo member, ValidationAttribute? attribute = null, Func<T, bool>? when = null)
+    internal static ConditionalValidationRule CreateRuleFromPending<T>(this PendingRule<T> rule, 
+    MemberInfo member, ValidationAttribute? attribute = null,
+    Func<T, bool>? when = null, Func<T, CancellationToken, Task<bool>>? asyncPredicate = null)
     {
         if (when is not null)
         {
-            rule.Predicate = model => when(model);
+            rule.Predicate = when;
+        }
+
+        if (asyncPredicate is not null)
+        {
+            rule.AsyncPredicate = asyncPredicate;
         }
 
         var conditionalRule = new ConditionalValidationRule(

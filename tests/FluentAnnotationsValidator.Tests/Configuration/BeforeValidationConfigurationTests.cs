@@ -243,7 +243,7 @@ public class BeforeValidationConfigurationTests
     public void WhenAsync_SetsConditionCorrectly()
     {
         // Arrange
-        static async Task<bool> asyncCondition(BeforeValidationTestDto dto) => await Task.FromResult(dto.Name!.Length > 5);
+        static async Task<bool> asyncCondition(BeforeValidationTestDto dto, CancellationToken cancellationToken = default) => await Task.FromResult(dto.Name!.Length > 5);
 
         // Act
         _configurator.Rule(d => d.Name)

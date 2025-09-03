@@ -337,8 +337,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync(Func{T, Task{bool}})"/>
-    public virtual ValidationTypeConfigurator<T> WhenAsync(Func<T, Task<bool>> condition)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync(Func{T, CancellationToken, Task{bool}})"/>
+    public virtual ValidationTypeConfigurator<T> WhenAsync(Func<T, CancellationToken, Task<bool>> condition)
     {
         if (_currentRule is null)
             throw new InvalidOperationException("You must create a rule with the .Rule(...) method.");
@@ -354,8 +354,8 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
         return this;
     }
 
-    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync{TProp}(Expression{Func{T, TProp}}, Func{T, Task{bool}})"/>
-    public virtual ValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> member, Func<T, Task<bool>> condition)
+    /// <inheritdoc cref="IValidationTypeConfigurator{T}.WhenAsync{TProp}(Expression{Func{T, TProp}}, Func{T, CancellationToken, Task{bool}})"/>
+    public virtual ValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> member, Func<T, CancellationToken, Task<bool>> condition)
     {
         if (_currentRule is null || _currentRule.Attributes.Count == 0)
             EnsureContainsAnyRule(member);
@@ -488,7 +488,7 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
             {
                 foreach (var attr in pendingRule.Attributes)
                 {
-                    var newRule = pendingRule.CreateRuleFromPending(member, attr, pendingRule.Predicate);
+                    var newRule = pendingRule.CreateRuleFromPending(member, attr);
                     newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
                     allRulesToRegister.Add(newRule);
                 }
@@ -533,10 +533,10 @@ public class ValidationTypeConfigurator<T>(ValidationConfigurator parent, Valida
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.When<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)
         => When(property, condition);
 
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync(Func<T, Task<bool>> condition)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync(Func<T, CancellationToken, Task<bool>> condition)
         => WhenAsync(condition);
 
-    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, Task<bool>> condition)
+    IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, CancellationToken, Task<bool>> condition)
         => WhenAsync(property, condition);
 
     IValidationTypeConfigurator<T> IValidationTypeConfigurator<T>.And<TMember>(Expression<Func<T, TMember>> property, Func<T, bool> condition)

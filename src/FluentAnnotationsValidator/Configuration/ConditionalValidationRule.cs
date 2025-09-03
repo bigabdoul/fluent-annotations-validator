@@ -40,7 +40,7 @@ public class ConditionalValidationRule(
     ValidationRuleBase(message, key, resourceKey, resourceType, culture, fallbackMessage, useConventionalKeys)
 {
     private Func<object, bool>? _shouldApplyEvaluator;
-    private Func<object, Task<bool>>? _shouldApplyAsyncEvaluator;
+    private Func<object, CancellationToken, Task<bool>>? _shouldApplyAsyncEvaluator;
 
     /// <summary>
     /// Gets or sets a function that evaluates when the rule is applied.
@@ -50,7 +50,7 @@ public class ConditionalValidationRule(
     /// <summary>
     /// Gets or sets a function that evaluates when the rule is applied asynchronously.
     /// </summary>
-    public Func<object, Task<bool>>? AsyncPredicate { get; set; }
+    public Func<object, CancellationToken, Task<bool>>? AsyncPredicate { get; set; }
 
     /// <summary>
     /// The validation attribute associated to the rule.
@@ -87,11 +87,12 @@ public class ConditionalValidationRule(
     /// Asynchronously determines whether the current rule should be evaluated.
     /// </summary>
     /// <param name="targetInstance">The target instance passed to the predicate.</param>
+    /// <param name="cancellationToken">An object that propagates notification that operations should be canceled.</param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> that resolves to <see langword="true"/> if the rule should be evaluated;
     /// otherwise, <see langword="false"/>.
     /// </returns>
-    public virtual Task<bool> ShouldApplyAsync(object targetInstance)
+    public virtual Task<bool> ShouldApplyAsync(object targetInstance, CancellationToken cancellationToken = default)
     {
         var asyncPredicate = AsyncPredicate;
 
@@ -99,8 +100,8 @@ public class ConditionalValidationRule(
             return Task.Run(() => ShouldApply(targetInstance));
 
         return _shouldApplyAsyncEvaluator is not null
-            ? _shouldApplyAsyncEvaluator(targetInstance)
-            : asyncPredicate!(targetInstance);
+            ? _shouldApplyAsyncEvaluator(targetInstance, cancellationToken)
+            : asyncPredicate!(targetInstance, cancellationToken);
     }
 
     /// <summary>
@@ -109,7 +110,7 @@ public class ConditionalValidationRule(
     /// <param name="predicate">
     /// An asynchronous function used to evaluate whether the current rule should be applied.
     /// </param>
-    public void SetShouldApplyAsync(Func<object, Task<bool>> predicate)
+    public void SetShouldApplyAsync(Func<object, CancellationToken, Task<bool>> predicate)
         => _shouldApplyAsyncEvaluator = predicate;
 
     /// <summary>

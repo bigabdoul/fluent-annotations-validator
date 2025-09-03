@@ -47,6 +47,14 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
+    /// Adds a conditional group of rules that will only be executed if the specified asynchronous predicate is true.
+    /// </summary>
+    /// <param name="predicate">An asynchronous predicate that determines whether to apply the nested rules.</param>
+    /// <param name="configure">An action to configure the nested rules within this conditional scope.</param>
+    /// <returns>The current rule builder instance for fluent chaining.</returns>
+    IValidationRuleBuilder<T, TProp> WhenAsync(Func<T, CancellationToken, Task<bool>> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
+
+    /// <summary>
     /// Alias for <see cref="When(Func{T, bool}, Action{IValidationRuleBuilder{T, TProp}})"/>
     /// to make the intent clearer for complex validation logics.
     /// </summary>
@@ -61,6 +69,13 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// <param name="predicate">A function that returns <see langword="true"/> if the property's value is valid.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate);
+
+    /// <summary>
+    /// Adds a simple validation rule using an asynchronous predicate that evaluates a property's value.
+    /// </summary>
+    /// <param name="predicate">An asynchronous function that performs the validation on the property's value.</param>
+    /// <returns>The current rule builder instance for fluent chaining.</returns>
+    IValidationRuleBuilder<T, TProp> MustAsync(Func<TProp, CancellationToken, Task<bool>> predicate);
 
     /// <summary>
     /// Applies a conditional predicate to all subsequent rules in the chain.

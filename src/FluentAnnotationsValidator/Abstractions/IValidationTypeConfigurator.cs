@@ -176,7 +176,7 @@ public interface IValidationTypeConfigurator<T>
     /// </summary>
     /// <param name="condition">An asynchronous predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> WhenAsync(Func<T, Task<bool>> condition);
+    IValidationTypeConfigurator<T> WhenAsync(Func<T, CancellationToken, Task<bool>> condition);
 
     /// <summary>
     /// Adds a conditional validation rule for a given property that supports asynchronous operations.
@@ -185,7 +185,7 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="property">An expression identifying the target property.</param>
     /// <param name="condition">An asynchronous predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, Task<bool>> condition);
+    IValidationTypeConfigurator<T> WhenAsync<TProp>(Expression<Func<T, TProp>> property, Func<T, CancellationToken, Task<bool>> condition);
 
     /// <summary>
     /// Adds an additional conditional rule for another property. Alias for <see cref="When{TProp}"/>.
