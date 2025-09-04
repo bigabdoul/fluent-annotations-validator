@@ -233,11 +233,6 @@ public static class ValidationTypeConfiguratorExtensions
             rule.Predicate = when;
         }
 
-        if (asyncPredicate is not null)
-        {
-            rule.AsyncPredicate = asyncPredicate;
-        }
-
         var conditionalRule = new ConditionalValidationRule(
             model => rule.Predicate((T)model),
             rule.Message,
@@ -252,6 +247,11 @@ public static class ValidationTypeConfiguratorExtensions
             Attribute = attribute,
             ConfigureBeforeValidation = rule.ConfigureBeforeValidation,
         };
+
+        if (asyncPredicate != null)
+        {
+            conditionalRule.AsyncPredicate = (model, cancellation) => asyncPredicate((T)model, cancellation);
+        }
 
         return conditionalRule;
     }

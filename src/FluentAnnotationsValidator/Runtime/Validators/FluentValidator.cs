@@ -60,7 +60,9 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
         foreach (var (member, rules) in enumeratedRules)
         {
-            foreach (var error in rules.Validate(typeof(T), instance!, member, resolver, options))
+            if (rules.Count == 0) continue;
+
+            foreach (var error in rules.Validate(instance!, member, resolver, options))
             {
                 failures.Add(new(error));
             }
@@ -92,7 +94,9 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
         foreach (var (member, rules) in enumeratedRules)
         {
-            foreach (var error in await rules.ValidateAsync(typeof(T), instance!, member, resolver, options, cancellationToken))
+            if (rules.Count == 0) continue;
+
+            foreach (var error in await rules.ValidateAsync(instance!, member, resolver, options, cancellationToken))
             {
                 failures.Add(new(error));
             }

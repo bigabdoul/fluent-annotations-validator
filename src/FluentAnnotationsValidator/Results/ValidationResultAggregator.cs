@@ -2,8 +2,10 @@
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Results;
@@ -22,15 +24,14 @@ public static class ValidationResultAggregator
     /// on the member's value.
     /// </summary>
     /// <param name="rules">The conditional rules to evaluate.</param>
-    /// <param name="type">The declaring type of the member.</param>
     /// <param name="instance">The model instance containing the member.</param>
     /// <param name="member">The <see cref="MemberInfo"/> representing the property or field.</param>
     /// <param name="resolver">An object used for validation message resolution.</param>
     /// <param name="ruleRegistry">An object providing access to the rule registry.</param>
+    /// 
     /// <returns>A list of <see cref="ValidationErrorResult"/> if any rules failed; an empty list otherwise.</returns>
     public static List<ValidationErrorResult> Validate(
         this IEnumerable<ConditionalValidationRule> rules,
-        Type type,
         object instance,
         MemberInfo member,
         IValidationMessageResolver resolver,
@@ -75,39 +76,25 @@ public static class ValidationResultAggregator
 
             // Check if the attribute is a generic RuleForEachAttribute<TElement>.
             // The `is` keyword cannot be used with open generic types, so we use reflection.
-            if (rule.Attribute.GetType().IsGenericType == true && rule.Attribute.GetType().GetGenericTypeDefinition() == typeof(RuleForEachAttribute<>))
+            if (IsRuleForEach(rule, out var elementType))
             {
-                if (value is not System.Collections.IEnumerable collection)
+                if (value is not IEnumerable collection)
                 {
                     continue;
                 }
 
-                // Get the appropriate validator for the element type from the cache or registry
-                var elementType = rule.Attribute.GetType().GetGenericArguments()[0];
-                var elementRules = _cachedElementRules.GetOrAdd(elementType, t => [.. ruleRegistry.GetRulesForType(t)]);
-
-                if (elementRules.Count != 0)
-                {
-                    // Recursively validate each item in the collection
-                    var index = 0;
-                    foreach (var item in collection)
+                var task = ProcessRuleForEachAsync(collection, elementType, ruleRegistry, errors, (item, rules) =>
                     {
-                        var collectionErrors = elementRules.Validate(elementType, item, member, resolver, ruleRegistry);
-
-                        // Add collection errors to the main error list, including the index of the failed item
-                        foreach (var error in collectionErrors)
-                        {
-                            error.Message = $"[{index}]: {error.Message}";
-                            errors.Add(error);
-                        }
-                        index++;
-                    }
-                }
+                        var result = rules.Validate(item, member, resolver, ruleRegistry);
+                        return Task.FromResult(result);
+                    });
+                
+                //task.Wait();
             }
             else if (rule.Attribute is FluentRuleAttribute fluentRule)
             {
                 var fluentRules = ruleRegistry.GetRulesForType(fluentRule.RulesContainer);
-                var fluentErrors = fluentRules.Validate(fluentRule.RulesContainer, instance, member, resolver, ruleRegistry);
+                var fluentErrors = fluentRules.Validate(instance, member, resolver, ruleRegistry);
                 errors.AddRange(fluentErrors);
             }
             else if (rule.Attribute is { } attr)
@@ -115,7 +102,7 @@ public static class ValidationResultAggregator
                 var result = attr.GetValidationResult(value, context);
                 if (result != ValidationResult.Success)
                 {
-                    var message = resolver.ResolveMessage(type, member.Name, attr, rule);
+                    var message = resolver.ResolveMessage(instance, GetPropertyName(rule), attr, rule: rule);
                     errors.Add(new ValidationErrorResult
                     {
                         AttemptedValue = value,
@@ -137,19 +124,18 @@ public static class ValidationResultAggregator
     /// on the member's value in a non-blocking manner.
     /// </summary>
     /// <param name="rules">The conditional rules to evaluate.</param>
-    /// <param name="type">The declaring type of the member.</param>
     /// <param name="instance">The model instance containing the member.</param>
     /// <param name="member">The <see cref="MemberInfo"/> representing the property or field.</param>
     /// <param name="resolver">An object used for validation message resolution.</param>
     /// <param name="ruleRegistry">An object providing access to the rule registry.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
+    /// 
     /// <returns>
     /// A <see cref="Task{TResult}"/> that resolves to a list of <see cref="ValidationErrorResult"/> if any rules failed;
     /// an empty list otherwise.
     /// </returns>
     public static async Task<List<ValidationErrorResult>> ValidateAsync(
         this IEnumerable<ConditionalValidationRule> rules,
-        Type type,
         object instance,
         MemberInfo member,
         IValidationMessageResolver resolver,
@@ -195,47 +181,38 @@ public static class ValidationResultAggregator
 
             // Check if the attribute is a generic RuleForEachAttribute<TElement>.
             // The `is` keyword cannot be used with open generic types, so we use reflection.
-            if (rule.Attribute.GetType().IsGenericType == true && rule.Attribute.GetType().GetGenericTypeDefinition() == typeof(RuleForEachAttribute<>))
+            if (IsRuleForEach(rule, out var elementType))
             {
-                if (value is not System.Collections.IEnumerable collection)
+                if (value is not IEnumerable elements)
                 {
                     continue;
                 }
 
-                // Get the appropriate validator for the element type from the cache or registry
-                var elementType = rule.Attribute.GetType().GetGenericArguments()[0];
-                var elementRules = _cachedElementRules.GetOrAdd(elementType, t => [.. ruleRegistry.GetRulesForType(t)]);
-
-                if (elementRules.Count != 0)
-                {
-                    // Recursively validate each item in the collection
-                    var index = 0;
-                    foreach (var item in collection)
-                    {
-                        var collectionErrors = await elementRules.ValidateAsync(elementType, item, member, resolver, ruleRegistry, cancellationToken);
-
-                        // Add collection errors to the main error list, including the index of the failed item
-                        foreach (var error in collectionErrors)
-                        {
-                            error.Message = $"[{index}]: {error.Message}";
-                            errors.Add(error);
-                        }
-                        index++;
-                    }
-                }
+                await ProcessRuleForEachAsync(elements, elementType, ruleRegistry, errors, (item, rules) => rules.ValidateAsync(item, member, resolver, ruleRegistry));
             }
             else if (rule.Attribute is FluentRuleAttribute fluentRule)
             {
                 var fluentRules = ruleRegistry.GetRulesForType(fluentRule.RulesContainer);
-                var fluentErrors = await fluentRules.ValidateAsync(fluentRule.RulesContainer, instance, member, resolver, ruleRegistry, cancellationToken);
+                var fluentErrors = await fluentRules.ValidateAsync(instance, member, resolver, ruleRegistry, cancellationToken);
                 errors.AddRange(fluentErrors);
             }
             else if (rule.Attribute is { } attr)
             {
-                var result = attr.GetValidationResult(value, context);
+                ValidationResult? result;
+
+                // Check if the attribute implements IAsyncValidationAttribute
+                if (attr is IAsyncValidationAttribute asyncAttr)
+                {
+                    result = await asyncAttr.ValidateAsync(value, context, cancellationToken);
+                }
+                else
+                {
+                    result = attr.GetValidationResult(value, context);
+                }
+
                 if (result != ValidationResult.Success)
                 {
-                    var message = resolver.ResolveMessage(type, member.Name, attr, rule);
+                    var message = resolver.ResolveMessage(instance, GetPropertyName(rule), attr, rule: rule);
                     errors.Add(new ValidationErrorResult
                     {
                         AttemptedValue = value,
@@ -286,5 +263,49 @@ public static class ValidationResultAggregator
         }
 
         preconfigurationInvoked = true;
+    }
+
+    private static string GetPropertyName(ConditionalValidationRule rule)
+    {
+        var propertyName = rule.PropertyName;
+        if (string.IsNullOrWhiteSpace(propertyName))
+            propertyName = rule.Member.Name;
+        return propertyName;
+    }
+
+    private static bool IsRuleForEach(ConditionalValidationRule rule, [NotNullWhen(true)] out Type? elementType)
+    {
+        elementType = null;
+        if (rule.Attribute != null && rule.Attribute.GetType().IsGenericType == true && rule.Attribute.GetType().GetGenericTypeDefinition() == typeof(RuleForEachAttribute<>))
+        {
+            // Get the appropriate validator for the element type from the cache or registry
+            elementType = rule.Attribute.GetType().GetGenericArguments()[0];
+        }
+        return elementType != null;
+    }
+
+    private static async Task ProcessRuleForEachAsync(IEnumerable elements,
+    Type elementType, IRuleRegistry ruleRegistry, List<ValidationErrorResult> errors,
+    Func<object, List<ConditionalValidationRule>, Task<List<ValidationErrorResult>>> validator)
+    {
+        var rules = _cachedElementRules.GetOrAdd(elementType, t => [.. ruleRegistry.GetRulesForType(t)]);
+
+        if (rules.Count != 0)
+        {
+            // Recursively validate each item in the collection
+            var index = 0;
+            foreach (var item in elements)
+            {
+                var collectionErrors = await validator(item, rules);
+
+                // Add collection errors to the main error list, including the index of the failed item
+                foreach (var error in collectionErrors)
+                {
+                    error.Message = $"[{index}]: {error.Message}";
+                    errors.Add(error);
+                }
+                index++;
+            }
+        }
     }
 }

@@ -81,18 +81,20 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     IValidationRuleBuilder<T, TProp> Must(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
-    /// Adds a custom rule that validates the property's value based on a predicate function.
+    /// Specifies a custom validation rule for the current member using a synchronous delegate.
+    /// The rule passes if the delegate returns <see langword="true"/>.
     /// </summary>
-    /// <param name="predicate">A function that returns <see langword="true"/> if the property's value is valid.</param>
-    /// <returns>The current builder instance for method chaining.</returns>
+    /// <param name="predicate">A delegate that contains the custom validation logic.</param>
+    /// <returns>The current rule builder instance for chaining.</returns>
     IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate);
 
     /// <summary>
-    /// Adds a simple validation rule using an asynchronous predicate that evaluates a property's value.
+    /// Specifies a custom asynchronous validation rule for the current member.
+    /// The rule passes if the asynchronous delegate returns <see langword="true"/>.
     /// </summary>
-    /// <param name="predicate">An asynchronous function that performs the validation on the property's value.</param>
-    /// <returns>The current rule builder instance for fluent chaining.</returns>
-    IValidationRuleBuilder<T, TProp> MustAsync(Func<TProp, CancellationToken, Task<bool>> predicate);
+    /// <param name="predicate">An asynchronous delegate that contains the custom validation logic.</param>
+    /// <returns>The current rule builder instance for chaining.</returns>
+    IValidationRuleBuilder<T, TProp> MustAsync(Func<TProp?, CancellationToken, Task<bool>> predicate);
 
     /// <summary>
     /// Applies a conditional predicate to all subsequent rules in the chain.
@@ -104,6 +106,13 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     IValidationRuleBuilder<T, TProp> Otherwise(Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
+    /// Provides a way to define asynchronous rules that will be applied if the preceding WhenAsync condition is not met.
+    /// </summary>
+    /// <param name="configure">A function to configure the rule that will be executed.</param>
+    /// <returns>The current rule builder instance for chaining.</returns>
+    IValidationRuleBuilder<T, TProp> OtherwiseAsync(Func<IValidationRuleBuilder<T, TProp>, Task> configure);
+
+    /// <summary>
     /// Sets a custom error message for the most recently added rule.
     /// </summary>
     /// <param name="message">The custom message string. Can contain format placeholders like `{0}`.</param>
@@ -111,11 +120,25 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     IValidationRuleBuilder<T, TProp> WithMessage(string? message);
 
     /// <summary>
+    /// Sets a custom error message for the most recently added via delegate.
+    /// </summary>
+    /// <param name="messageResolver">A delegate to set the custom message string.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    IValidationRuleBuilder<T, TProp> WithMessage(Func<T, string> messageResolver);
+
+    /// <summary>
+    /// Specifies the property name to use in the generated validation message.
+    /// </summary>
+    /// <param name="propertyName">The name of the property to be used in the message.</param>
+    /// <returns>The current rule builder instance for chaining.</returns>
+    IValidationRuleBuilder<T, TProp> OverridePropertyName(string propertyName);
+
+    /// <summary>
     /// Adds a new validation rule to the builder based on the logic of a <see cref="ValidationAttribute"/>.
     /// </summary>
     /// <param name="attribute">The <see cref="ValidationAttribute"/> to use for the validation rule.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute);
+    IValidationRuleBuilder<T, TProp> SetAttributeValidator(ValidationAttribute attribute);
 
     /// <summary>
     /// Gives a rule a chance to gather the correct value for the specified member before validation occurs.

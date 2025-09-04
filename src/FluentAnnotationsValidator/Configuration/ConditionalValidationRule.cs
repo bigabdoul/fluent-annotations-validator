@@ -65,6 +65,11 @@ public class ConditionalValidationRule(
     public MemberInfo Member { get; init; } = default!;
 
     /// <summary>
+    /// Gets or sets a custom error message resolver delegate.
+    /// </summary>
+    public Func<object, string>? MessageResolver { get; set; }
+
+    /// <summary>
     /// Determines whether the current rule should be evaluated.
     /// </summary>
     /// <param name="targetInstance">The target instance passed to the predicate.</param>
@@ -73,15 +78,6 @@ public class ConditionalValidationRule(
     /// </returns>
     public virtual bool ShouldApply(object targetInstance) =>
         (_shouldApplyEvaluator ?? Predicate)(targetInstance);
-
-    /// <summary>
-    /// Sets the function used to evaluate rule application.
-    /// </summary>
-    /// <param name="predicate">
-    /// A function used to evaluate whether the current rule should be applied.
-    /// </param>
-    public void SetShouldApply(Func<object, bool> predicate) =>
-        _shouldApplyEvaluator = predicate;
 
     /// <summary>
     /// Asynchronously determines whether the current rule should be evaluated.
@@ -105,12 +101,21 @@ public class ConditionalValidationRule(
     }
 
     /// <summary>
+    /// Sets the function used to evaluate rule application.
+    /// </summary>
+    /// <param name="predicate">
+    /// A function used to evaluate whether the current rule should be applied.
+    /// </param>
+    public void SetShouldApply(Func<object, bool> predicate) =>
+        _shouldApplyEvaluator = predicate;
+
+    /// <summary>
     /// Sets the asynchronous function used to evaluate rule application.
     /// </summary>
     /// <param name="predicate">
     /// An asynchronous function used to evaluate whether the current rule should be applied.
     /// </param>
-    public void SetShouldApplyAsync(Func<object, CancellationToken, Task<bool>> predicate)
+    public void SetAsyncShouldApply(Func<object, CancellationToken, Task<bool>> predicate)
         => _shouldApplyAsyncEvaluator = predicate;
 
     /// <summary>

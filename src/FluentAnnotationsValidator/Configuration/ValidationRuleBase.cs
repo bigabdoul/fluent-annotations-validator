@@ -31,6 +31,11 @@ public abstract class ValidationRuleBase(
     public string? Message { get; set; } = message;
 
     /// <summary>
+    /// Gets or sets the overridden property name.
+    /// </summary>
+    public string? PropertyName { get; set; }
+
+    /// <summary>
     /// Gets or sets the failure key used by the message resolver or diagnostics.
     /// </summary>
     public string? Key { get; set; } = key;

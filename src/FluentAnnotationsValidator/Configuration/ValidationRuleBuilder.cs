@@ -3,7 +3,6 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
-using System.Threading;
 
 namespace FluentAnnotationsValidator.Configuration;
 
@@ -51,15 +50,15 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
             throw new InvalidOperationException("No rules configured within the conditional block. At least one rule must be defined within the 'When' scope.");
         }
 
-        bool ShouldApply(object value) => predicate((T)value);
+        bool ShouldApply(object instance) => predicate((T)instance);
 
         foreach (var nestedRule in nestedBuilder.Rules)
         {
             var originalPredicate = nestedRule.Predicate;
 
             // Compose a new predicate that checks the 'When' condition first,
-            // and then the original nested rule's predicate.
-            nestedRule.Predicate = model => predicate((T)model) && originalPredicate(model);
+            // and then the original nested rule's predicate.
+            nestedRule.Predicate = instance => ShouldApply(instance) && originalPredicate(instance);
 
             nestedRule.SetShouldApply(ShouldApply);
 
@@ -86,36 +85,41 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
 
         if (nestedBuilder.Rules.Count == 0)
         {
-            throw new InvalidOperationException("No rules configured within the conditional block. At least one rule must be defined within the 'WhenAsync' scope.");
+            throw new InvalidOperationException("No rules configured within the conditional block. " +
+                "At least one rule must be defined within the 'WhenAsync' scope.");
         }
 
-        Task<bool> ShouldApplyAsync(object value, CancellationToken cancellationToken) => predicate((T)value, cancellationToken);
+        Task<bool> ShouldApplyAsync(object instance, CancellationToken cancellationToken) 
+            => predicate((T)instance, cancellationToken);
 
         foreach (var nestedRule in nestedBuilder.Rules)
         {
-            var originalPredicate = nestedRule.Predicate;
+            //var originalPredicate = nestedRule.Predicate;
             var originalAsyncPredicate = nestedRule.AsyncPredicate;
 
             // Compose a new asynchronous predicate that chains the outer and inner conditions.
-            nestedRule.AsyncPredicate = async (model, cancellationToken) =>
-            {
-                var outerCondition = await predicate((T)model, cancellationToken);
-                if (!outerCondition)
-                {
-                    return false;
-                }
+            //nestedRule.AsyncPredicate = async (instance, cancellationToken) =>
+            //{
+            //    var outerCondition = await ShouldApplyAsync(instance, cancellationToken);
+            //    if (!outerCondition)
+            //    {
+            //        return false;
+            //    }
 
-                // If the inner rule has its own async predicate, use it.
-                if (originalAsyncPredicate is not null)
-                {
-                    return await originalAsyncPredicate((T)model, cancellationToken);
-                }
+            //    // If the inner rule has its own async predicate, use it.
+            //    if (originalAsyncPredicate is not null)
+            //    {
+            //        return await originalAsyncPredicate((T)instance, cancellationToken);
+            //    }
 
-                // Otherwise, fall back to the synchronous predicate.
-                return originalPredicate(model);
-            };
+            //    // Otherwise, fall back to the synchronous predicate.
+            //    return originalPredicate(instance);
+            //};
+            nestedRule.AsyncPredicate = async (instance, cancellationToken) => 
+                await ShouldApplyAsync(instance, cancellationToken) && 
+                (originalAsyncPredicate is null || await originalAsyncPredicate(instance, cancellationToken));
 
-            nestedRule.SetShouldApplyAsync(ShouldApplyAsync);
+            nestedRule.SetAsyncShouldApply(ShouldApplyAsync);
 
             Rules.Add(nestedRule);
         }
@@ -166,7 +170,7 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     /// </summary>
     /// <param name="predicate">An asynchronous function that performs the validation on the property's value.</param>
     /// <returns>The current rule builder instance for fluent chaining.</returns>
-    public IValidationRuleBuilder<T, TProp> MustAsync(Func<TProp, CancellationToken, Task<bool>> predicate)
+    public IValidationRuleBuilder<T, TProp> MustAsync(Func<TProp?, CancellationToken, Task<bool>> predicate)
     {
         var member = currentRule.MemberExpression;
 
@@ -177,10 +181,10 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
         }
 
         var rule = currentRule.CreateRuleFromPending(member.GetMemberInfo(),
-            attribute: new MustAttribute<TProp>(null!),
+            attribute: new MustAsyncAttribute((prop, cancellation) => predicate((TProp?)prop, cancellation)),
             asyncPredicate: composedAsyncPredicate);
 
-        rule.SetShouldApplyAsync((_1, _2) => Task.FromResult(true));
+        rule.SetAsyncShouldApply((_, _) => Task.FromResult(true));
 
         Rules.Add(rule);
 
@@ -210,22 +214,65 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
 
         configure(nestedConfigurator);
 
-        bool ShouldApply(object value) => !lastCondition((T)value);
+        bool ShouldApply(object instance) => !lastCondition((T)instance);
 
         foreach (var nestedRule in nestedConfigurator.Rules)
         {
+            // Compose a new predicate that checks the inverse of the 'When' condition,
+            // and then the original nested rule's predicate.
             var originalPredicate = nestedRule.Predicate;
-            nestedRule.Predicate = model => ShouldApply(model) && originalPredicate(model);
+            nestedRule.Predicate = instance => ShouldApply(instance) && originalPredicate(instance);
+
             nestedRule.SetShouldApply(ShouldApply);
+
             Rules.Add(nestedRule);
         }
 
-        nestedConfigurator.Rules.Clear();
         return this;
     }
 
-    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.AddRuleFromAttribute(ValidationAttribute)"/>
-    public IValidationRuleBuilder<T, TProp> AddRuleFromAttribute(ValidationAttribute attribute)
+    /// <summary>
+    /// Adds a conditional group of rules that are executed if the previous
+    /// <see cref="WhenAsync(Func{T, CancellationToken, Task{bool}}, Action{IValidationRuleBuilder{T, TProp}})"/>
+    /// condition is false.
+    /// </summary>
+    /// <param name="configure">A function to configure the nested rules within this conditional scope.</param>
+    /// <returns>The current rule builder instance for fluent chaining.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if this method is not chained after a <see cref="WhenAsync"/> call.
+    /// </exception>
+    public IValidationRuleBuilder<T, TProp> OtherwiseAsync(Func<IValidationRuleBuilder<T, TProp>, Task> configure)
+    {
+        var lastAsyncCondition = _whenAsyncPredicate
+            ?? throw new InvalidOperationException("OtherwiseAsync(...) must follow a call to a WhenAsync(...) method that accepts a configure action.");
+
+        var nestedBuilder = new ValidationRuleBuilder<T, TProp>(currentRule);
+
+        configure(nestedBuilder);
+
+        async Task<bool> ShouldApplyAsync(object instance, CancellationToken cancellationToken)
+        {
+            return !await lastAsyncCondition((T)instance, cancellationToken);
+        }
+
+        foreach (var nestedRule in nestedBuilder.Rules)
+        {
+            // Compose a new asynchronous predicate that chains the outer and inner conditions.
+            var originalAsyncPredicate = nestedRule.AsyncPredicate;
+
+            nestedRule.AsyncPredicate = async (instance, cancellationToken) =>
+                await ShouldApplyAsync(instance, cancellationToken) &&
+                (originalAsyncPredicate is null || await originalAsyncPredicate(instance, cancellationToken));
+
+            nestedRule.SetAsyncShouldApply(ShouldApplyAsync);
+            Rules.Add(nestedRule);
+        }
+
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.SetAttributeValidator(ValidationAttribute)"/>
+    public IValidationRuleBuilder<T, TProp> SetAttributeValidator(ValidationAttribute attribute)
     {
         var member = currentRule.MemberExpression.GetMemberInfo();
         var rule = currentRule.CreateRuleFromPending(member,
@@ -242,6 +289,20 @@ public class ValidationRuleBuilder<T, TProp>(PendingRule<T> currentRule) : IVali
     public IValidationRuleBuilder<T, TProp> WithMessage(string? message)
     {
         Rules.Last().Message = message;
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.WithMessage(Func{T, string})"/>
+    public IValidationRuleBuilder<T, TProp> WithMessage(Func<T, string> messageResolver)
+    {
+        Rules.Last().MessageResolver = instance => messageResolver.Invoke((T)instance);
+        return this;
+    }
+
+    /// <inheritdoc cref="IValidationRuleBuilder{T, TProp}.OverridePropertyName(string)"/>
+    public IValidationRuleBuilder<T, TProp> OverridePropertyName(string propertyName)
+    {
+        Rules.Last().PropertyName = propertyName;
         return this;
     }
 

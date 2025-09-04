@@ -11,8 +11,9 @@ namespace FluentAnnotationsValidator.Metadata;
 /// This class represents an object that performs validation using the predicate specified in the constructor.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-internal class MustAttribute<TProperty>(Func<TProperty, bool> predicate) : ValidationAttribute
+public sealed class MustAttribute<TProperty>(Func<TProperty, bool> predicate) : ValidationAttribute
 {
+    /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
         if (value is null || predicate((TProperty)value))

@@ -31,7 +31,7 @@ public class Resolver_CultureTests
         var resolver = GetMessageResolver<ValidationMessages>(expectedMessage);
 
         // Act
-        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Password), attr, rule);
+        var resolvedMessage = resolver.ResolveMessage(NewTestLoginDto, nameof(TestLoginDto.Password), attr, rule);
 
         resolvedMessage.Should().NotBeNull();
         resolvedMessage.Should().Be(expectedMessage);

@@ -16,6 +16,7 @@ using static TestHelpers;
 public class Resolver_PriorityTests
 {
     private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
+    private static TestLoginDto NewTestLogin => new("user@example.com", "password");
 
     private class WrongMessages
     {
@@ -33,7 +34,7 @@ public class Resolver_PriorityTests
         var attr = new RequiredAttribute();
         var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
 
-        var msg = GetResolver().ResolveMessage(instanceType, member.Name, attr, rule);
+        var msg = GetResolver().ResolveMessage(NewTestLogin, member.Name, attr, rule);
         Assert.Equal("Override wins", msg);
     }
 
@@ -51,7 +52,7 @@ public class Resolver_PriorityTests
         var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.EmailRequired);
 
         // Act
-        var msg = resolver.ResolveMessage(instanceType, member.Name, attr, rule);
+        var msg = resolver.ResolveMessage(NewTestLogin, member.Name, attr, rule);
 
         // Assert
         msg.Should().NotBeNull();
@@ -71,7 +72,7 @@ public class Resolver_PriorityTests
         var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.EmailRequired);
 
         // Act
-        var msg = resolver.ResolveMessage(instanceType, member.Name, attr);
+        var msg = resolver.ResolveMessage(new TestLoginDtoWithResource(), member.Name, attr);
 
         // Assert
         msg.Should().NotBeNull();
@@ -86,7 +87,7 @@ public class Resolver_PriorityTests
         var resolver = GetMessageResolver<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
         // Act
-        var msg = resolver.ResolveMessage(instanceType, member.Name, attr);
+        var msg = resolver.ResolveMessage(new TestLoginDtoWithResource(), member.Name, attr);
 
         // Assert
         msg.Should().NotBeNull();
@@ -108,7 +109,7 @@ public class Resolver_PriorityTests
         var resolver = GetMessageResolver<WrongMessages>(null); // null means the resource was not found
 
         // Act
-        var msg = resolver.ResolveMessage(instanceType, member.Name, attr, rule);
+        var msg = resolver.ResolveMessage(NewTestLogin, member.Name, attr, rule);
 
         // Assert
         msg.Should().NotBeNull();

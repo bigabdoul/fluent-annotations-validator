@@ -25,7 +25,7 @@ public static class ValidationRuleBuilderExtensions
         Expression<Func<T, TProp>> otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal)
     {
         var otherPropertyName = otherProperty.GetMemberInfo().Name;
-        return builder.AddRuleFromAttribute(new Compare2Attribute(otherPropertyName, comparison));
+        return builder.SetAttributeValidator(new Compare2Attribute(otherPropertyName, comparison));
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Compare<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         string otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal)
-        => builder.AddRuleFromAttribute(new Compare2Attribute(otherProperty, comparison));
+        => builder.SetAttributeValidator(new Compare2Attribute(otherProperty, comparison));
 
     /// <summary>
     /// Adds a rule that ensures the property's value is considered empty.
@@ -50,7 +50,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="builder">The validation rule builder instance.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Empty<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
-        => builder.AddRuleFromAttribute(new EmptyAttribute());
+        => builder.SetAttributeValidator(new EmptyAttribute());
 
     /// <summary>
     /// Adds a rule that ensures the property's value is not empty.
@@ -60,7 +60,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="builder">The validation rule builder instance.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> NotEmpty<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
-        => builder.AddRuleFromAttribute(new NotEmptyAttribute());
+        => builder.SetAttributeValidator(new NotEmptyAttribute());
 
     /// <summary>
     /// Adds a rule that validates the property has an exact length.
@@ -71,7 +71,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="length">The required exact length.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> ExactLength<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, int length)
-        => builder.AddRuleFromAttribute(new ExactLengthAttribute(length));
+        => builder.SetAttributeValidator(new ExactLengthAttribute(length));
 
     /// <summary>
     /// Adds a rule that validates the property has a minimum length.
@@ -83,7 +83,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> MinimumLength<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         int minimumLength)
-        => builder.AddRuleFromAttribute(new MinLengthAttribute(minimumLength));
+        => builder.SetAttributeValidator(new MinLengthAttribute(minimumLength));
 
     /// <summary>
     /// Adds a rule that validates the property has a maximum length.
@@ -95,7 +95,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> MaximumLength<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         int maximumLength)
-        => builder.AddRuleFromAttribute(new MaxLengthAttribute(maximumLength));
+        => builder.SetAttributeValidator(new MaxLengthAttribute(maximumLength));
 
     /// <summary>
     /// Adds a rule that validates the property's length falls within a specified range.
@@ -108,7 +108,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Length<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         int min, int max)
-        => builder.AddRuleFromAttribute(new Length2Attribute(min, max));
+        => builder.SetAttributeValidator(new Length2Attribute(min, max));
 
     /// <summary>
     /// Adds a rule that ensures the property's value is not null or empty.
@@ -118,7 +118,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="builder">The validation rule builder instance.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Required<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
-        => builder.AddRuleFromAttribute(new RequiredAttribute());
+        => builder.SetAttributeValidator(new RequiredAttribute());
 
     /// <summary>
     /// Adds a rule that ensures the property's value is equal to a specified expected value.
@@ -129,7 +129,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="expected">The value the property must be equal to.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Equal<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, object? expected)
-        => builder.AddRuleFromAttribute(new EqualAttribute<object?>(expected));
+        => builder.SetAttributeValidator(new EqualAttribute<object?>(expected));
 
     /// <summary>
     /// Adds a rule that ensures the property's value is equal to a specified expected value,
@@ -146,7 +146,7 @@ public static class ValidationRuleBuilderExtensions
         Expression<Func<T, TProp>> _, TProp expected, IEqualityComparer<TProp>? equalityComparer = null)
     {
         var attr = new EqualAttribute<TProp>(expected, equalityComparer);
-        builder.AddRuleFromAttribute(attr);
+        builder.SetAttributeValidator(attr);
         return builder;
     }
 
@@ -160,7 +160,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> NotEqual<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         object? disallowed)
-        => builder.AddRuleFromAttribute(new NotEqualAttribute(disallowed));
+        => builder.SetAttributeValidator(new NotEqualAttribute(disallowed));
 
     /// <summary>
     /// Adds a rule that ensures the property's value is not equal to a specified disallowed value,
@@ -177,7 +177,7 @@ public static class ValidationRuleBuilderExtensions
         Expression<Func<T, TProp>> _, TProp disallowed, IEqualityComparer<TProp>? equalityComparer = null)
     {
         var attr = new NotEqualAttribute<TProp>(disallowed, equalityComparer);
-        builder.AddRuleFromAttribute(attr);
+        builder.SetAttributeValidator(attr);
         return builder;
     }
 
@@ -189,7 +189,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="builder">The validation rule builder instance.</param>
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> EmailAddress<T, TProp>(this IValidationRuleBuilder<T, TProp> builder)
-        => builder.AddRuleFromAttribute(new EmailAddressAttribute());
+        => builder.SetAttributeValidator(new EmailAddressAttribute());
 
     /// <summary>
     /// Specifies that a property's value must be within a specified range of integer values.
@@ -201,7 +201,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="maximum">The maximum allowable integer value.</param>
     /// <returns>A reference to the current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
-        int minimum, int maximum) => builder.AddRuleFromAttribute(new RangeAttribute(minimum, maximum));
+        int minimum, int maximum) => builder.SetAttributeValidator(new RangeAttribute(minimum, maximum));
 
     /// <summary>
     /// Specifies that a property's value must be within a specified range of double values.
@@ -213,7 +213,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="maximum">The maximum allowable double value.</param>
     /// <returns>A reference to the current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
-        double minimum, double maximum) => builder.AddRuleFromAttribute(new RangeAttribute(minimum, maximum));
+        double minimum, double maximum) => builder.SetAttributeValidator(new RangeAttribute(minimum, maximum));
 
     /// <summary>
     /// Specifies that a property's value must be within a specified range of values of a given type.
@@ -226,7 +226,7 @@ public static class ValidationRuleBuilderExtensions
     /// <param name="maximum">The string representation of the maximum value.</param>
     /// <returns>A reference to the current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
-        Type type, string minimum, string maximum) => builder.AddRuleFromAttribute(new RangeAttribute(type, minimum, maximum));
+        Type type, string minimum, string maximum) => builder.SetAttributeValidator(new RangeAttribute(type, minimum, maximum));
 
     /// <summary>
     /// Adds a rule by instantiating and attaching a specified <see cref="ValidationAttribute"/> to the rule builder.
@@ -238,7 +238,7 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> WithAttribute<T, TProp, TAttribute>(this IValidationRuleBuilder<T, TProp> builder)
         where TAttribute : ValidationAttribute, new()
-        => builder.AddRuleFromAttribute(new TAttribute());
+        => builder.SetAttributeValidator(new TAttribute());
 
     /// <summary>
     /// Gets a failed <see cref="ValidationResult"/> instance with a resolved error message,
@@ -255,8 +255,10 @@ public static class ValidationRuleBuilderExtensions
         ArgumentNullException.ThrowIfNull(validationContext);
         var fieldName = validationContext.DisplayName ?? validationContext.MemberName ?? "field";
 
-        var message = messageResolver?.ResolveMessage(
-            validationContext.ObjectInstance.GetType(),
+        var message = messageResolver?.ResolveMessage
+        (
+            validationContext.ObjectInstance
+,
             validationContext.MemberName ?? validationContext.DisplayName ?? fieldName,
             attribute) ?? attribute.FormatErrorMessage(fieldName);
 

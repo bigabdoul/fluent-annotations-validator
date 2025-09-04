@@ -21,9 +21,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// Resolves the error message to be used for a validation failure, based on the supplied
     /// <see cref="ValidationAttribute"/>, property metadata, and optional conditional rule context.
     /// </summary>
-    /// <param name="declaringType">
-    /// The metadata container for the property, field, or parameter being validated, including its <see cref="PropertyInfo"/> and target model type.
-    /// </param>
+    /// <param name="objectInstance">The object instance for which to resolve the message.</param>
     /// <param name="memberName">The name of the member being validated.</param>
     /// <param name="attr">
     /// The <see cref="ValidationAttribute"/> instance describing the validation logic and message configuration.
@@ -32,22 +30,31 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// Optional: The <see cref="ConditionalValidationRule"/> representing conditional validation logic.
     /// May contain metadata overrides such as <c>ResourceKey</c> or <c>Message</c>.
     /// </param>
+    /// 
     /// <returns>
     /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
     /// Returns <see langword="null"/> if no message can be resolved.
     /// </returns>
-    public virtual string? ResolveMessage(Type declaringType, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
+    public virtual string? ResolveMessage(object objectInstance, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
     {
         // 1️ Rule-based explicit message override
-        if (rule is not null && !string.IsNullOrWhiteSpace(rule.Message))
+        if (rule is not null)
         {
-            return string.Format(rule.Message, memberName);
+            if (rule.MessageResolver is not null)
+            {
+                return rule.MessageResolver.Invoke(objectInstance);
+            }
+            if (!string.IsNullOrWhiteSpace(rule.Message))
+            {
+                return string.Format(rule.Message, memberName);
+            }
         }
 
         var formatArg = GetFormatValue(attr);
         var culture = rule?.Culture ?? options.SharedCulture ?? CultureInfo.CurrentCulture;
+        var objectType = objectInstance.GetType();
 
-        var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? declaringType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
+        var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? objectType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
 
         var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? options.SharedResourceType;
         var useConventionalKeys = rule?.UseConventionalKeys ?? options.UseConventionalKeys;
@@ -58,7 +65,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             ?? (attrErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
 
             // fall back to conventional keys; otherwise, use the error message;
-            ?? (useConventionalKeys ? options.ConventionalKeyGetter?.Invoke(declaringType, memberName, attr) ?? declaringType.GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
+            ?? (useConventionalKeys ? options.ConventionalKeyGetter?.Invoke(objectType, memberName, attr) ?? objectType.GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
 
             // and finally the empty string.
             ?? string.Empty;
@@ -66,7 +73,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
         // 2️ Attempt resolution using IStringLocalizer
         if (rule is not null && !string.IsNullOrWhiteSpace(resourceKey))
         {
-            if (TryResolveFromLocalizer(localizerFactory, resourceKey, resourceType ?? declaringType, culture, formatArg, out var resolved))
+            if (TryResolveFromLocalizer(localizerFactory, resourceKey, resourceType ?? objectType, culture, formatArg, out var resolved))
                 return resolved;
         }
         else if (useConventionalKeys && resourceType is not null)

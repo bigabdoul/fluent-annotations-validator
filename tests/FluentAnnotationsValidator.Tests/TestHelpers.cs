@@ -85,4 +85,6 @@ internal static partial class TestHelpers
 
     internal static ValidationMessageResolver GetMessageResolver<T>(string? localizedStringValue) =>
         new(new ValidationBehaviorOptions(), MockStringLocalizerFactory<T>(localizedStringValue));
+
+    internal static TestLoginDto NewTestLoginDto => new(Email: "user@example.com", Password: "weak-Password-");
 }

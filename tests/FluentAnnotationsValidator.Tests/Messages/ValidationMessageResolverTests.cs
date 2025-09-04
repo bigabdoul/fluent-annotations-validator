@@ -28,7 +28,7 @@ public class ValidationMessageResolverTests
         var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage(typeof(TestLoginDto), nameof(TestLoginDto.Email), attr);
+        var message = resolver.ResolveMessage(NewTestLoginDto, nameof(TestLoginDto.Email), attr);
 
         // Assert
         message.Should().NotBeNull();
@@ -49,7 +49,7 @@ public class ValidationMessageResolverTests
         var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr);
+        var message = resolver.ResolveMessage(NewTestLoginDto, member.Name, attr);
 
         // Assert
         message.Should().NotBeNull();
@@ -66,7 +66,7 @@ public class ValidationMessageResolverTests
         var resolver = GetResolver();
 
         // Act
-        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
+        var message = resolver.ResolveMessage(NewTestLoginDto, member.Name, attr, rule);
 
         // Assert
         Assert.Equal("Overridden message", message);
@@ -86,7 +86,7 @@ public class ValidationMessageResolverTests
         var resolver = GetMessageResolver<ValidationMessages>(ValidationMessages.PasswordRequired);
 
         // Act
-        var message = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attr, rule);
+        var message = resolver.ResolveMessage(NewTestLoginDto, member.Name, attr, rule);
 
         // Assert
         message.Should().NotBeNull();
@@ -108,7 +108,7 @@ public class ValidationMessageResolverTests
 
         // Act
         // This is where you would call your message resolution method.
-        var resolvedMessage = resolver.ResolveMessage(typeof(TestLoginDto), member.Name, attribute, rule);
+        var resolvedMessage = resolver.ResolveMessage(NewTestLoginDto, member.Name, attribute, rule);
 
         // Assert
         resolvedMessage.Should().NotBeNull();

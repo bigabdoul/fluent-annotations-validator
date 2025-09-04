@@ -2,6 +2,7 @@ using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Extensions;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -78,7 +79,13 @@ public class ValidationBehaviorOptions : IRuleRegistry
     /// <param name="rules">The <see cref="List{T}"/> of <see cref="ConditionalValidationRule"/> instances to associate with the member.</param>
     protected internal virtual void AddRules(MemberInfo member, List<ConditionalValidationRule> rules)
     {
-        _ruleRegistry.AddOrUpdate(member, rules, (_, _) => rules);
+        var existingRules = _ruleRegistry.GetOrAdd(member, []);
+
+        // Lock on the specific list instance to ensure thread-safe addition.
+        lock (existingRules)
+        {
+            existingRules.AddRange(rules);
+        }
     }
 
     /// <summary>
@@ -89,19 +96,16 @@ public class ValidationBehaviorOptions : IRuleRegistry
     /// <param name="rule">The conditional validation rule to apply.</param>
     public virtual void AddRule(MemberInfo member, ConditionalValidationRule rule)
     {
-        _ruleRegistry.AddOrUpdate(
-            member,
-            _ => [rule],
-            (_, rules) =>
-            {
-                var index = rules.IndexOf(rule);
-                if (index == -1)
-                    rules.Add(rule);
-                else
-                    rules[index] = rule;
-                return rules;
-            }
-        );
+        // Use GetOrAdd to retrieve the list for the member, or create a new one if it doesn't exist.
+        // This is more efficient than AddOrUpdate for this specific pattern.
+        var rules = _ruleRegistry.GetOrAdd(member, []);
+
+        // Lock on the specific list instance to ensure thread-safe addition.
+        // This provides fine-grained locking, preventing contention on the entire dictionary.
+        lock (rules)
+        {
+            rules.Add(rule);
+        }
     }
 
     /// <summary>

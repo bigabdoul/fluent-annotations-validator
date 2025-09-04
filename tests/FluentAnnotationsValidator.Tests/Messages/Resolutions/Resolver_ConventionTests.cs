@@ -26,7 +26,7 @@ public class Resolver_ConventionTests
         var resolver = new ValidationMessageResolver(options, localizerFactoryMock);
 
         // Act
-        var msg = resolver.ResolveMessage(typeof(LoginDtoWithResource), EmailName, attr);
+        var msg = resolver.ResolveMessage(new LoginDtoWithResource(), EmailName, attr);
 
         // Assert
         Assert.Equal(ConventionValidationMessages.Email_Required, msg);
@@ -49,7 +49,7 @@ public class Resolver_ConventionTests
         var resolver = new ValidationMessageResolver(options, localizerFactoryMock.Object);
 
         // Act
-        var actualMessage = resolver.ResolveMessage(typeof(LoginDtoWithResource), EmailName, attr, rule);
+        var actualMessage = resolver.ResolveMessage(new LoginDtoWithResource(), EmailName, attr, rule);
 
         // Assert
         Assert.Equal(expected: attr.FormatErrorMessage(EmailName), actualMessage);

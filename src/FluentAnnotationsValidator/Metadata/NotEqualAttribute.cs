@@ -35,8 +35,10 @@ public class NotEqualAttribute(object? unexpectedValue, IEqualityComparer<object
         if (!_comparer.Equals(value, unexpectedValue))
             return ValidationResult.Success;
 
-        var message = MessageResolver?.ResolveMessage(
-            validationContext.ObjectInstance.GetType(),
+        var message = MessageResolver?.ResolveMessage
+        (
+            validationContext.ObjectInstance
+,
             validationContext.MemberName ?? validationContext.DisplayName ?? "field",
             this) ?? FormatErrorMessage(validationContext.DisplayName ?? validationContext.MemberName ?? "field");
 
@@ -76,8 +78,10 @@ public class NotEqualAttribute<TProperty>(TProperty unexpectedValue, IEqualityCo
             if (!_comparer.Equals(typedValue, unexpectedValue))
                 return ValidationResult.Success;
 
-            var message = MessageResolver?.ResolveMessage(
-                validationContext.ObjectInstance.GetType(),
+            var message = MessageResolver?.ResolveMessage
+            (
+                validationContext.ObjectInstance
+,
                 validationContext.MemberName ?? validationContext.DisplayName ?? "field",
                 this) ?? FormatErrorMessage(validationContext.DisplayName ?? validationContext.MemberName ?? "field");
 
