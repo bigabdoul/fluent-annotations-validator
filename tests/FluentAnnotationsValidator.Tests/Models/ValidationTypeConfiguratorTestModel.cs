@@ -1,5 +1,4 @@
-﻿using FluentAnnotationsValidator.Abstractions;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
@@ -24,6 +23,7 @@ public class TestProductModel : IFluentValidatable
     public string ProductName { get; set; } = default!;
     public bool IsPhysicalProduct { get; set; }
     public string ShippingAddress { get; set; } = string.Empty;
+    public ICollection<ProductOrderModel> Orders { get; set; } = [];
 }
 
 public class ProductOrderModel

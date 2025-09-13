@@ -11,6 +11,7 @@ namespace FluentAnnotationsValidator.Abstractions;
 /// Supports chaining validation logic, metadata overrides, and transitions to other model configurators.
 /// </summary>
 /// <typeparam name="T">The model type being configured.</typeparam>
+[Obsolete("Use " + nameof(IFluentTypeValidator<T>))]
 public interface IValidationTypeConfigurator<T>
 {
     /// <summary>
@@ -47,7 +48,7 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="member">The expression that contains the property, field, or method info.</param>
     /// <param name="must">A function that performs the validation.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must);
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Predicate<TMember> must);
 
     /// <summary>
     /// Creates a preemptive, conditionally executed rule that optionally 
@@ -60,7 +61,7 @@ public interface IValidationTypeConfigurator<T>
     /// A value that indicates whether to replace rules for the specified <paramref name="member"/>.
     /// </param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Func<TMember, bool> must, RuleDefinitionBehavior behavior);
+    IValidationTypeConfigurator<T> Rule<TMember>(Expression<Func<T, TMember>> member, Predicate<TMember> must, RuleDefinitionBehavior behavior);
 
     /// <summary>
     /// Creates a non-preemptive rule, that is a rule that preserves 
@@ -74,16 +75,18 @@ public interface IValidationTypeConfigurator<T>
     /// </returns>
     IValidationRuleBuilder<T, TMember> RuleFor<TMember>(Expression<Func<T, TMember>> member);
 
+    /*
     /// <summary>
     /// Defines a validation rule for each item in a collection property.
     /// </summary>
     /// <typeparam name="TElement">The type of the elements in the collection.</typeparam>
-    /// <param name="member">The expression that contains the collection property.</param>
+    /// <param name="expression">The expression that contains the collection property.</param>
     /// <returns>
     /// A new instance of a class that implements the <see cref="IValidationRuleBuilder{T, TProp}"/> interface 
     /// for the specified type <typeparamref name="T"/>, and element type <typeparamref name="TElement"/>.
     /// </returns>
-    IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<T, IEnumerable<TElement>>> member);
+    ICollectionRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression);
+    */
 
     /// <summary>
     /// Removes all validation rules currently registered for the specified member.
@@ -171,7 +174,7 @@ public interface IValidationTypeConfigurator<T>
     /// </summary>
     /// <param name="condition">A predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> When(Func<T, bool> condition);
+    IValidationTypeConfigurator<T> When(Predicate<T> condition);
 
     /// <summary>
     /// Adds a conditional validation rule for a given property.
@@ -180,7 +183,7 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="property">An expression identifying the target property.</param>
     /// <param name="condition">A predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition);
+    IValidationTypeConfigurator<T> When<TProp>(Expression<Func<T, TProp>> property, Predicate<T> condition);
 
     /// <summary>
     /// Adds a conditional validation rule for a given property that supports asynchronous operations.
@@ -205,7 +208,7 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="property">An expression identifying the target property.</param>
     /// <param name="condition">A predicate that determines whether validation should execute.</param>
     /// <returns>The current configurator for further chaining.</returns>
-    IValidationTypeConfigurator<T> And<TProp>(Expression<Func<T, TProp>> property, Func<T, bool> condition);
+    IValidationTypeConfigurator<T> And<TProp>(Expression<Func<T, TProp>> property, Predicate<T> condition);
 
     /// <summary>
     /// Excludes the specified property from validation entirely.
@@ -290,10 +293,16 @@ public interface IValidationTypeConfigurator<T>
     /// <param name="attribute">The validation attribute instance to attach.</param>
     /// <param name="when">A function that determines when the rule should be applied.</param>
     /// <returns>The current <see cref="IValidationTypeConfigurator{T}"/> instance for fluent chaining.</returns>
-    IValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Func<T, bool>? when = null);
+    IValidationTypeConfigurator<T> AttachAttribute(ValidationAttribute attribute, Predicate<T>? when = null);
 
     /// <summary>
     /// Finalizes the configuration of validation rules for the type <typeparamref name="T"/>.
     /// </summary>
-    void Build();
+    /// <returns>A read-only list of <see cref="IValidationRule"/> objects that were built.</returns>
+    IReadOnlyList<IValidationRule> Build();
+
+    /// <summary>
+    /// Clears the rules from the last <see cref="Build"/> generation.
+    /// </summary>
+    void DiscardRulesFromLastBuild();
 }

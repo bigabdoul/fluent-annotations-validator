@@ -13,10 +13,9 @@ namespace FluentAnnotationsValidator.Configuration;
 /// with the specified service collection.
 /// </remarks>
 /// <param name="options">The validation behavior options used during configuration.</param>
+[Obsolete("Use " + nameof(FluentTypeValidatorRoot))]
 public class ValidationConfigurator(ValidationBehaviorOptions options) : IValidationConfigurator
 {
-    private readonly List<Action<ValidationBehaviorOptions>> _registrations = [];
-
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.
     /// </summary>

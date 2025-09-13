@@ -1,7 +1,4 @@
-﻿using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +17,7 @@ public partial class RegistrationModelTests
         _serviceProvider = new ServiceCollection()
             .AddFluentAnnotations(new ConfigurationOptions
             {
-                ConfigureValidationConfigurator = validation =>
+                ConfigureValidatorRoot = validation =>
                 {
                     // Rule for password complexity
                     var configurator = validation.For<TestRegistrationDto>();
@@ -38,8 +35,8 @@ public partial class RegistrationModelTests
             })
             .AddTransient(provider =>
             {
-                var options = provider.GetRequiredService<ValidationBehaviorOptions>();
-                return new ValidationConfigurator(options);
+                var options = provider.GetRequiredService<ValidationRuleGroupRegistry>();
+                return new FluentTypeValidatorRoot(options);
             })
             .AddTransient<ITestRegistrationConfigurator, TestRegistrationConfigurator>()
             .BuildServiceProvider();
@@ -83,7 +80,7 @@ public partial class RegistrationModelTests
 
         // The TestRegistrationDto.Email property has a [Required] attribute.
         // We ensure it's registered by building the default configuration first.
-        _serviceProvider.GetRequiredService<ValidationConfigurator>().For<TestRegistrationDto>().Build();
+        _serviceProvider.GetRequiredService<FluentTypeValidatorRoot>().For<TestRegistrationDto>().Build();
 
         // Act
         // Now, clear all current rules from the configurator for a clean state
@@ -172,12 +169,12 @@ public partial class RegistrationModelTests
 
     #region Helpers
 
-    interface ITestRegistrationConfigurator : IValidationTypeConfigurator<TestRegistrationDto>
+    interface ITestRegistrationConfigurator : IFluentTypeValidator<TestRegistrationDto>
     {
     }
 
-    class TestRegistrationConfigurator(ValidationConfigurator parent, ValidationBehaviorOptions options)
-        : ValidationTypeConfigurator<TestRegistrationDto>(parent, options), ITestRegistrationConfigurator
+    class TestRegistrationConfigurator(FluentTypeValidatorRoot parent)
+        : FluentTypeValidator<TestRegistrationDto>(parent), ITestRegistrationConfigurator
     {
     }
 

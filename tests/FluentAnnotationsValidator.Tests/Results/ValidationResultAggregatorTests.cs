@@ -1,5 +1,4 @@
-﻿using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FluentAnnotationsValidator.Tests.Results;

@@ -1,5 +1,4 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Messages;
+﻿using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
@@ -13,7 +12,7 @@ using static TestHelpers;
 public class ValidationMessageResolverTests
 {
     private static ValidationMessageResolver GetResolver() =>
-        new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
+        new(new GlobalRegistry(), new Mock<IStringLocalizerFactory>().Object);
 
     public ValidationMessageResolverTests()
     {
@@ -62,7 +61,7 @@ public class ValidationMessageResolverTests
         // Arrange
         var attr = new RequiredAttribute();
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
-        var rule = new ConditionalValidationRule(predicate: null!, message: "Overridden message");
+        var rule = new ValidationRule(message: "Overridden message");
         var resolver = GetResolver();
 
         // Act
@@ -79,7 +78,7 @@ public class ValidationMessageResolverTests
         var attr = new StringLengthAttribute(5);
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Password))!;
 
-        var rule = new ConditionalValidationRule(predicate: null!,
+        var rule = new ValidationRule(
             resourceKey: nameof(ValidationMessages.PasswordRequired),
             resourceType: typeof(ValidationMessages));
 
@@ -100,7 +99,7 @@ public class ValidationMessageResolverTests
         var member = typeof(TestLoginDto).GetProperty(nameof(TestLoginDto.Email))!;
         var attribute = new RequiredAttribute();
 
-        var rule = new ConditionalValidationRule(predicate: null!,
+        var rule = new ValidationRule(
             resourceKey: nameof(ConventionValidationMessages.Email_Required),
             resourceType: typeof(ConventionValidationMessages));
 

@@ -1,24 +1,26 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
-public class MockValidationBehaviorOptions(ValidationBehaviorOptions options)
+public class MockValidationRuleGroupRegistry(ValidationRuleGroupRegistry options)
 {
-    public ValidationBehaviorOptions Options => options;
+    public ValidationRuleGroupRegistry Options => options;
 
-    public List<(MemberInfo Member, ConditionalValidationRule Rule)> AddedRules => GetAddedRules<ValidationTypeConfiguratorTestModel>();
+    public List<(MemberInfo Member, IValidationRule Rule)> AddedRules => GetAddedRules<ValidationTypeConfiguratorTestModel>();
 
-    public List<(MemberInfo Member, ConditionalValidationRule Rule)> GetAddedRules<T>()
+    public List<(MemberInfo Member, IValidationRule Rule)> GetAddedRules<T>()
     {
-        List<(MemberInfo Member, ConditionalValidationRule Rule)>? added = [];
+        List<(MemberInfo Member, IValidationRule Rule)>? added = [];
         var ruleTuples = options.EnumerateRules<T>();
-        foreach (var (member, ruleList) in ruleTuples)
+        foreach (var (type, ruleList) in ruleTuples)
         {
-            foreach (var r in ruleList)
+            foreach (var group in ruleList)
             {
-                added.Add((member, r));
+                foreach (var rule in group.Rules)
+                {
+                    added.Add((rule.Member, rule));
+                }
             }
         }
         return added;

@@ -1,4 +1,3 @@
-using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Abstractions;
@@ -19,12 +18,12 @@ public interface IValidationMessageResolver
     /// <param name="memberName">The name of the validated property or field.</param>
     /// <param name="attr">The <see cref="ValidationAttribute"/> instance that failed validation.</param>
     /// <param name="rule">
-    /// An optional <see cref="ConditionalValidationRule"/> containing metadata for a fluent-configured rule.
+    /// An optional <see cref="IValidationRule"/> containing metadata for a fluent-configured rule.
     /// This is used to resolve messages when a rule is defined via the fluent API rather than a static attribute.
     /// </param>
     /// 
     /// <returns>
     /// A formatted validation message string, or <c>null</c> if no message could be resolved.
     /// </returns>
-    string? ResolveMessage(object objectInstance, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null);
+    string ResolveMessage(object objectInstance, string memberName, ValidationAttribute attr, IValidationRule? rule = null);
 }

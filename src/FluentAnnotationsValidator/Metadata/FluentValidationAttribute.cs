@@ -24,4 +24,10 @@ public abstract class FluentValidationAttribute : ValidationAttribute
     /// Optional message resolver to use for resolving validation messages.
     /// </summary>
     public virtual IValidationMessageResolver? MessageResolver { get; set; }
+
+    /// <summary>
+    /// Gets or sets the validation rule associated with this attribute.
+    /// The value of this property is intended to be passed to message resolver.
+    /// </summary>
+    public virtual IValidationRule? Rule { get; set; }
 }

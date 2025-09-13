@@ -24,6 +24,9 @@ public sealed class EmptyAttribute : FluentValidationAttribute
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
+        if (value is null) 
+            return ValidationResult.Success;
+
         // For strings, consider null, empty, or whitespace as valid.
         if (value is string s)
         {

@@ -45,10 +45,12 @@ public class FluentValidationFailure
     {
         ArgumentNullException.ThrowIfNull(error);
         _error = error;
-        PropertyName = error.Member.Name;
+        PropertyName = error.PropertyName ?? error.Member.Name;
         ErrorMessage = error.Message ?? string.Empty;
         AttemptedValue = error.AttemptedValue;
-        CustomState = error.Attribute is null ? null : $"Origin: {error.Attribute.CleanAttributeName()}";
+        CollectionIndex = error.ItemIndex;
+        CustomState ??= [];
+        CustomState["Origin"] = error.Attribute is null ? string.Empty : error.Attribute.CleanAttributeName();
     }
 
     /// <summary>
@@ -62,6 +64,16 @@ public class FluentValidationFailure
     public virtual string ErrorMessage { get; set; } = default!;
 
     /// <summary>
+    /// Gets or sets the index (for child collections) at which validation failed. Defaults to -1.
+    /// </summary>
+    public int CollectionIndex { get; set; } = -1;
+
+    /// <summary>
+    /// Gets or sets the parent index at which validation failed. Defaults to -1.
+    /// </summary>
+    public int ParentCollectionIndex { get; set; } = -1;
+
+    /// <summary>
     /// The property value that caused the failure.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -71,7 +83,7 @@ public class FluentValidationFailure
     /// Custom state associated with the failure.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public virtual object? CustomState { get; set; }
+    public virtual Dictionary<string, object>? CustomState { get; set; }
 
     /// <summary>
     /// Gets or sets the error code.

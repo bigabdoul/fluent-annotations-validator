@@ -3,6 +3,7 @@ using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Internals.Reflection;
 using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
 
@@ -11,14 +12,18 @@ namespace FluentAnnotationsValidator.Runtime.Validators;
 /// </summary>
 /// <remarks>
 /// This class serves as the core entry point for the validation process. It uses the
-/// configured rules from <see cref="ValidationBehaviorOptions"/> and resolves error
+/// configured rules from <see cref="ValidationRuleGroupRegistry"/> and resolves error
 /// messages using the <see cref="IValidationMessageResolver"/>.
 /// </remarks>
-/// <param name="options">The configured validation behavior options for the application.</param>
+/// <param name="registry">The configured validation behavior options for the application.</param>
 /// <param name="resolver">The service responsible for resolving validation error messages.</param>
 /// <typeparam name="T">The type of the object instance to be validated.</typeparam>
-public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMessageResolver resolver) : IFluentValidator<T>
+public class FluentValidator<T>(IRuleRegistry registry, IValidationMessageResolver resolver) : IFluentValidator<T>
 {
+    private IRuleRegistry _ruleRegistry = registry;
+    private IValidationMessageResolver _messageResolver = resolver;
+    private ValidationContext? _validationContext;
+
     /// <summary>
     /// Validates the specified instance.
     /// </summary>
@@ -41,39 +46,54 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
     /// <returns>A <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
     public virtual FluentValidationResult Validate(T instance, bool throwWhenNoRules)
     {
-        var enumeratedRules = options.EnumerateRules<T>();
-
-        if (enumeratedRules.Count == 0)
-        {
-            if (throwWhenNoRules)
-            {
-                throw new InvalidOperationException(
-                    $"No rules found for the type {typeof(T).Name}. " +
-                    $"Are you sure you invoked IValidationTypeConfigurator<{typeof(T).Name}>.Build() " +
-                    "before calling this method?");
-            }
-
-            return new();
-        }
+        ArgumentNullException.ThrowIfNull(instance);
 
         var failures = new List<FluentValidationFailure>();
+        var items = _validationContext?.Items;
 
-        foreach (var (member, rules) in enumeratedRules)
+        if (throwWhenNoRules)
         {
-            if (rules.Count == 0) continue;
+            var ruleCount = 0;
 
-            foreach (var error in rules.Validate(instance!, member, resolver, options))
+            foreach (var rulesForMember in _ruleRegistry.GetRulesByMember(typeof(T)))
             {
-                failures.Add(new(error));
+                var rules = rulesForMember.ToList();
+                ruleCount += rules.Count;
+                ValidateAll(rules, rulesForMember.Key);
+            }
+
+            if (ruleCount == 0)
+                throw new InvalidOperationException(
+                        $"No rules found for the type {typeof(T).Name}. Are you sure you invoked " +
+                        $"{nameof(IFluentTypeValidator<T>)}<{typeof(T).Name}>.{nameof(IFluentTypeValidator<T>.Build)}() " +
+                        "before calling this method?");
+        }
+        else
+        {
+            foreach (var rulesForMember in _ruleRegistry.GetRulesByMember(typeof(T)))
+            {
+                ValidateAll(rulesForMember, rulesForMember.Key);
             }
         }
 
         return new(failures);
+
+        void ValidateAll(IEnumerable<IValidationRule> rules, MemberInfo member)
+        {
+            var validationErrorResults = rules.Validate(instance, member, _messageResolver, _ruleRegistry, items);
+            foreach (var error in validationErrorResults)
+            {
+                failures.Add(error.Failure ?? new(error));
+            }
+        }
     }
 
     /// <inheritdoc />
     public virtual FluentValidationResult Validate(ValidationContext context)
-        => Validate((T)context.ObjectInstance);
+    {
+        _validationContext = context;
+        return Validate((T)context.ObjectInstance);
+    }
 
     /// <summary>
     /// Asynchronously validates the specified instance.
@@ -83,22 +103,21 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
     /// <returns>A <see cref="Task{TResult}"/> that resolves to a <see cref="FluentValidationResult"/> object containing any validation failures.</returns>
     public virtual async Task<FluentValidationResult> ValidateAsync(T instance, CancellationToken cancellationToken = default)
     {
-        var enumeratedRules = options.EnumerateRules<T>();
-
-        if (enumeratedRules.Count == 0)
-        {
-            return new();
-        }
+        ArgumentNullException.ThrowIfNull(instance);
 
         var failures = new List<FluentValidationFailure>();
+        var items = _validationContext?.Items;
 
-        foreach (var (member, rules) in enumeratedRules)
+        foreach (var rulesForMember in _ruleRegistry.GetRulesByMember(typeof(T)))
         {
-            if (rules.Count == 0) continue;
+            cancellationToken.ThrowIfCancellationRequested();
 
-            foreach (var error in await rules.ValidateAsync(instance!, member, resolver, options, cancellationToken))
+            var validationErrorResults = await rulesForMember.ValidateAsync(instance,
+                rulesForMember.Key, _messageResolver, _ruleRegistry, items, cancellationToken: cancellationToken);
+
+            foreach (var error in validationErrorResults)
             {
-                failures.Add(new(error));
+                failures.Add(error.Failure ?? new(error));
             }
         }
 
@@ -107,7 +126,10 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
 
     /// <inheritdoc />
     public virtual Task<FluentValidationResult> ValidateAsync(ValidationContext context, CancellationToken cancellationToken = default)
-        => ValidateAsync((T)context.ObjectInstance, cancellationToken);
+    {
+        _validationContext = context;
+        return ValidateAsync((T)context.ObjectInstance, cancellationToken);
+    }
 
     /// <summary>
     /// Determines whether the validator can validate instances of the specified type.
@@ -117,4 +139,18 @@ public class FluentValidator<T>(ValidationBehaviorOptions options, IValidationMe
     /// <see langword="true"/> if the validator can validate the type; otherwise, <see langword="false"/>.
     /// </returns>
     public virtual bool CanValidateInstancesOfType(Type type) => TypeUtils.IsAssignableFrom(typeof(T), type);
+
+    /// <inheritdoc/>
+    public void SetRuleRegistry(IRuleRegistry value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        _ruleRegistry = value;
+    }
+
+    /// <inheritdoc/>
+    public void SetMessageResolver(IValidationMessageResolver value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        _messageResolver = value;
+    }
 }

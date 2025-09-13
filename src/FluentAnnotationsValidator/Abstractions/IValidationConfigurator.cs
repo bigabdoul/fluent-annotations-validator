@@ -6,6 +6,7 @@ namespace FluentAnnotationsValidator.Abstractions;
 /// Defines the contract for configuring conditional validation rules
 /// in a fluent and type-safe manner.
 /// </summary>
+[Obsolete("Use " + nameof(IFluentTypeValidatorRoot))]
 public interface IValidationConfigurator
 {
     /// <summary>
@@ -38,4 +39,3 @@ public interface IValidationConfigurator
     /// </returns>
     IValidationTypeConfigurator<T> For<T>();
 }
-

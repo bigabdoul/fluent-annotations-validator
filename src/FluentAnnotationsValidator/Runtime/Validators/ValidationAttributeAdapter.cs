@@ -1,6 +1,7 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
@@ -13,16 +14,18 @@ public static class ValidationAttributeAdapter
 {
     /// <summary>
     /// Parses all validation attributes from a property,
-    /// creating one or more <see cref="ConditionalValidationRule"/> entries.
+    /// creating one or more <see cref="IValidationRule"/> entries.
     /// </summary>
     /// <param name="instanceType">The target model type.</param>
     /// <param name="member">The property or field to inspect belonging to <paramref name="instanceType"/>.</param>
     /// <returns>A list of conditional validation rules for the member.</returns>
-    public static List<ConditionalValidationRule> ParseRules(Type instanceType, MemberInfo member)
+    public static List<IValidationRule> ParseRules(Type instanceType, MemberInfo member)
     {
         ValidationAttribute[] attributes = [.. member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
-        var rules = new List<ConditionalValidationRule>();
+        LambdaExpression defaultExpression = (object instance) => member;
+
+        var rules = new List<IValidationRule>();
 
         if (attributes.Length == 0)
         {
@@ -42,10 +45,10 @@ public static class ValidationAttributeAdapter
 
         void AddRule(string uniqueKey, ValidationAttribute? attr)
         {
-            var rule = new ConditionalValidationRule(predicate: _ => true) // always validate, unless fluent overrides occur
+            var rule = new ValidationRule(expression: defaultExpression) // always validate, unless fluent overrides occur
             {
                 Member = member,
-                Attribute = attr,
+                Validator = attr,
                 UniqueKey = uniqueKey,
             };
             rules.Add(rule);

@@ -13,10 +13,13 @@ namespace FluentAnnotationsValidator.Metadata;
 /// the validation process remains non-blocking.
 /// </remarks>
 /// <remarks>
-/// Initializes a new instance of the <see cref="MustAsyncAttribute"/> class.
+/// Initializes a new instance of the <see cref="AsyncValidationAttribute"/> class.
 /// </remarks>
-/// <param name="predicate">The asynchronous function that performs the validation. It must return <c>true</c> for a valid state.</param>
-public sealed class MustAsyncAttribute(Func<object?, CancellationToken, Task<bool>> predicate) : ValidationAttribute, IAsyncValidationAttribute
+/// <param name="asyncCondition">
+/// The asynchronous function that performs the validation.
+/// It must return <c><see langword="true"/></c> for a valid state.
+/// </param>
+public sealed class AsyncValidationAttribute(Func<object?, CancellationToken, Task<bool>> asyncCondition) : ValidationAttribute, IAsyncValidationAttribute
 {
     /// <summary>
     /// This method is part of the synchronous <see cref="ValidationAttribute"/> contract.
@@ -49,7 +52,7 @@ public sealed class MustAsyncAttribute(Func<object?, CancellationToken, Task<boo
     public async Task<ValidationResult?> ValidateAsync(object? value, ValidationContext validationContext, CancellationToken cancellationToken)
     {
         // Execute the custom asynchronous predicate.
-        var isValid = await predicate(value, cancellationToken);
+        var isValid = await asyncCondition(value, cancellationToken);
 
         if (isValid)
         {

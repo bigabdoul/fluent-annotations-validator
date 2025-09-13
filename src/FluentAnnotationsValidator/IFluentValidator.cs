@@ -1,4 +1,5 @@
-﻿using FluentAnnotationsValidator.Results;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator;
@@ -27,6 +28,18 @@ public interface IFluentValidator
     /// Checks to see whether the validator can validate objects of the specified type
     /// </summary>
     bool CanValidateInstancesOfType(Type type);
+
+    /// <summary>
+    /// Sets an alternative registry for rules retrieval.
+    /// </summary>
+    /// <param name="value">The rule registry to use.</param>
+    void SetRuleRegistry(IRuleRegistry value);
+
+    /// <summary>
+    /// Sets an alternative validation message resolver.
+    /// </summary>
+    /// <param name="value">The validation message resolver to use.</param>
+    void SetMessageResolver(IValidationMessageResolver value);
 }
 
 /// <summary>

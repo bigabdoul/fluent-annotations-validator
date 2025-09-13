@@ -5,12 +5,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
 		<NeutralLanguage>en</NeutralLanguage>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="coverlet.collector" Version="6.0.2" />
@@ -31,25 +28,30 @@
 
 	<ItemGroup>
 		<Compile Update="Resources\ConventionValidationMessages.Designer.cs">
+			<DependentUpon>ConventionValidationMessages.resx</DependentUpon>
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
-			<DependentUpon>ConventionValidationMessages.resx</DependentUpon>
 		</Compile>
 		<Compile Update="Resources\ValidationMessages.Designer.cs">
+			<DependentUpon>ValidationMessages.resx</DependentUpon>
 			<DesignTime>True</DesignTime>
 			<AutoGen>True</AutoGen>
-			<DependentUpon>ValidationMessages.resx</DependentUpon>
 		</Compile>
 	</ItemGroup>
 
 	<ItemGroup>
+		<EmbeddedResource Update="Resources\ConventionValidationMessages.fr.resx">
+			<SubType>Designer</SubType>
+		</EmbeddedResource>
 		<EmbeddedResource Update="Resources\ConventionValidationMessages.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
+			<SubType>Designer</SubType>
 			<LastGenOutput>ConventionValidationMessages.Designer.cs</LastGenOutput>
+			<Generator>ResXFileCodeGenerator</Generator>
 		</EmbeddedResource>
 		<EmbeddedResource Update="Resources\ValidationMessages.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
+			<SubType>Designer</SubType>
 			<LastGenOutput>ValidationMessages.Designer.cs</LastGenOutput>
+			<Generator>ResXFileCodeGenerator</Generator>
 		</EmbeddedResource>
 	</ItemGroup>
 

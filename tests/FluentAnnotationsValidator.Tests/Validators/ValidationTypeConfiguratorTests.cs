@@ -1,6 +1,4 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Metadata;
+﻿using FluentAnnotationsValidator.Metadata;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
@@ -13,10 +11,10 @@ using static TestHelpers;
 public class ValidationTypeConfiguratorTests
 {
     private readonly ServiceCollection _services = new();
-    private MockValidationBehaviorOptions _mockOptions;
-    private ValidationTypeConfigurator<ValidationTypeConfiguratorTestModel> _configurator;
-    private ValidationTypeConfigurator<TestProductModel> _productConfigurator;
-    private ValidationTypeConfigurator<ProductOrderModel> _productOrderConfigurator;
+    private MockValidationRuleGroupRegistry _mockOptions;
+    private FluentTypeValidator<ValidationTypeConfiguratorTestModel> _configurator;
+    private FluentTypeValidator<TestProductModel> _productConfigurator;
+    private FluentTypeValidator<ProductOrderModel> _productOrderConfigurator;
 
     private IFluentValidator<ValidationTypeConfiguratorTestModel> Validator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ValidationTypeConfiguratorTestModel>>();
@@ -30,8 +28,8 @@ public class ValidationTypeConfiguratorTests
     {
         _services.AddFluentAnnotations(new ConfigurationOptions
         {
-            ConfigureBehaviorOptions = options => _mockOptions = new(options),
-            ConfigureValidationConfigurator = validation =>
+            ConfigureRegistry = options => _mockOptions = new(options),
+            ConfigureValidatorRoot = validation =>
             {
                 _configurator = validation.For<ValidationTypeConfiguratorTestModel>();
                 _productConfigurator = validation.For<TestProductModel>();
@@ -62,7 +60,7 @@ public class ValidationTypeConfiguratorTests
         configurator.Rule(x => x.Email).Required(when: m => m.Age > 10);//.When(m => m.Age > 10);
 
         // Build to process the rules. The 'Build' method will call CommitCurrentRule for the final rule.
-        configurator.Build();
+        var rules = configurator.Build();
 
         // Assert
         // We should have rules registered for both 'Name' and 'Email', and 'ConfirmEmail' already present.
@@ -90,12 +88,12 @@ public class ValidationTypeConfiguratorTests
         var addedRules = _mockOptions.AddedRules;
         addedRules.Count(r => r.Member.Name == "Email").Should().Be(2);
         var ruleForEmail = addedRules.First(r => r.Member.Name == "Email").Rule;
-        ruleForEmail.Attribute.Should().NotBeNull();
-        ruleForEmail.Attribute.GetType().Should().Be(typeof(RequiredAttribute));
+        ruleForEmail.Validator.Should().NotBeNull();
+        ruleForEmail.Validator.GetType().Should().Be(typeof(RequiredAttribute));
 
         ruleForEmail = addedRules.Last(r => r.Member.Name == "Email").Rule;
-        ruleForEmail.Attribute.Should().NotBeNull();
-        ruleForEmail.Attribute.GetType().Should().Be(typeof(MaxLengthAttribute));
+        ruleForEmail.Validator.Should().NotBeNull();
+        ruleForEmail.Validator.GetType().Should().Be(typeof(MaxLengthAttribute));
     }
 
 
@@ -115,11 +113,11 @@ public class ValidationTypeConfiguratorTests
         var addedRules = _mockOptions.AddedRules;
         // The Build method should find the static attributes and the dynamic ones.
         // Static attributes for 'Name':
-        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is RequiredAttribute);
-        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Attribute is MinLengthAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Validator is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Name" && r.Rule.Validator is MinLengthAttribute);
 
         // Dynamic attribute for 'Age':
-        addedRules.Should().Contain(r => r.Member.Name == "Age" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Age" && r.Rule.Validator is RequiredAttribute);
     }
 
     [Fact]
@@ -144,9 +142,9 @@ public class ValidationTypeConfiguratorTests
         // We should have only one rule (the static attributes should be gone);
         // only the dynamic one should exist.
         nameRules.Count.Should().Be(1);
-        nameRules.Should().NotContain(r => r.Rule.Attribute is RequiredAttribute);
-        nameRules.Should().NotContain(r => r.Rule.Attribute is MinLengthAttribute);
-        nameRules.Should().Contain(r => r.Rule.Attribute is Length2Attribute);
+        nameRules.Should().NotContain(r => r.Rule.Validator is RequiredAttribute);
+        nameRules.Should().NotContain(r => r.Rule.Validator is MinLengthAttribute);
+        nameRules.Should().Contain(r => r.Rule.Validator is Length2Attribute);
     }
 
     [Fact]
@@ -174,7 +172,7 @@ public class ValidationTypeConfiguratorTests
         var addedRules = _mockOptions.AddedRules;
         // We should have rules registered for 'Email' with the specified conditions.
         addedRules.Should().HaveCount(2);
-        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Validator is RequiredAttribute);
 
         Validator.Validate(model).IsValid.Should().BeTrue();
     }
@@ -198,7 +196,7 @@ public class ValidationTypeConfiguratorTests
         var addedRules = _mockOptions.AddedRules;
         // We should have rules registered for 'Email' with the specified conditions.
         addedRules.Should().HaveCount(2);
-        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Attribute is RequiredAttribute);
+        addedRules.Should().Contain(r => r.Member.Name == "Email" && r.Rule.Validator is RequiredAttribute);
 
         // Invalid email should fail; however, the age is under the requirement
         Validator.Validate(model).IsValid.Should().BeTrue();
@@ -319,14 +317,14 @@ public class ValidationTypeConfiguratorTests
 
         addedRules.Should().Contain(r =>
             r.Member.Name == nameof(ProductOrderModel.OrderId) &&
-            r.Rule.Attribute != null &&
-            (r.Rule.Attribute.GetType() == typeof(NotEmptyAttribute) || r.Rule.Attribute.GetType() == typeof(MinLengthAttribute))
+            r.Rule.Validator != null &&
+            (r.Rule.Validator.GetType() == typeof(NotEmptyAttribute) || r.Rule.Validator.GetType() == typeof(MinLengthAttribute))
         );
 
         addedRules.Should().Contain(r =>
             r.Member.Name == nameof(ProductOrderModel.ProductId) &&
-            r.Rule.Attribute != null &&
-            (r.Rule.Attribute.GetType() == typeof(RequiredAttribute) || r.Rule.Attribute.GetType() == typeof(MinLengthAttribute))
+            r.Rule.Validator != null &&
+            (r.Rule.Validator.GetType() == typeof(RequiredAttribute) || r.Rule.Validator.GetType() == typeof(MinLengthAttribute))
         );
     }
 
@@ -394,7 +392,7 @@ public class ValidationTypeConfiguratorTests
 
         _mockOptions.AddedRules.Should().Contain(r =>
             r.Member.Name == nameof(model.Email) &&
-            r.Rule.Attribute is RequiredAttribute);
+            r.Rule.Validator is RequiredAttribute);
     }
 
     [Theory]

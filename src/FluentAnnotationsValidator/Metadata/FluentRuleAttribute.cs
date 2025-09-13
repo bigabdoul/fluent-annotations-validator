@@ -13,12 +13,12 @@ namespace FluentAnnotationsValidator.Metadata;
 /// <remarks>
 /// Initializes a new instance of the <see cref="FluentRuleAttribute"/> class.
 /// </remarks>
-/// <param name="rulesContainer">The type that holds the validation rules.</param>
+/// <param name="objectType">The type that holds the validation rules.</param>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = true)]
-public sealed class FluentRuleAttribute(Type rulesContainer) : ValidationAttribute
+public sealed class FluentRuleAttribute(Type objectType) : ValidationAttribute
 {
     /// <summary>
     /// Gets the type that contains the configured validation rules to be applied.
     /// </summary>
-    public Type RulesContainer { get; } = rulesContainer ?? throw new ArgumentNullException(nameof(rulesContainer));
+    public Type ObjectType { get; } = objectType ?? throw new ArgumentNullException(nameof(objectType));
 }

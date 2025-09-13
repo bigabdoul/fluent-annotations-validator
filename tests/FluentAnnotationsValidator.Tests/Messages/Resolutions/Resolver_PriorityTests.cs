@@ -1,6 +1,4 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Messages;
+﻿using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
@@ -15,7 +13,7 @@ using static TestHelpers;
 
 public class Resolver_PriorityTests
 {
-    private static ValidationMessageResolver GetResolver() => new(new ValidationBehaviorOptions(), new Mock<IStringLocalizerFactory>().Object);
+    private static ValidationMessageResolver GetResolver() => new(new GlobalRegistry(), new Mock<IStringLocalizerFactory>().Object);
     private static TestLoginDto NewTestLogin => new("user@example.com", "password");
 
     private class WrongMessages
@@ -26,10 +24,7 @@ public class Resolver_PriorityTests
     [Fact]
     public void Rule_Message_OverridesEverything()
     {
-        var rule = new ConditionalValidationRule(
-            dto => true,
-            message: "Override wins"
-        );
+        var rule = new ValidationRule(message: "Override wins");
 
         var attr = new RequiredAttribute();
         var (member, instanceType) = CreateInfo<TestLoginDto>(x => x.Email);
@@ -41,8 +36,7 @@ public class Resolver_PriorityTests
     [Fact]
     public void Rule_ResourceKey_OverridesAttributeResource()
     {
-        var rule = new ConditionalValidationRule(
-            dto => true,
+        var rule = new ValidationRule(
             resourceKey: nameof(ValidationMessages.EmailRequired),
             resourceType: typeof(ValidationMessages)
         );
@@ -97,8 +91,7 @@ public class Resolver_PriorityTests
     [Fact]
     public void FallbackMessage_Used_WhenResourceFails()
     {
-        var rule = new ConditionalValidationRule(
-            dto => true,
+        var rule = new ValidationRule(
             resourceKey: "MissingKey",
             resourceType: typeof(WrongMessages),
             fallbackMessage: "Use this instead"

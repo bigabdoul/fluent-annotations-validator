@@ -25,6 +25,10 @@ public sealed class NotEmptyAttribute : FluentValidationAttribute
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
+        // Explicit null check first
+        if (value is null)
+            return this.GetFailedValidationResult(validationContext, MessageResolver);
+
         // For strings, consider null, empty, or whitespace as invalid.
         if (value is string s)
         {

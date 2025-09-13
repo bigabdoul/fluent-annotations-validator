@@ -15,17 +15,35 @@ public interface IValidationRuleBuilder
     Expression Member { get; }
 
     /// <summary>
+    /// Adds the specified rule to the underlying Rules collection.
+    /// </summary>
+    /// <param name="rule">The rule to add to the register.</param>
+    void AddRule(IValidationRule rule);
+
+    /// <summary>
     /// Gets a read-only collection of the conditional validation rules that have been added to this builder.
     /// </summary>
-    /// <returns>A collection of <see cref="ConditionalValidationRule"/> instances.</returns>
-    IReadOnlyCollection<ConditionalValidationRule> GetRules();
+    /// <returns>A collection of <see cref="IValidationRule"/> instances.</returns>
+    IReadOnlyCollection<IValidationRule> GetRules();
 
     /// <summary>
     /// Removes rules from the builder that match the specified predicate.
     /// </summary>
     /// <param name="predicate">A function that defines the conditions of the rules to remove.</param>
     /// <returns>The number of rules that were removed from the builder.</returns>
-    int RemoveRules(Predicate<ConditionalValidationRule> predicate);
+    int RemoveRules(Predicate<IValidationRule> predicate);
+
+    /// <summary>
+    /// Adds a new validation rule to the builder based on the logic of a <see cref="ValidationAttribute"/>.
+    /// </summary>
+    /// <param name="attribute">The <see cref="ValidationAttribute"/> to use for the validation rule.</param>
+    /// <returns>The current builder instance for method chaining.</returns>
+    IValidationRuleBuilder SetValidator(ValidationAttribute attribute);
+
+    /// <summary>
+    /// Gets the current validation rule being configured.
+    /// </summary>
+    IValidationRule CurrentRule { get; }
 }
 
 /// <summary>
@@ -37,21 +55,16 @@ public interface IValidationRuleBuilder
 public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
 {
     /// <summary>
-    /// Defines a rule for each item in a nested collection.
+    /// Adds the specified rule to the underlying Rules collection.
     /// </summary>
-    /// <remarks>
-    /// This method is designed to validate nested collections within a model. For top-level
-    /// collections, use the 
-    /// <see cref="IValidationTypeConfigurator{T}.RuleForEach{TElement}(Expression{Func{T, IEnumerable{TElement}}})"/>
-    /// method on the main configurator.
-    /// </remarks>
-    /// <typeparam name="TElement">The type of the elements in the nested collection.</typeparam>
-    /// <param name="member">The expression that contains the nested collection property.</param>
-    /// <returns>
-    /// A new instance of a class that implements the <see cref="IValidationRuleBuilder{T, TProp}"/> interface 
-    /// for the specified type <typeparamref name="T"/>, and element type <typeparamref name="TElement"/>.
-    /// </returns>
-    IValidationRuleBuilder<T, TElement> RuleForEach<TElement>(Expression<Func<TProp, IEnumerable<TElement>>> member);
+    /// <param name="rule">The rule to add to the register.</param>
+    void AddRule(IValidationRule<T> rule);
+
+    /// <summary>
+    /// Adds the specified rule as child of the current builder.
+    /// </summary>
+    /// <param name="rule">The child validation rule to add.</param>
+    void AddChildRule(IValidationRule<TProp> rule);
 
     /// <summary>
     /// Applies a conditional predicate to all subsequent rules in the chain.
@@ -61,7 +74,7 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// <param name="predicate">A function that returns <see langword="true"/> to enable the rules.</param>
     /// <param name="configure">An action to configure the validation rules to apply when the condition is met.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    IValidationRuleBuilder<T, TProp> When(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
+    IValidationRuleBuilder<T, TProp> When(Predicate<T> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
     /// Adds a conditional group of rules that will only be executed if the specified asynchronous predicate is true.
@@ -72,13 +85,13 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     IValidationRuleBuilder<T, TProp> WhenAsync(Func<T, CancellationToken, Task<bool>> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
-    /// Alias for <see cref="When(Func{T, bool}, Action{IValidationRuleBuilder{T, TProp}})"/>
+    /// Alias for <see cref="When(Predicate{T}, Action{IValidationRuleBuilder{T, TProp}})"/>
     /// to make the intent clearer for complex validation logics.
     /// </summary>
     /// <param name="predicate">A function that returns <see langword="true"/> to enable the rules.</param>
     /// <param name="configure">An action to configure the validation rules to apply when the condition is met.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    IValidationRuleBuilder<T, TProp> Must(Func<T, bool> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
+    IValidationRuleBuilder<T, TProp> Must(Predicate<T> predicate, Action<IValidationRuleBuilder<T, TProp>> configure);
 
     /// <summary>
     /// Specifies a custom validation rule for the current member using a synchronous delegate.
@@ -86,7 +99,7 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// </summary>
     /// <param name="predicate">A delegate that contains the custom validation logic.</param>
     /// <returns>The current rule builder instance for chaining.</returns>
-    IValidationRuleBuilder<T, TProp> Must(Func<TProp, bool> predicate);
+    IValidationRuleBuilder<T, TProp> Must(Predicate<TProp> predicate);
 
     /// <summary>
     /// Specifies a custom asynchronous validation rule for the current member.
@@ -138,7 +151,7 @@ public interface IValidationRuleBuilder<T, TProp> : IValidationRuleBuilder
     /// </summary>
     /// <param name="attribute">The <see cref="ValidationAttribute"/> to use for the validation rule.</param>
     /// <returns>The current builder instance for method chaining.</returns>
-    IValidationRuleBuilder<T, TProp> SetAttributeValidator(ValidationAttribute attribute);
+    new IValidationRuleBuilder<T, TProp> SetValidator(ValidationAttribute attribute);
 
     /// <summary>
     /// Gives a rule a chance to gather the correct value for the specified member before validation occurs.

@@ -18,8 +18,7 @@ public class Resolver_CultureTests
         // Arrange
         var frenchCulture = ValidationMessages.Culture = CultureInfo.GetCultureInfo("fr-FR");
 
-        var rule = new ConditionalValidationRule(
-            dto => true,
+        var rule = new ValidationRule(
             resourceKey: nameof(ValidationMessages.Password_Range), // conventional key: Property_Attribute
             resourceType: typeof(ValidationMessages),
             culture: frenchCulture

@@ -1,6 +1,4 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Validators;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
@@ -10,11 +8,11 @@ namespace FluentAnnotationsValidator.Tests.Configuration;
 
 public class BeforeValidationConfigurationTests
 {
-    private static readonly Func<BeforeValidationTestDto, bool> AlwaysValidate = _ => true;
+    private static readonly Predicate<BeforeValidationTestDto> AlwaysValidate = _ => true;
 
     private readonly ServiceCollection _services = new();
-    private MockValidationBehaviorOptions _mockOptions;
-    private ValidationTypeConfigurator<BeforeValidationTestDto> _configurator;
+    private MockValidationRuleGroupRegistry _mockOptions;
+    private FluentTypeValidator<BeforeValidationTestDto> _configurator;
 
     private IFluentValidator<BeforeValidationTestDto> Validator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<BeforeValidationTestDto>>();
@@ -23,8 +21,11 @@ public class BeforeValidationConfigurationTests
     {
         _services.AddFluentAnnotations
         (
-            configure: config => _configurator = config.For<BeforeValidationTestDto>(),
-            configureBehavior: options => _mockOptions = new(options)
+            new ConfigurationOptions
+            {
+                ConfigureValidatorRoot = config => _configurator = config.For<BeforeValidationTestDto>(),
+                ConfigureRegistry = options => _mockOptions = new(options)
+            }
         );
 
         ArgumentNullException.ThrowIfNull(_configurator);
@@ -215,7 +216,7 @@ public class BeforeValidationConfigurationTests
         var member = typeof(BeforeValidationTestDto).GetProperty(nameof(BeforeValidationTestDto.Name))!;
 
         // Simulate a rule already existing in the registry with a pre-validation delegate
-        var existingRule = new ConditionalValidationRule(_ => true)
+        var existingRule = new ValidationRule()
         {
             Member = member,
             ConfigureBeforeValidation = (instance, member, memberValue) => "Modified Value"
@@ -254,7 +255,7 @@ public class BeforeValidationConfigurationTests
 
         // Assert
         Assert.NotNull(pendingRule);
-        Assert.NotNull(pendingRule.AsyncPredicate);
-        Assert.Equal(asyncCondition, pendingRule.AsyncPredicate);
+        Assert.NotNull(pendingRule.AsyncCondition);
+        Assert.Equal(asyncCondition, pendingRule.AsyncCondition);
     }
 }

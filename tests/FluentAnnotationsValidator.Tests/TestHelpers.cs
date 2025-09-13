@@ -1,30 +1,25 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Messages;
+﻿using FluentAnnotationsValidator.Messages;
 using FluentAnnotationsValidator.Tests.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Tests;
 
 internal static partial class TestHelpers
 {
-    internal static FluentAnnotationsBuilder CreateBuilder(Action<ValidationBehaviorOptions>? configure = null) =>
-        new ServiceCollection().AddFluentAnnotationsValidators(configure, typeof(TestLoginDto));
-
-    internal static IFluentValidator<T> GetValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
-        [CallerMemberName] string? testName = null)
-    {
-        var builder = CreateBuilder(options =>
+    internal static FluentAnnotationsBuilder CreateBuilder(Action<ValidationRuleGroupRegistry>? configure = null) =>
+        new ServiceCollection().AddFluentAnnotationsValidators(new ConfigurationOptions
         {
-            options.CurrentTestName = testName;
+            ConfigureRegistry = configure,
+            ExtraValidatableTypesFactory = () => [typeof(TestLoginDto)],
         });
 
+    internal static IFluentValidator<T> GetValidator<T>(Func<FluentTypeValidatorRoot, FluentTypeValidator<T>>? configure = null)
+    {
+        var builder = CreateBuilder();
         var services = builder.Services;
-
         var fluent = builder.UseFluentAnnotations();
 
         if (configure != null)
@@ -35,13 +30,9 @@ internal static partial class TestHelpers
         return services.BuildServiceProvider().GetRequiredService<IFluentValidator<T>>();
     }
 
-    internal static IFluentValidator<T> GetFluentValidator<T>(Func<ValidationConfigurator, ValidationTypeConfigurator<T>>? configure = null,
-        [CallerMemberName] string? testName = null)
+    internal static IFluentValidator<T> GetFluentValidator<T>(Func<FluentTypeValidatorRoot, FluentTypeValidator<T>>? configure = null)
     {
-        var builder = CreateBuilder(options =>
-        {
-            options.CurrentTestName = testName;
-        });
+        var builder = CreateBuilder();
         var services = builder.Services;
         var fluent = builder.UseFluentAnnotations();
         if (configure != null)
@@ -84,7 +75,7 @@ internal static partial class TestHelpers
     }
 
     internal static ValidationMessageResolver GetMessageResolver<T>(string? localizedStringValue) =>
-        new(new ValidationBehaviorOptions(), MockStringLocalizerFactory<T>(localizedStringValue));
+        new(new GlobalRegistry(), MockStringLocalizerFactory<T>(localizedStringValue));
 
     internal static TestLoginDto NewTestLoginDto => new(Email: "user@example.com", Password: "weak-Password-");
 }

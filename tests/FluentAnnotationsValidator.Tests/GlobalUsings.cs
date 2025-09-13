@@ -1,0 +1,4 @@
+﻿global using FluentAnnotationsValidator.Abstractions;
+global using FluentAnnotationsValidator.Configuration;
+global using FluentAnnotationsValidator.Extensions;
+global using FluentAnnotationsValidator.Runtime.Validators;

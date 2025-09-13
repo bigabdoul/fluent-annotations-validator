@@ -15,7 +15,10 @@ namespace FluentAnnotationsValidator.Messages;
 /// Provides mechanisms for resolving localized error messages associated with <see cref="ValidationAttribute"/> instances.
 /// Supports conventional lookup, explicit resource naming, and fallback formatting strategies.
 /// </summary>
-public class ValidationMessageResolver(ValidationBehaviorOptions options, IStringLocalizerFactory localizerFactory) : IValidationMessageResolver
+/// <remarks>Initializes a new instance of the <see cref="ValidationMessageResolver"/> class.</remarks>
+/// <param name="localizerFactory">The string localizer factory.</param>
+/// <param name="registry">The global registry that supplies shared values.</param>
+public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalizerFactory localizerFactory) : IValidationMessageResolver
 {
     /// <summary>
     /// Resolves the error message to be used for a validation failure, based on the supplied
@@ -27,7 +30,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// The <see cref="ValidationAttribute"/> instance describing the validation logic and message configuration.
     /// </param>
     /// <param name="rule">
-    /// Optional: The <see cref="ConditionalValidationRule"/> representing conditional validation logic.
+    /// Optional: The <see cref="IValidationRule"/> representing conditional validation logic.
     /// May contain metadata overrides such as <c>ResourceKey</c> or <c>Message</c>.
     /// </param>
     /// 
@@ -35,9 +38,11 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
     /// A fully formatted error message string to display to consumers (e.g., UI or diagnostics).
     /// Returns <see langword="null"/> if no message can be resolved.
     /// </returns>
-    public virtual string? ResolveMessage(object objectInstance, string memberName, ValidationAttribute attr, ConditionalValidationRule? rule = null)
+    public virtual string ResolveMessage(object objectInstance, string memberName, ValidationAttribute attr, IValidationRule? rule = null)
     {
         // 1️ Rule-based explicit message override
+        rule ??= (attr as FluentValidationAttribute)?.Rule;
+
         if (rule is not null)
         {
             if (rule.MessageResolver is not null)
@@ -50,14 +55,15 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             }
         }
 
+        var globalOptions = registry ?? GlobalRegistry.Default;
         var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? options.SharedCulture ?? CultureInfo.CurrentCulture;
+        var culture = rule?.Culture ?? globalOptions.SharedCulture ?? CultureInfo.CurrentCulture;
         var objectType = objectInstance.GetType();
 
         var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? objectType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
 
-        var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? options.SharedResourceType;
-        var useConventionalKeys = rule?.UseConventionalKeys ?? options.UseConventionalKeys;
+        var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? globalOptions.SharedResourceType;
+        var useConventionalKeys = rule?.UseConventionalKeys ?? globalOptions.UseConventionalKeys;
 
         var resourceKey = rule?.ResourceKey // Give priority to the rule's resource key;
 
@@ -65,7 +71,7 @@ public class ValidationMessageResolver(ValidationBehaviorOptions options, IStrin
             ?? (attrErrorMessageResourceType != null && !string.IsNullOrWhiteSpace(attr.ErrorMessageResourceName) ? attr.ErrorMessageResourceName : null)
 
             // fall back to conventional keys; otherwise, use the error message;
-            ?? (useConventionalKeys ? options.ConventionalKeyGetter?.Invoke(objectType, memberName, attr) ?? objectType.GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
+            ?? (useConventionalKeys ? globalOptions.ConventionalKeyGetter?.Invoke(objectType, memberName, attr) ?? objectType.GetConventionalKey(memberName, attr) : attr.ErrorMessage ?? attr.ErrorMessageResourceName)
 
             // and finally the empty string.
             ?? string.Empty;

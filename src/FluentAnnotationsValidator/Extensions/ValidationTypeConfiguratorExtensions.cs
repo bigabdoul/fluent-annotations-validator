@@ -2,7 +2,6 @@
 using FluentAnnotationsValidator.Metadata;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace FluentAnnotationsValidator.Extensions;
 
@@ -10,6 +9,7 @@ namespace FluentAnnotationsValidator.Extensions;
 /// Provides fluent chaining extension methods for instances
 /// of the <see cref="ValidationTypeConfigurator{T}"/> class.
 /// </summary>
+[Obsolete("Use the extension methods from FluentAnnotationsValidator.Extensions.FluentTypeValidatorExtensions.", true)]
 public static class ValidationTypeConfiguratorExtensions
 {
     /// <summary>
@@ -26,7 +26,7 @@ public static class ValidationTypeConfiguratorExtensions
         Expression<Func<T, TProp>> otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal)
     {
         var otherPropertyName = otherProperty.GetMemberInfo().Name;
-        return configurator.AttachAttribute(new Compare2Attribute(otherPropertyName, comparison));
+        return configurator.AddValidator(new Compare2Attribute(otherPropertyName, comparison));
     }
 
     /// <summary>
@@ -40,8 +40,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Compare<T>(this ValidationTypeConfigurator<T> configurator,
-        string otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new Compare2Attribute(otherProperty, comparison), when);
+        string otherProperty, ComparisonOperator comparison = ComparisonOperator.Equal, Predicate<T>? when = null)
+        => configurator.AddValidator(new Compare2Attribute(otherProperty, comparison), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member is considered empty.
@@ -51,8 +51,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Empty<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new EmptyAttribute(), when);
+        Predicate<T>? when = null)
+        => configurator.AddValidator(new EmptyAttribute(), when);
 
     /// <summary>
     /// Attaches a <see cref="NotEmptyAttribute"/> to the most recent fluent rule definition.
@@ -62,8 +62,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> NotEmpty<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new NotEmptyAttribute(), when);
+        Predicate<T>? when = null)
+        => configurator.AddValidator(new NotEmptyAttribute(), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member has an exact length.
@@ -74,8 +74,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> ExactLength<T>(this ValidationTypeConfigurator<T> configurator,
-        int length, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new ExactLengthAttribute(length), when);
+        int length, Predicate<T>? when = null)
+        => configurator.AddValidator(new ExactLengthAttribute(length), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member has a minimum length.
@@ -86,8 +86,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> MinimumLength<T>(this ValidationTypeConfigurator<T> configurator,
-        int minimumLength, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new MinLengthAttribute(minimumLength), when);
+        int minimumLength, Predicate<T>? when = null)
+        => configurator.AddValidator(new MinLengthAttribute(minimumLength), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member has a maximum length.
@@ -98,8 +98,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> MaximumLength<T>(this ValidationTypeConfigurator<T> configurator,
-        int maximumLength, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new MaxLengthAttribute(maximumLength), when);
+        int maximumLength, Predicate<T>? when = null)
+        => configurator.AddValidator(new MaxLengthAttribute(maximumLength), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member's length is within a specified range.
@@ -111,8 +111,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Length<T>(this ValidationTypeConfigurator<T> configurator,
-        int min, int max, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new Length2Attribute(min, max), when);
+        int min, int max, Predicate<T>? when = null)
+        => configurator.AddValidator(new Length2Attribute(min, max), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member is not null or empty.
@@ -122,8 +122,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Required<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new RequiredAttribute(), when);
+        Predicate<T>? when = null)
+        => configurator.AddValidator(new RequiredAttribute(), when);
 
     /// <summary>
     /// Adds a rule that ensures the last-defined member is equal to a specified expected value.
@@ -134,8 +134,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Equal<T>(this ValidationTypeConfigurator<T> configurator,
-        object? expected, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new EqualAttribute<object?>(expected), when);
+        object? expected, Predicate<T>? when = null)
+        => configurator.AddValidator(new EqualAttribute<object?>(expected), when);
 
     /// <summary>
     /// Adds a rule that ensures a member's value is equal to a specified expected value,
@@ -151,10 +151,10 @@ public static class ValidationTypeConfiguratorExtensions
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> Equal<T, TProp>(this ValidationTypeConfigurator<T> configurator,
         Expression<Func<T, TProp>> _, TProp expected, IEqualityComparer<TProp>? equalityComparer = null,
-        Func<T, bool>? when = null)
+        Predicate<T>? when = null)
     {
         var attr = new EqualAttribute<TProp>(expected, equalityComparer);
-        configurator.AttachAttribute(attr, when);
+        configurator.AddValidator(attr, when);
         return configurator;
     }
 
@@ -167,8 +167,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> NotEqual<T>(this ValidationTypeConfigurator<T> configurator,
-        object? disallowed, Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new NotEqualAttribute<object?>(disallowed), when);
+        object? disallowed, Predicate<T>? when = null)
+        => configurator.AddValidator(new NotEqualAttribute<object?>(disallowed), when);
 
     /// <summary>
     /// Adds a rule that ensures a member's value is not equal to a specified disallowed value,
@@ -184,10 +184,10 @@ public static class ValidationTypeConfiguratorExtensions
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> NotEqual<T, TProp>(this ValidationTypeConfigurator<T> configurator,
         Expression<Func<T, TProp>> _, TProp disallowed, IEqualityComparer<TProp>? equalityComparer = null,
-        Func<T, bool>? when = null)
+        Predicate<T>? when = null)
     {
         var attr = new NotEqualAttribute<TProp>(disallowed, equalityComparer);
-        configurator.AttachAttribute(attr, when);
+        configurator.AddValidator(attr, when);
         return configurator;
     }
 
@@ -199,8 +199,8 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> EmailAddress<T>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null)
-        => configurator.AttachAttribute(new EmailAddressAttribute(), when);
+        Predicate<T>? when = null)
+        => configurator.AddValidator(new EmailAddressAttribute(), when);
 
     /// <summary>
     /// Attaches a custom validation attribute instance to the last-defined member in the fluent chain.
@@ -211,11 +211,11 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <returns>A reference to the <paramref name="configurator"/> instance for method chaining.</returns>
     public static ValidationTypeConfigurator<T> WithAttribute<T, TAttribute>(this ValidationTypeConfigurator<T> configurator,
-        Func<T, bool>? when = null) where TAttribute : ValidationAttribute, new()
-        => configurator.AttachAttribute(new TAttribute(), when);
-
+        Predicate<T>? when = null) where TAttribute : ValidationAttribute, new()
+        => configurator.AddValidator(new TAttribute(), when);
+    /*
     /// <summary>
-    /// Creates a new <see cref="ConditionalValidationRule"/> from a pending rule instance.
+    /// Creates a new <see cref="ConditionalValidationRule{T}"/> from a pending rule instance.
     /// </summary>
     /// <typeparam name="T">The type of the model being configured.</typeparam>
     /// <param name="rule">The pending rule to convert.</param>
@@ -223,18 +223,19 @@ public static class ValidationTypeConfiguratorExtensions
     /// <param name="attribute">The validation attribute to associate with the rule.</param>
     /// <param name="when">An optional predicate that determines whether this rule should be applied.</param>
     /// <param name="asyncPredicate">A function that evaluates when a rule is applied asynchronously.</param>
-    /// <returns>A new <see cref="ConditionalValidationRule"/> instance.</returns>
-    internal static ConditionalValidationRule CreateRuleFromPending<T>(this PendingRule<T> rule, 
+    /// <returns>A new <see cref="ConditionalValidationRule{T}"/> instance.</returns>
+    internal static ConditionalValidationRule<T> CreateRuleFromPending<T>(this PendingRule<T> rule,
     MemberInfo member, ValidationAttribute? attribute = null,
-    Func<T, bool>? when = null, Func<T, CancellationToken, Task<bool>>? asyncPredicate = null)
+    Predicate<T>? when = null, Func<T, CancellationToken, Task<bool>>? asyncPredicate = null)
     {
         if (when is not null)
         {
             rule.Predicate = when;
         }
 
-        var conditionalRule = new ConditionalValidationRule(
-            model => rule.Predicate((T)model),
+        var conditionalRule = new ConditionalValidationRule<T>(
+            rule.Predicate,
+            rule.Expression,
             rule.Message,
             rule.Key,
             rule.ResourceKey,
@@ -255,6 +256,26 @@ public static class ValidationTypeConfiguratorExtensions
 
         return conditionalRule;
     }
+
+    internal static ValidationRule<T> CreateValidationRule<T>(this IValidationRule rule, MemberInfo member)
+    {
+        return new ValidationRule<T>(
+            predicate: instance => rule.Predicate(instance!),
+            rule.Expression,
+            rule.Message,
+            rule.Key,
+            rule.ResourceKey,
+            rule.ResourceType,
+            rule.Culture,
+            rule.FallbackMessage,
+            rule.UseConventionalKeys ?? true)
+        {
+            Member = member,
+            Attribute = rule.Attribute,
+            ConfigureBeforeValidation = rule.ConfigureBeforeValidation,
+        };
+    }
+    */
 
     /// <summary>
     /// Generates a conventional localization key for a validation attribute and a member name.

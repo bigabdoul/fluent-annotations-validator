@@ -1,6 +1,8 @@
 ﻿using FluentAnnotationsValidator.Internals.Reflection;
+using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 
 namespace FluentAnnotationsValidator.Extensions;
 
@@ -61,6 +63,28 @@ public static class ValidatorExpressionExtensions
             //ConstructorInfo => null,
             _ => throw new NotSupportedException("The specified expression is not supported.")
         };
+    }
+
+    /// <summary>
+    /// Attempts to retrieve the value of a member (property, field, or parameterless method) from an object instance.
+    /// </summary>
+    /// <param name="member">The member whose value to get.</param>
+    /// <param name="instance">The object instance from which to get the value.</param>
+    /// <param name="value">Returns the value, if the operation is successful.</param>
+    /// <returns><see langword="true"/> if the operation succeeds; otherwise, <see langword="false"/>.</returns>
+    public static bool TryGetValue(this MemberInfo member, object instance, out object? value)
+    {
+        value = null;
+        try
+        {
+            value = member.GetValue(instance);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+            return false;
+        }
     }
 
     /// <summary>
@@ -136,7 +160,39 @@ public static class ValidatorExpressionExtensions
     /// </returns>
     public static bool AreSameMembers(this MemberInfo sourceMemberInfo, MemberInfo targetMemberInfo)
     {
-        return sourceMemberInfo.Name == targetMemberInfo.Name &&
-            TypeUtils.IsAssignableFrom(sourceMemberInfo.DeclaringType, targetMemberInfo.ReflectedType);
+        if (ReferenceEquals(sourceMemberInfo, targetMemberInfo))
+            return true;
+        
+        if (sourceMemberInfo is null || targetMemberInfo is null)
+            return false;
+
+        return sourceMemberInfo.MetadataToken == targetMemberInfo.MetadataToken &&
+           sourceMemberInfo.Module == targetMemberInfo.Module;
+
+        //return sourceMemberInfo.Name == targetMemberInfo.Name &&
+        //    TypeUtils.IsAssignableFrom(sourceMemberInfo.DeclaringType, targetMemberInfo.ReflectedType);
+    }
+
+    /// <summary>
+    /// Creates a unique, hashable key for a MemberInfo instance.
+    /// This key is used to enable efficient lookups in a dictionary.
+    /// </summary>
+    /// <param name="member">The MemberInfo object to create a key for.</param>
+    /// <returns>An object representing a unique key for the member.</returns>
+    public static object AreSameMembersKey(this MemberInfo member)
+    {
+        // A tuple combining metadata token and module handle provides a unique, hashable key.
+        // This is a robust way to identify members, even across different assemblies.
+        return (member.MetadataToken, member.Module.ModuleHandle);
+    }
+
+    /// <summary>
+    /// Checks if the expression is a parameter expression
+    /// </summary>
+    /// <param name="expression">The lambda expression to check.</param>
+    /// <returns><see langword="true"/> if the specified expression is a lambda; otherwise, <see langword="false"/>.</returns>
+    internal static bool IsParameterExpression(this LambdaExpression expression)
+    {
+        return expression.Body.NodeType == ExpressionType.Parameter;
     }
 }

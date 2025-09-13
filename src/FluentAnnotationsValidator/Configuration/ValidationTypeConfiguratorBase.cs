@@ -6,6 +6,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Base configurator holding type-level validation metadata.
 /// Enables implicit rule synthesis and message resolution.
 /// </summary>
+[Obsolete("Use FluentAnnotationsValidator.Configuration.FluentTypeValidatorBase", true)]
 public abstract class ValidationTypeConfiguratorBase
 {
     /// <summary>
@@ -13,15 +14,17 @@ public abstract class ValidationTypeConfiguratorBase
     /// </summary>
     /// <remarks>
     /// This constructor automatically registers the configurator instance with the global
-    /// <see cref="ValidationConfiguratorStore"/>. This ensures that the configurator is
+    /// <see cref="GlobalRegistry"/>. This ensures that the configurator is
     /// discoverable by the validation framework, allowing the engine to retrieve and apply
     /// fluent-defined rules for the specified <paramref name="targetType"/> at runtime.
     /// </remarks>
     /// <param name="targetType">The <see cref="Type"/> of the model for which this configurator will define validation rules.</param>
     protected ValidationTypeConfiguratorBase(Type targetType)
     {
-        TargetType = targetType;
-        ValidationConfiguratorStore.Registry.Register(targetType, this);
+        //TargetType = targetType;
+        //GlobalValidationRegistry.Default.Register(targetType, this);
+        throw new NotSupportedException("This class is obsolete and will be removed in the final release. " +
+            $"Use the {typeof(FluentTypeValidatorBase).Name} class.");
     }
 
     /// <summary>
