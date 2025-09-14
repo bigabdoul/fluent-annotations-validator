@@ -55,29 +55,26 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// Both <see cref="MemberInfo.ReflectedType"/> and <see cref="MemberInfo.DeclaringType"/> are <see langword="null"/>.
     /// </exception>
     public virtual void AddRule(MemberInfo member, IValidationRule rule)
-        => AddRule(
-            member.ReflectedType ?? member.DeclaringType ??
-                throw new InvalidOperationException("The specified member doesn't support this method."),
-            member, rule);
+        => AddRule(GetTypeFromMember(member), member, rule);
 
     /// <summary>
     /// Registers a validation rule for the specified type and member.
     /// Multiple rules can be associated with a single member.
     /// </summary>
-    /// <param name="type">The target type.</param>
+    /// <param name="objectType">The target type.</param>
     /// <param name="member">The target property or field.</param>
     /// <param name="rule">The validation rule to apply.</param>
-    public virtual void AddRule(Type type, MemberInfo member, IValidationRule rule)
+    public virtual void AddRule(Type objectType, MemberInfo member, IValidationRule rule)
     {
-        // Use GetOrAdd to retrieve the list for the member, or create a new one if it doesn't exist.
-        // This is more efficient than AddOrUpdate for this specific pattern.
-        var group = _ruleRegistry.GetOrAdd(type, new ValidationRuleGroupList(type));
+        // Use GetOrAdd to retrieve the list for the member, or create a new one if it
+        // doesn't exist. This is more efficient than AddOrUpdate for this specific pattern.
+        var group = _ruleRegistry.GetOrAdd(objectType, new ValidationRuleGroupList(objectType));
 
         // Lock on the specific list instance to ensure thread-safe addition.
         // This provides fine-grained locking, preventing contention on the entire dictionary.
         lock (group)
         {
-            group.Merge(new ValidationRuleGroup(type, member, [rule]));
+            group.Merge(new ValidationRuleGroup(objectType, member, [rule]));
         }
     }
 
@@ -86,30 +83,29 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// Retrieves all rules defined for the specified type.
     /// </summary>
     /// <param name="expression">The property or field expression to inspect.</param>
-    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <param name="filter">Optional filter applied to rules.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
     public virtual IReadOnlyList<IValidationRule> GetRules<T>(Expression<Func<T, string?>> expression,
-    Func<IValidationRule, bool>? predicate = null)
+    Func<IValidationRule, bool>? filter = null)
     {
         var member = expression.GetMemberInfo();
         if (!_ruleRegistry.TryGetValue(typeof(T), out var groups))
         {
             return [];
         }
-
         var rules = groups.SelectMany(g => g.Rules.Where(r => member.AreSameMembers(r.Member)));
-        return predicate != null ? [.. rules.Where(predicate)] : [.. rules];
+        return filter != null ? [.. rules.Where(filter)] : [.. rules];
     }
 
     /// <summary>
     /// Retrieves all rules defined for the specified type.
     /// </summary>
-    /// <param name="type">The property or field to inspect.</param>
+    /// <param name="objectType">The property or field to inspect.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
-    public virtual ValidationRuleGroupList GetRules(Type type)
-    {
-        return _ruleRegistry.TryGetValue(type, out var rules) ? rules : new ValidationRuleGroupList(type);
-    }
+    public virtual ValidationRuleGroupList GetRules(Type objectType)
+        => _ruleRegistry.TryGetValue(objectType, out var rules) 
+            ? rules 
+            : new ValidationRuleGroupList(objectType);
 
     /// <summary>
     /// Retrieves rules associated with the property referenced by the given lambda expression.
@@ -120,14 +116,13 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <param name="predicate">Optional filter applied to rules.</param>
     /// <returns>A read-only list of matching rules.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no rule matches the expression.</exception>
-    public virtual ValidationRuleGroupList GetRules<T>(
-        Expression<Func<T, string?>> expression,
-        Func<IValidationRuleGroup, bool>? predicate = null)
+    public virtual ValidationRuleGroupList GetRules<T>(Expression<Func<T, string?>> expression,
+    Func<IValidationRuleGroup, bool>? predicate = null)
     {
         var member = expression.GetMemberInfo();
         var type = GetTypeFromMember(member);
         var rules = FindRules(type, member, predicate);
-        return rules.Count > 0 ? rules : throw new InvalidOperationException("No rule matching the specified expression.");
+        return rules.Count > 0 ? rules : throw new InvalidOperationException("No rule matched the specified expression.");
     }
 
     /// <summary>
@@ -137,26 +132,24 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <typeparam name="T">Declaring type of the property.</typeparam>
     /// <param name="expression">Expression referencing the property.</param>
     /// <param name="rules">The resulting rule list (empty if none).</param>
-    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <param name="filter">Optional filter applied to rules.</param>
     /// <returns>True if matching rules were found, false otherwise.</returns>
-    public virtual bool TryGetRules<T>(
-        Expression<Func<T, string?>> expression,
-        out IReadOnlyList<IValidationRule> rules,
-        Func<IValidationRule, bool>? predicate = null)
+    public virtual bool TryGetRules<T>(Expression<Func<T, string?>> expression,
+    out IReadOnlyList<IValidationRule> rules,
+    Func<IValidationRule, bool>? filter = null)
     {
         var member = expression.GetMemberInfo();
         var type = GetTypeFromMember(member);
+
         if (!_ruleRegistry.TryGetValue(type, out var groups))
         {
             rules = [];
             return false;
         }
 
-        var foundRules = groups.SelectMany(g => g.Rules.Where(r => member.AreSameMembers(r.Member)));
-        if (predicate != null)
-        {
-            foundRules = foundRules.Where(predicate);
-        }
+        var foundRules = groups.SelectMany(g => 
+            g.Rules.Where(r => member.AreSameMembers(r.Member) && (filter is null || filter(r)))
+        );
 
         rules = [.. foundRules];
         return rules.Count > 0;
@@ -167,13 +160,14 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// </summary>
     /// <typeparam name="T">Declaring type of the type.</typeparam>
     /// <param name="expression">Expression referencing the type.</param>
-    /// <param name="predicate">Optional filter applied to rules.</param>
+    /// <param name="filter">Optional filter applied to rules.</param>
     /// <returns>True if at least one matching rule exists, false otherwise.</returns>
-    public virtual bool Contains<T>(Expression<Func<T, string?>> expression, Func<IValidationRuleGroup, bool>? predicate = null)
+    public virtual bool Contains<T>(Expression<Func<T, string?>> expression, 
+    Func<IValidationRuleGroup, bool>? filter = null)
     {
         var member = expression.GetMemberInfo();
         var type = GetTypeFromMember(member);
-        var groups = FindRules(type, member, predicate);
+        var groups = FindRules(type, member, filter);
         return groups.Count > 0;
     }
 
@@ -184,12 +178,12 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <typeparam name="T">The declaring type of the type.</typeparam>
     /// <param name="type">The type information to look up.</param>
     /// <param name="member">The member to match.</param>
-    /// <param name="predicate">A function that tests each rule.</param>
+    /// <param name="filter">A function that tests each rule.</param>
     /// <returns>
     /// <see langword="true"/> as soon as the first rule satisfies the
-    /// <paramref name="predicate"/>; otherwise <see langword="false"/>.
+    /// <paramref name="filter"/>; otherwise <see langword="false"/>.
     /// </returns>
-    public virtual bool ContainsAny<T>(Type type, MemberInfo member, Func<IValidationRule, bool> predicate)
+    public virtual bool ContainsAny<T>(Type type, MemberInfo member, Func<IValidationRule, bool> filter)
     {
         var groups = GetRules(type);
         foreach (var group in groups)
@@ -197,7 +191,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
             foreach (var rule in group.Rules)
             {
                 if (!member.AreSameMembers(rule.Member)) continue;
-                if (predicate(rule)) return true;
+                if (filter(rule)) return true;
             }
         }
         return false;
@@ -207,35 +201,36 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// Finds all rules for a given type access expression.
     /// </summary>
     /// <param name="expression">Expression referencing the property.</param>
-    /// <param name="predicate">Optional rule filter.</param>
+    /// <param name="filter">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public ValidationRuleGroupList FindRules(Expression expression, Func<IValidationRuleGroup, bool>? predicate = null)
+    public ValidationRuleGroupList FindRuleGroups(Expression expression, Func<IValidationRuleGroup, bool>? filter = null)
     {
         var member = expression.GetMemberInfo();
         Type type = GetTypeFromMember(member);
-        var rules = FindRules(type, member, predicate);
+        var rules = FindRules(type, member, filter);
         return rules;
     }
 
     /// <summary>
     /// Finds all rules for a given <see cref="Type"/>, <see cref="MemberInfo"/>, and optional filter.
     /// </summary>
-    /// <param name="type">The type to look up.</param>
+    /// <param name="objectType">The type to look up.</param>
     /// <param name="member">The member for which to retrieve rules.</param>
-    /// <param name="predicate">Optional rule filter.</param>
+    /// <param name="filter">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public virtual ValidationRuleGroupList FindRules(Type type, MemberInfo member, Func<IValidationRuleGroup, bool>? predicate = null)
+    public virtual ValidationRuleGroupList FindRules(Type objectType, MemberInfo member, 
+    Func<IValidationRuleGroup, bool>? filter = null)
     {
-        if (!_ruleRegistry.TryGetValue(type, out var rules))
+        if (!_ruleRegistry.TryGetValue(objectType, out var rules))
         {
-            return new ValidationRuleGroupList(type);
+            return new ValidationRuleGroupList(objectType);
         }
 
-        var vrg = new ValidationRuleGroupList(type);
+        var vrg = new ValidationRuleGroupList(objectType);
 
         foreach (var rule in rules.Where(r => member.AreSameMembers(r.Member)))
         {
-            if (predicate == null || predicate(rule))
+            if (filter == null || filter(rule))
             {
                 vrg.Add(rule);
             }
@@ -279,12 +274,9 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <inheritdoc />
     public virtual List<IValidationRule> GetRulesForType(Type type)
     {
-        if (!_ruleRegistry.TryGetValue(type, out var groups))
-        {
-            return [];
-        }
-
-        return [.. groups.SelectMany(g => g.Rules)];
+        return !_ruleRegistry.TryGetValue(type, out var groups) 
+            ? [] 
+            : [.. groups.SelectMany(g => g.Rules)];
     }
 
     /// <inheritdoc/>
@@ -308,40 +300,38 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <summary>
     /// Removes all rules matching the specified predicate from all members.
     /// </summary>
-    /// <param name="type">The type for which to remove rules according to the specified predicate.</param>
+    /// <param name="objectType">The type for which to remove rules according to the specified predicate.</param>
     /// <param name="predicate">
     /// A function that takes a Type and returns true if the rule should be removed.
     /// </param>
     /// <returns>The number of rules removed.</returns>
-    public int RemoveAll(Type type, Predicate<MemberInfo> predicate)
+    public int RemoveAll(Type objectType, Predicate<MemberInfo> predicate)
     {
-        if (!_ruleRegistry.TryGetValue(type, out var groups))
-        {
-            return 0;
-        }
-        return groups.RemoveRulesForMember(predicate);
+        return !_ruleRegistry.TryGetValue(objectType, out var groups) 
+            ? 0 
+            : groups.RemoveRulesForMember(predicate);
     }
 
     /// <summary>
     /// Removes all rules associated with the specified attribute type for a given type.
     /// </summary>
     /// <typeparam name="TAttribute">The type of validation attribute to filter by.</typeparam>
-    /// <param name="key">The type whose rules should be removed.</param>
+    /// <param name="objectType">The type whose rules should be removed.</param>
     /// <returns>The number of rules removed.</returns>
-    public int RemoveAll<TAttribute>(Type key) where TAttribute : ValidationAttribute
-        => RemoveAll<TAttribute>((type, _) => key.AreSameMembers(type));
+    public int RemoveAll<TAttribute>(Type objectType) where TAttribute : ValidationAttribute
+        => RemoveAll<TAttribute>((type, _) => objectType.AreSameMembers(type));
 
     /// <summary>
     /// Removes all rules associated with the specified attribute type for a given type.
     /// </summary>
-    /// <param name="key">The type whose rules should be removed.</param>
+    /// <param name="objectType">The type whose rules should be removed.</param>
     /// <param name="member">The member for which to remove attributes of the specified type.</param>
     /// <param name="attributeType">The type of validation attribute to filter by.</param>
     /// <returns>The number of rules removed.</returns>
-    public int RemoveAll(Type key, MemberInfo member, Type attributeType)
+    public int RemoveAll(Type objectType, MemberInfo member, Type attributeType)
     {
         var removedCount = 0;
-        if (!_ruleRegistry.TryGetValue(key, out var groups))
+        if (!_ruleRegistry.TryGetValue(objectType, out var groups))
         {
             return 0;
         }
@@ -360,9 +350,8 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
         var removedCount = 0;
         foreach (var type in _ruleRegistry.Keys)
         {
-            if (!_ruleRegistry.TryGetValue(type, out var rules))
-                continue;
-            removedCount += rules.RemoveAttributesOf(predicate);
+            if (_ruleRegistry.TryGetValue(type, out var rules))
+                removedCount += rules.RemoveAttributesOf(predicate);
         }
         return removedCount;
     }
@@ -370,19 +359,17 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <summary>
     /// Removes all rules associated with the specified type, and member determined by the predicate.
     /// </summary>
-    /// <param name="type">The type whose members' rules should be removed.</param>
-    /// <param name="predicate">
+    /// <param name="objectType">The type whose members' rules should be removed.</param>
+    /// <param name="filter">
     /// An optional function that determines whether a key should be
     /// removed from the registry when a compatible type is matched.
     /// </param>
     /// <returns>The number of rules removed.</returns>
-    public int RemoveAllForType(Type type, Predicate<MemberInfo>? predicate = null)
+    public int RemoveAllForType(Type objectType, Predicate<MemberInfo>? filter = null)
     {
-        if (!_ruleRegistry.TryGetValue(type, out var groups))
-        {
-            return 0;
-        }
-        return groups.RemoveAll(g => predicate is null || predicate(g.Member));
+        return !_ruleRegistry.TryGetValue(objectType, out var groups) 
+            ? 0 
+            : groups.RemoveAll(g => filter is null || filter(g.Member));
     }
 
     /// <summary>
@@ -393,7 +380,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <summary>
     /// Gets a deep copy of the internal rule registry for the specified type.
     /// </summary>
-    /// <param name="type">The <see cref="Type"/> of the type to retrieve.</param>
+    /// <param name="objectType">The <see cref="Type"/> of the type to retrieve.</param>
     /// <param name="member">The member to retrieve.</param>
     /// <remarks>
     /// This method provides a snapshot of the current state of the rule registry,
@@ -401,9 +388,9 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// </remarks>
     /// <returns>A new <see cref="ConcurrentDictionary{TKey, TValue}"/> containing copies
     /// of the type-rule mappings.</returns>
-    protected internal ConcurrentDictionary<Type, ValidationRuleGroupList> GetRegistryForMember(Type type, MemberInfo member)
+    protected internal ConcurrentDictionary<Type, ValidationRuleGroupList> GetRegistryForMember(Type objectType, MemberInfo member)
     {
-        if (!_ruleRegistry.TryGetValue(type, out var groups))
+        if (!_ruleRegistry.TryGetValue(objectType, out var groups))
         {
             return [];
         }
@@ -412,14 +399,14 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
         var result = new ConcurrentDictionary<Type, ValidationRuleGroupList>();
         if (filteredGroups.Any())
         {
-            var newList = new ValidationRuleGroupList(type);
+            var newList = new ValidationRuleGroupList(objectType);
             newList.AddRange([.. filteredGroups]);
-            result.TryAdd(type, newList);
+            result.TryAdd(objectType, newList);
         }
 
         return result;
     }
 
     private static Type GetTypeFromMember(MemberInfo member) => member.ReflectedType ?? member.DeclaringType ??
-        throw new InvalidOperationException($"Could not determine the reflected or declaring type of the expresion.");
+        throw new InvalidOperationException($"Could not determine the reflected or declaring type of the member.");
 }
