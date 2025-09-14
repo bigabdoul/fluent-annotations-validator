@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
 
-public class ValidationTypeConfiguratorTests
+public class LocalizationResourcesTests
 {
     private static FluentTypeValidator<TestLoginDto> GetConfigurator()
     {
@@ -22,19 +22,15 @@ public class ValidationTypeConfiguratorTests
         // Arrange
         var configurator = GetConfigurator();
         var propertyName = nameof(FluentTypeValidator<TestLoginDto>.ValidationResourceType);
-        var property = typeof(FluentTypeValidator<TestLoginDto>).GetProperty(propertyName);
+        var property = typeof(FluentTypeValidator<TestLoginDto>).GetProperty(propertyName)!;
 
         // Act
         var result = configurator.WithValidationResource<ValidationMessages>();
-
-        // Assert
-        property.Should().NotBeNull();
-
         var propertyValue = property.GetValue(configurator);
 
+        // Assert
         propertyValue.Should().NotBeNull();
         propertyValue.Should().BeEquivalentTo(typeof(ValidationMessages));
-
         configurator.Should().BeSameAs(result);
     }
 
