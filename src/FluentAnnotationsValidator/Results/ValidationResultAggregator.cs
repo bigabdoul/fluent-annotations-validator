@@ -3,6 +3,7 @@ using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Metadata;
 using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Results;
@@ -25,7 +26,7 @@ public static class ValidationResultAggregator
     /// <param name="member">The <see cref="MemberInfo"/> representing the property or field.</param>
     /// <param name="resolver">An object used for validation message resolution.</param>
     /// <param name="ruleRegistry">An object providing access to the rule registry.</param>
-    /// <param name="validationContextItems">A dictionary of key/value pairs to associate with the validation context.</param>
+    /// <param name="contextItems">A dictionary of key/value pairs to associate with the validation context.</param>
     /// 
     /// <returns>A list of <see cref="ValidationErrorResult"/> if any rules failed; an empty list otherwise.</returns>
     public static List<ValidationErrorResult> Validate(
@@ -34,7 +35,7 @@ public static class ValidationResultAggregator
     MemberInfo member,
     IValidationMessageResolver resolver,
     IRuleRegistry ruleRegistry,
-    IDictionary<object, object?>? validationContextItems = null)
+    IDictionary<object, object?>? contextItems = null)
     {
         var ruleList = rules as IList<IValidationRule> ?? [.. rules];
         if (ruleList.Count == 0)
@@ -42,7 +43,7 @@ public static class ValidationResultAggregator
 
         var rulesToValidate = new Dictionary<IValidationRule, bool>();
         var errors = new List<ValidationErrorResult>();
-        var value = member.GetValue(instance);
+        var memberValue = member.GetValue(instance);
         var preconfigurationInvoked = false;
         ValidationContext? context = null;
 
@@ -71,30 +72,22 @@ public static class ValidationResultAggregator
 
             if (!preconfigurationInvoked)
             {
-                GetPrevalidationValue(ruleList, instance, member, ref value, ref preconfigurationInvoked);
+                GetPrevalidationValue(ruleList, instance, member, ref memberValue, ref preconfigurationInvoked);
             }
 
             switch (rule.Validator)
             {
-                case FluentRuleAttribute fluentRule:
-                    var fluentRules = ruleRegistry.GetRulesForType(fluentRule.ObjectType);
-                    var fluentErrors = fluentRules.Validate(instance, member, resolver, ruleRegistry, validationContextItems);
-                    errors.AddRange(fluentErrors);
+                case FluentRuleAttribute fluentAttr:
+                    ProcessFluentRule(fluentAttr, instance, member, memberValue, contextItems, rule, resolver, ruleRegistry, errors);
                     break;
-
                 case ValidationAttribute attr:
-                    if (context is null)
-                    {
-                        context = new ValidationContext(instance) { MemberName = member.Name };
-                        MergeItems(context.Items, validationContextItems);
-                    }
-
-                    var isUnresolvedMessage = CheckFluentValidationAttribute(attr, rule, resolver);
-                    var result = attr.GetValidationResult(value, context);
+                    context ??= new ValidationContext(instance, contextItems) { MemberName = member.Name };
+                    var isUnresolvedMessage = CheckFluentValidationAttribute(attr, rule, resolver, ruleRegistry);
+                    var result = attr.GetValidationResult(memberValue, context);
 
                     if (result != ValidationResult.Success)
                     {
-                        AddErrors(errors, instance, member, attr, value, rule, result, resolver, isUnresolvedMessage);
+                        AddErrors(errors, instance, member, attr, memberValue, rule, result, resolver, isUnresolvedMessage);
                     }
                     break;
             }
@@ -113,7 +106,7 @@ public static class ValidationResultAggregator
     /// <param name="member">The <see cref="MemberInfo"/> representing the property or field.</param>
     /// <param name="resolver">An object used for validation message resolution.</param>
     /// <param name="ruleRegistry">An object providing access to the rule registry.</param>
-    /// <param name="validationContextItems">A dictionary of key/value pairs to associate with the validation context.</param>
+    /// <param name="contextItems">A dictionary of key/value pairs to associate with the validation context.</param>
     /// <param name="cancellationToken">A token to observe for cancellation requests.</param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> that resolves to a list of <see cref="ValidationErrorResult"/> if any rules failed;
@@ -125,16 +118,16 @@ public static class ValidationResultAggregator
     MemberInfo member,
     IValidationMessageResolver resolver,
     IRuleRegistry ruleRegistry,
-    IDictionary<object, object?>? validationContextItems = null,
+    IDictionary<object, object?>? contextItems = null,
     CancellationToken cancellationToken = default)
     {
-        var ruleList = rules as IList<IValidationRule> ?? rules.ToList();
+        var ruleList = rules as IList<IValidationRule> ?? [.. rules];
         if (ruleList.Count == 0)
             return [];
 
         var rulesToValidate = new Dictionary<IValidationRule, bool>();
         var errors = new List<ValidationErrorResult>();
-        var value = member.GetValue(instance);
+        var memberValue = member.GetValue(instance);
         var preconfigurationInvoked = false;
         ValidationContext? context = null;
 
@@ -172,33 +165,25 @@ public static class ValidationResultAggregator
 
             if (!preconfigurationInvoked)
             {
-                GetPrevalidationValue(ruleList, instance, member, ref value, ref preconfigurationInvoked);
+                GetPrevalidationValue(ruleList, instance, member, ref memberValue, ref preconfigurationInvoked);
             }
 
             switch (rule.Validator)
             {
-                case FluentRuleAttribute fluentRule:
-                    var nestedRules = ruleRegistry.GetRulesForType(fluentRule.ObjectType);
-                    var nestedErrors = await nestedRules.ValidateAsync(instance, member, resolver, ruleRegistry, validationContextItems, cancellationToken);
-                    errors.AddRange(nestedErrors);
+                case FluentRuleAttribute fluentAttr:
+                    await ProcessFluentRuleAsync(fluentAttr, instance, member, memberValue, contextItems, rule, resolver, ruleRegistry, errors, cancellationToken);
                     break;
-
                 case ValidationAttribute attr:
-                    if (context is null)
-                    {
-                        context = new ValidationContext(instance) { MemberName = member.Name };
-                        MergeItems(context.Items, validationContextItems);
-                    }
-
-                    var isUnresolvedMessage = CheckFluentValidationAttribute(attr, rule, resolver);
+                    context ??= new ValidationContext(instance, contextItems) { MemberName = member.Name };
+                    var isUnresolvedMessage = CheckFluentValidationAttribute(attr, rule, resolver, ruleRegistry);
 
                     var result = attr is IAsyncValidationAttribute asyncAttr
-                        ? await asyncAttr.ValidateAsync(value, context, cancellationToken)
-                        : attr.GetValidationResult(value, context);
+                        ? await asyncAttr.ValidateAsync(memberValue, context, cancellationToken)
+                        : attr.GetValidationResult(memberValue, context);
 
                     if (result != ValidationResult.Success)
                     {
-                        AddErrors(errors, instance, member, attr, value, rule, result, resolver, isUnresolvedMessage);
+                        AddErrors(errors, instance, member, attr, memberValue, rule, result, resolver, isUnresolvedMessage);
                     }
                     break;
             }
@@ -213,7 +198,7 @@ public static class ValidationResultAggregator
     {
         var propertyName = rule.GetPropertyName();
 
-        if (attr is ICollectionValidationResult collectionValidationResult)
+        if (attr is IValidationResult validationResult && validationResult.Errors.Count > 0)
         {
             // Convert the errors to instances of ValidationErrorResult
             // containing the FluentValidationFailure errors collection.
@@ -221,14 +206,14 @@ public static class ValidationResultAggregator
             // the presence of the 'Failure' property and use that directly.
             // The choice of this pattern is justified by the return value
             // of the extension method, which contrasts with the type of
-            // the ICollectionValidationResult.Errors property items.
+            // the IValidationResult.Errors property items.
 
             // One might wonder: Why not simply use ValidationErrorResult
             // (since it shares similar properties with FluentValidationFailure)?
             // FluentValidationFailure is marked as [Serializable], and 
             // ValidationErrorResult is not, because it contains non-serializable
             // properties like 'Member' (MemberInfo type) and 'Attribute' (ValidationAttribute type).
-            errors.AddRange(collectionValidationResult.Errors.Select(err => new ValidationErrorResult(err)
+            errors.AddRange(validationResult.Errors.Select(err => new ValidationErrorResult(err)
             {
                 PropertyName = propertyName
             }));
@@ -288,26 +273,52 @@ public static class ValidationResultAggregator
         preconfigurationInvoked = true;
     }
 
-    private static void MergeItems(IDictionary<object, object?> contextItems, IDictionary<object, object?>? items)
-    {
-        if (items != null)
-        {
-            foreach (var item in items)
-                contextItems[item.Key] = item.Value;
-        }
-    }
-
     private static bool CheckFluentValidationAttribute(ValidationAttribute attr, IValidationRule rule,
-    IValidationMessageResolver resolver)
+    IValidationMessageResolver resolver, IRuleRegistry registry)
     {
         bool isUnresolvedMessage = true; // Indicates whether to consider the error message unresolved.
         if (attr is FluentValidationAttribute fva)
         {
             fva.Rule = rule;
             fva.MessageResolver ??= resolver;
+            fva.RuleRegistry ??= registry;
             // Since the attribute has a set resolver, it will use that one should validation fail.
             isUnresolvedMessage = resolver == null;
         }
         return isUnresolvedMessage;
+    }
+
+    private static void ProcessFluentRule(FluentRuleAttribute attribute,
+    object instance, MemberInfo member, object? memberValue,
+    IDictionary<object, object?>? contextItems,
+    IValidationRule rule, IValidationMessageResolver resolver, 
+    IRuleRegistry registry, List<ValidationErrorResult> errors)
+    {
+        var isUnresolvedMessage = CheckFluentValidationAttribute(attribute, rule, resolver, registry);
+        var context = new ValidationContext(instance, contextItems) { MemberName = member.Name };
+        var fluentResult = attribute.GetValidationResult(instance, context);
+        if (fluentResult != ValidationResult.Success)
+        {
+            AddErrors(errors, instance, member, attribute, memberValue, rule, fluentResult, resolver, isUnresolvedMessage);
+        }
+    }
+
+    private static async Task ProcessFluentRuleAsync(FluentRuleAttribute attribute,
+    object instance, MemberInfo member, object? memberValue,
+    IDictionary<object, object?>? contextItems,
+    IValidationRule rule, IValidationMessageResolver resolver, IRuleRegistry registry,
+    List<ValidationErrorResult> errors, CancellationToken cancellationToken)
+    {
+        if (attribute is not IAsyncValidationAttribute asyncAttribute)
+            throw new InvalidOperationException($"The specified attribute does not implement {typeof(IAsyncValidationAttribute).Name}.");
+
+        var isUnresolvedMessage = CheckFluentValidationAttribute(attribute, rule, resolver, registry);
+        var fluentRuleContext = new ValidationContext(instance, contextItems) { MemberName = member.Name };
+        var fluentResult = await asyncAttribute.ValidateAsync(instance, fluentRuleContext, cancellationToken);
+
+        if (fluentResult != ValidationResult.Success)
+        {
+            AddErrors(errors, instance, member, attribute, memberValue, rule, fluentResult, resolver, isUnresolvedMessage);
+        }
     }
 }

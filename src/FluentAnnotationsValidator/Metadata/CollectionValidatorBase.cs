@@ -1,8 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Results;
-using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
@@ -12,36 +10,17 @@ namespace FluentAnnotationsValidator.Metadata;
 /// Base class for collection validators that apply rules to each element.
 /// </summary>
 /// <typeparam name="T">The type of the elements in the collection.</typeparam>
-public abstract partial class CollectionValidatorBase<T> : FluentValidationAttribute, ICollectionValidationResult
+public abstract partial class CollectionValidatorBase<T> : FluentValidationAttribute
 {
     /// <summary>
     /// Gets the items path dictionary key.
     /// </summary>
     protected const string ItemPathKey = "ItemPath";
 
-    private IServiceProvider? _serviceProvider;
-
-    /// <summary>
-    /// Gets the service provider for dependency injection.
-    /// </summary>
-    protected IServiceProvider ServiceProvider =>
-        _serviceProvider ??= FluentAnnotationsBuilder.Default?.Services.BuildServiceProvider()
-        ?? throw new InvalidOperationException("No service provider available.");
-
     /// <summary>
     /// Gets the collection of rules that apply to each element.
     /// </summary>
     public List<IValidationRule<T>> Rules { get; } = [];
-
-    /// <summary>
-    /// Gets the list of validation failures.
-    /// </summary>
-    public List<FluentValidationFailure> Errors { get; } = [];
-
-    /// <summary>
-    /// Gets or sets the rule registry for validator resolution.
-    /// </summary>
-    public IRuleRegistry? RuleRegistry { get; set; }
 
     /// <summary>
     /// This method determines the type of the elements in a collection.
@@ -75,27 +54,6 @@ public abstract partial class CollectionValidatorBase<T> : FluentValidationAttri
         // If we can't determine the type of the items in the collection, we won't get
         // any validator for that type anyway; so throwing is the more obvious thing to do.
         throw new InvalidOperationException("Unable to determine the type of the collection's elements.");
-    }
-
-    /// <summary>
-    /// Instantiates a type-specific <see cref="IFluentValidator"/> using the configured <see cref="ServiceProvider"/>.
-    /// </summary>
-    /// <param name="type">The target type for which a validator should be created.</param>
-    /// <returns>
-    /// A configured <see cref="IFluentValidator"/> instance capable of validating objects of the specified type.
-    /// </returns>
-    protected IFluentValidator CreateValidator(Type type)
-    {
-        var validatorType = typeof(IFluentValidator<>).MakeGenericType(type);
-        var validator = (IFluentValidator)ServiceProvider.GetRequiredService(validatorType);
-        
-        if (RuleRegistry != null)
-            validator.SetRuleRegistry(RuleRegistry);
-
-        if (MessageResolver != null)
-            validator.SetMessageResolver(MessageResolver!);
-
-        return validator;
     }
 
     /// <summary>

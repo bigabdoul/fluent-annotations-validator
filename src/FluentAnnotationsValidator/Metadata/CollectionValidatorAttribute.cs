@@ -24,10 +24,7 @@ public class CollectionValidatorAttribute<T> : CollectionValidatorBase<T>
             return this.GetFailedValidationResult(context, MessageResolver);
 
         var errors = ValidateCollection(collection, context);
-        if (errors.Count == 0) return ValidationResult.Success;
-
-        Errors.AddRange(errors);
-        return new ValidationResult($"Validation errors occurred: {errors.Count}. See Errors for details.");
+        return GetValidationResult(errors);
     }
 
     private List<FluentValidationFailure> ValidateCollection(IEnumerable collection, ValidationContext parentContext)
