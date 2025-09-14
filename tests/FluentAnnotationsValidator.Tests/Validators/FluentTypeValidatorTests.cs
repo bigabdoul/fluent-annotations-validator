@@ -8,7 +8,7 @@ using System.ComponentModel.DataAnnotations;
 namespace FluentAnnotationsValidator.Tests.Validators;
 using static TestHelpers;
 
-public class ValidationTypeConfiguratorTests
+public class FluentTypeValidatorTests
 {
     private readonly ServiceCollection _services = new();
     private MockValidationRuleGroupRegistry _mockOptions;
@@ -24,7 +24,7 @@ public class ValidationTypeConfiguratorTests
     private IFluentValidator<ProductOrderModel> ProductOrderValidator =>
         _services.BuildServiceProvider().GetRequiredService<IFluentValidator<ProductOrderModel>>();
 
-    public ValidationTypeConfiguratorTests()
+    public FluentTypeValidatorTests()
     {
         _services.AddFluentAnnotations(new ConfigurationOptions
         {
