@@ -30,7 +30,7 @@ jobs:
           path: ./build-output
 
       - name: Run tests
-        run: dotnet test FluentAnnotationsValidator.sln --configuration Release --no-build --verbosity normal --diag testlog.txt
+        run: dotnet test --configuration Release --no-build --verbosity normal --diag testlog.txt
 
       - name: Upload test diagnostics
         uses: actions/upload-artifact@v4
