@@ -27,10 +27,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: compiled-app
-          path: ./build-output
+          path: tests/FluentAnnotationsValidator.Tests/bin/Release/net8.0/
 
       - name: Run tests
-        run: dotnet test --configuration Release --no-build --verbosity normal --diag testlog.txt
+        run: dotnet test tests/FluentAnnotationsValidator.Tests/FluentAnnotationsValidator.Tests.csproj --configuration Release --no-build --verbosity normal --diag testlog.txt
 
       - name: Upload test diagnostics
         uses: actions/upload-artifact@v4
