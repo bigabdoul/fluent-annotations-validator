@@ -30,4 +30,4 @@ jobs:
           path: ./build-output
 
       - name: Run tests
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test FluentAnnotationsValidator.sln --configuration Release --no-build --verbosity normal
