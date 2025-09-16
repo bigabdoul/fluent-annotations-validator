@@ -29,15 +29,19 @@ public static class ValidationRuleBuilderExtensions
         var current = builder.CurrentRule as IValidationRule<T>;
         ArgumentNullException.ThrowIfNull(current?.Expression);
 
-        var registry = ValidationRuleGroupRegistry.Default;
-        var typeValidator = new FluentTypeValidator<TProp>(new(registry));
+        var typeValidator = new FluentTypeValidator<TProp>(new(builder.Registry));
 
         configure(typeValidator);
 
-        var attr = new CollectionValidatorAttribute<TProp>
-        {
-            RuleRegistry = registry,
-        };
+        CollectionValidatorBase<TProp> attr = builder.IsAsync
+            ? new CollectionValidatorAsyncAttribute<TProp>
+            {
+                RuleRegistry = builder.Registry,
+            }
+            : new CollectionValidatorAttribute<TProp>
+            {
+                RuleRegistry = builder.Registry,
+            };
 
         var rules = typeValidator.Build();
         attr.Rules.AddRange(rules.OfType<IValidationRule<TProp>>());

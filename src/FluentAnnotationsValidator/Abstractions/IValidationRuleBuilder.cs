@@ -44,6 +44,16 @@ public interface IValidationRuleBuilder
     /// Gets the current validation rule being configured.
     /// </summary>
     IValidationRule CurrentRule { get; }
+
+    /// <summary>
+    /// Determines whether the current builder uses asynchronous methods and validators.
+    /// </summary>
+    bool IsAsync { get; }
+
+    /// <summary>
+    /// Gets the registry to use. Defaults to <see cref="ValidationRuleGroupRegistry.Default"/>.
+    /// </summary>
+    IValidationRuleGroupRegistry Registry { get; }
 }
 
 /// <summary>

@@ -54,13 +54,6 @@ public sealed class FluentAnnotationsBuilder
     public IServiceCollection Services { get; }
 
     /// <summary>
-    /// Gets the <see cref="ValidationBehaviorOptions"/> instance where all
-    /// fluent configuration and rules are stored.
-    /// </summary>
-    [Obsolete("Use the property " + nameof(Registry), true)]
-    public ValidationBehaviorOptions Options { get; } = default!;
-
-    /// <summary>
     /// Gets the <see cref="ValidationRuleGroupRegistry"/> instance where all 
     /// fluent configuration validators are stored.
     /// </summary>

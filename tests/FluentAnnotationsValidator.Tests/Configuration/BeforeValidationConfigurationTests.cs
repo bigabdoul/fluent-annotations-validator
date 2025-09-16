@@ -82,7 +82,7 @@ public class BeforeValidationConfigurationTests
         var testDto = new BeforeValidationTestDto { Id = 0 };
         Expression<Func<BeforeValidationTestDto, int>> memberExpression = dto => dto.Id;
         var pendingRule = new PendingRule<BeforeValidationTestDto>(memberExpression, AlwaysValidate);
-        var ruleBuilder = new ValidationRuleBuilder<BeforeValidationTestDto, int>(pendingRule);
+        var ruleBuilder = new ValidationRuleBuilder<BeforeValidationTestDto, int>(pendingRule, ValidationRuleGroupRegistry.Default);
 
         // Act
         ruleBuilder.Required().BeforeValidation((instance, m, memberValue) => instance.Id = 123);

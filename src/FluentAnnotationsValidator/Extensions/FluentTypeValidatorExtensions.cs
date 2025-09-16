@@ -216,6 +216,31 @@ public static class FluentTypeValidatorExtensions
         => configurator.AddValidator(new TAttribute(), when);
 
     /// <summary>
+    /// Generates a conventional localization key for a validation attribute and a member name.
+    /// </summary>
+    /// <param name="_">Unused parameter: The declaring type.</param>
+    /// <param name="memberName">The name of the member.</param>
+    /// <returns>The generated conventional key.</returns>
+    /// <param name="attr">The validation attribute instance.</param>
+    public static string GetConventionalKey(this Type _, string memberName, ValidationAttribute attr)
+        => $"{memberName}_{attr.ShortAttributeName()}";
+
+    /// <summary>
+    /// Gets a shortened name for a validation attribute by removing the "Attribute" suffix.
+    /// </summary>
+    /// <param name="attr">The validation attribute instance.</param>
+    /// <returns>The shortened attribute name.</returns>
+    public static string ShortAttributeName(this ValidationAttribute attr) =>
+        attr.CleanAttributeName().Replace("Attribute", string.Empty);
+
+    /// <summary>
+    /// Cleans the type name of an attribute to remove common generic type and language-specific suffixes.
+    /// </summary>
+    /// <param name="attr">The attribute instance.</param>
+    /// <returns>The cleaned attribute name.</returns>
+    public static string CleanAttributeName(this Attribute attr) =>
+        attr.GetType().Name.TrimEnd('`', '1');
+    /// <summary>
     /// Creates a new <see cref="ValidationRule{T}"/> from a pending rule instance.
     /// </summary>
     /// <typeparam name="T">The type of the model being configured.</typeparam>

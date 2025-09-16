@@ -45,7 +45,7 @@ public class FluentValidationResultAggregatorTests
 
         var validator = GetFluentValidator(builder =>
             builder.For<TestLoginDto>()
-                .Rule(x => x.Email, FluentAnnotationsValidator.Configuration.RuleDefinitionBehavior.Preserve)
+                .Rule(x => x.Email, RuleDefinitionBehavior.Preserve)
                 //.Required()
                 //.EmailAddress()
                 //.When(m => m.Role == "Admin")

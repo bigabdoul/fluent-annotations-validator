@@ -18,31 +18,12 @@ using System.ComponentModel.DataAnnotations;
 public class ConfigurationOptions
 {
     /// <summary>
-    /// Gets or sets a delegate to configure the core validation behavior, such as rule registration.
-    /// </summary>
-    /// <remarks>
-    /// Use this delegate to customize how rules are registered and validated.
-    /// </remarks>
-    [Obsolete("Use the property " + nameof(ConfigureRegistry), true)]
-    public Action<ValidationBehaviorOptions>? ConfigureBehaviorOptions { get; set; }
-
-    /// <summary>
     /// Gets or sets a delegate to configure the core validation registry.
     /// </summary>
     /// <remarks>
     /// Use this delegate to customize how rules are registered and validated.
     /// </remarks>
     public Action<ValidationRuleGroupRegistry>? ConfigureRegistry { get; set; }
-
-    /// <summary>
-    /// Gets or sets the delegate used to configure the core validation rules for the application.
-    /// </summary>
-    /// <remarks>
-    /// This action provides the main entry point for users to define and customize
-    /// their validation rules via the <see cref="ValidationConfigurator"/>.
-    /// </remarks>
-    [Obsolete("Use the property " + nameof(ConfigureValidatorRoot), true)]
-    public Action<ValidationConfigurator>? ConfigureValidationConfigurator { get; set; }
 
     /// <summary>
     /// Gets or sets the delegate used to configure the core validation rules for the application.

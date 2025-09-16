@@ -1,4 +1,5 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Extensions;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -38,8 +39,6 @@ public class ValidationRule<T>(
 {
     private Predicate<T>? _shouldApplyCondition;
     private Func<T, CancellationToken, Task<bool>>? _shouldApplyAsyncCondition;
-
-    private static InvalidCastException InvalidTargetInstance(object instance) => new($"Target instance of type {instance.GetType().Name} is incompatible with type {typeof(T).Name}.");
 
     /// <inheritdoc />
     public new Predicate<T> Condition { get; set; } = condition ?? (_ => true);
@@ -86,12 +85,10 @@ public class ValidationRule<T>(
     }
 
     /// <inheritdoc/>
-    public override Task<bool> ShouldValidateAsync(object targetInstance, CancellationToken cancellationToken)
+    public override async Task<bool> ShouldValidateAsync(object targetInstance, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(targetInstance);
-        return targetInstance is T target
-            ? ShouldApplyConditionAsync(target, cancellationToken)
-            : throw InvalidTargetInstance(targetInstance);
+        return targetInstance is not T target || await ShouldApplyConditionAsync(target, cancellationToken);
     }
 
     /// <summary>
@@ -116,9 +113,9 @@ public class ValidationRule<T>(
     /// Returns a string representation of the rule, including its validator type and target member.
     /// </summary>
     /// <returns>
-    /// A string in the format <c>[ValidatorType]DeclaringType.MemberName</c>, useful for debugging and diagnostics.
+    /// A string in the format <c>[Attribute]ObjectType.Member</c> (e.g., <c>[Required]LoginModel.Email</c>), useful for debugging and diagnostics.
     /// </returns>
     public override string? ToString() =>
-        (HasValidator ? $"[{Validator?.GetType().Name}]" : string.Empty) +
-        $"{Member.ReflectedType}.{Member.Name}";
+        (Validator != null ? $"[{Validator.CleanAttributeName()}]" : string.Empty) +
+        $"{Member.ReflectedType?.Name}.{Member.Name}";
 }

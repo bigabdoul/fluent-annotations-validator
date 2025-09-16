@@ -218,7 +218,7 @@ public class LocalizationResourcesTests
         rule.ResourceKey.Should().Match("Email_Required");
     }
 
-    private static IValidationRule GetRule(Expression<Func<TestLoginDto, string?>> property, ValidationRuleGroupRegistry options)
+    private static IValidationRule GetRule(Expression<Func<TestLoginDto, string?>> property, IValidationRuleGroupRegistry options)
     {
         var rules = options.GetRules(property, rule => !rule.HasValidator);
         return rules[0];

@@ -76,9 +76,9 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
     protected readonly List<IValidationRule> RulesFromLastBuild = [];
 
     /// <summary>
-    /// Gets the validation behavior options.
+    /// Gets the validation rule group registry.
     /// </summary>
-    public ValidationRuleGroupRegistry Registry => root.Registry;
+    public IValidationRuleGroupRegistry Registry => root.Registry;
 
     /// <inheritdoc cref="IFluentTypeValidator{T}.WithValidationResource{TResource}()"/>
     public virtual FluentTypeValidator<T> WithValidationResource<TResource>()
@@ -163,7 +163,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
             useConventionalKeys: _useConventionalKeys
         );
 
-        var configurator = new ValidationRuleBuilder<T, TMember>(newPendingRule);
+        var configurator = new ValidationRuleBuilder<T, TMember>(newPendingRule, Registry);
         _validationRuleBuilders.Add(configurator);
 
         return configurator;
@@ -182,7 +182,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
         CommitCurrentRule();
 
         var newPendingRule = new PendingRule<T>(expression);
-        var configurator = new ValidationRuleBuilder<T, TElement>(newPendingRule);
+        var configurator = new ValidationRuleBuilder<T, TElement>(newPendingRule, Registry);
         _validationRuleBuilders.Add(configurator);
 
         return configurator;

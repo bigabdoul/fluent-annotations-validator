@@ -13,7 +13,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// with the specified service collection.
 /// </remarks>
 /// <param name="registry">The validation behavior options used during configuration.</param>
-public class FluentTypeValidatorRoot(ValidationRuleGroupRegistry registry) : IFluentTypeValidatorRoot
+public class FluentTypeValidatorRoot(IValidationRuleGroupRegistry registry) : IFluentTypeValidatorRoot
 {
     /// <summary>
     /// Begins configuring conditional validation rules for a specific model type.
@@ -25,7 +25,7 @@ public class FluentTypeValidatorRoot(ValidationRuleGroupRegistry registry) : IFl
     /// <summary>
     /// Gets the validation rule group registry.
     /// </summary>
-    public ValidationRuleGroupRegistry Registry => registry;
+    public IValidationRuleGroupRegistry Registry => registry;
 
     /// <inheritdoc cref="IFluentTypeValidatorRoot.WithValidationResource{TResource}()"/>
     public FluentTypeValidatorRoot WithValidationResource<TResource>() => WithValidationResource(typeof(TResource));

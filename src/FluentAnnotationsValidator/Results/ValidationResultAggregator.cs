@@ -37,7 +37,7 @@ public static class ValidationResultAggregator
     IRuleRegistry ruleRegistry,
     IDictionary<object, object?>? contextItems = null)
     {
-        var ruleList = rules as IList<IValidationRule> ?? [.. rules];
+        List<IValidationRule> ruleList = [.. rules];
         if (ruleList.Count == 0)
             return [];
 
@@ -48,12 +48,18 @@ public static class ValidationResultAggregator
         ValidationContext? context = null;
 
         // Evaluate fluent rules once
-        foreach (var rule in ruleList)
+        for (int i = ruleList.Count - 1; i > -1; i--)
         {
-            if (!rule.HasValidator)
+            if (!ruleList[i].HasValidator)
             {
-                var shouldValidate = rule.ShouldValidate(instance);
-                rulesToValidate[rule] = shouldValidate;
+                // Rules with no validation attribute are gate keepers.
+                // In other words, they are pure conditions that allow
+                // or prevent validation to occur for the member
+                // expression they apply to.
+                rulesToValidate[ruleList[i]] = ruleList[i].ShouldValidate(instance);
+                
+                // Since this rule has no validator, it won't be run.
+                ruleList.RemoveAt(i);
             }
         }
 
@@ -63,7 +69,7 @@ public static class ValidationResultAggregator
 
         foreach (var rule in ruleList)
         {
-            var shouldSkip = rule.Validator is null ||
+            var shouldSkip =
                (rulesToValidate.TryGetValue(rule, out var shouldValidate) && !shouldValidate) ||
                (!rulesToValidate.ContainsKey(rule) && !rule.ShouldValidate(instance));
 
@@ -121,7 +127,7 @@ public static class ValidationResultAggregator
     IDictionary<object, object?>? contextItems = null,
     CancellationToken cancellationToken = default)
     {
-        var ruleList = rules as IList<IValidationRule> ?? [.. rules];
+        List<IValidationRule> ruleList = [.. rules];
         if (ruleList.Count == 0)
             return [];
 
@@ -132,32 +138,28 @@ public static class ValidationResultAggregator
         ValidationContext? context = null;
 
         // Evaluate fluent rules once
-        var fluentRules = ruleList.Where(r => !r.HasValidator).ToList();
-        if (fluentRules.Count > 0)
+        for (int i = ruleList.Count - 1; i > -1; i--)
         {
-            var conditionTasks = fluentRules
-                .Select(r => r.ShouldValidateAsync(instance, cancellationToken));
-
-            var conditionResults = await Task.WhenAll(conditionTasks);
-
-            bool anyApplies = false;
-            for (int i = 0; i < fluentRules.Count; i++)
+            if (!ruleList[i].HasValidator)
             {
-                rulesToValidate[fluentRules[i]] = conditionResults[i];
-                anyApplies |= conditionResults[i];
-            }
+                var shouldValidate = await ruleList[i].ShouldValidateAsync(instance, cancellationToken);
+                rulesToValidate[ruleList[i]] = shouldValidate;
 
-            if (!anyApplies)
-                return [];
+                // Remove rule with no validator
+                ruleList.RemoveAt(i);
+            }
         }
+
+        // Skip if no fluent rule applies
+        if (rulesToValidate.Count > 0 && !rulesToValidate.Values.Any(v => v))
+            return [];
 
         foreach (var rule in ruleList)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             bool shouldSkip =
-                rule.Validator is null ||
-                (rulesToValidate.TryGetValue(rule, out var cached) && !cached) ||
+                (rulesToValidate.TryGetValue(rule, out var shouldValidate) && !shouldValidate) ||
                 (!rulesToValidate.ContainsKey(rule) && !await rule.ShouldValidateAsync(instance, cancellationToken));
 
             if (shouldSkip)

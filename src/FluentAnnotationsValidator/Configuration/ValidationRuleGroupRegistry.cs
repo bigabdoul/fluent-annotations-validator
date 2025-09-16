@@ -13,7 +13,7 @@ namespace FluentAnnotationsValidator.Configuration;
 /// Stores validation rules mapped to each property or field.
 /// Supports multiple validation attributes per type.
 /// </summary>
-public class ValidationRuleGroupRegistry : IRuleRegistry
+public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
 {
     private readonly ConcurrentDictionary<Type, ValidationRuleGroupList> _ruleRegistry = new();
 
@@ -103,8 +103,8 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <param name="objectType">The property or field to inspect.</param>
     /// <returns>A read-only list of rules, or an empty list if none are registered.</returns>
     public virtual ValidationRuleGroupList GetRules(Type objectType)
-        => _ruleRegistry.TryGetValue(objectType, out var rules) 
-            ? rules 
+        => _ruleRegistry.TryGetValue(objectType, out var rules)
+            ? rules
             : new ValidationRuleGroupList(objectType);
 
     /// <summary>
@@ -147,7 +147,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
             return false;
         }
 
-        var foundRules = groups.SelectMany(g => 
+        var foundRules = groups.SelectMany(g =>
             g.Rules.Where(r => member.AreSameMembers(r.Member) && (filter is null || filter(r)))
         );
 
@@ -162,7 +162,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <param name="expression">Expression referencing the type.</param>
     /// <param name="filter">Optional filter applied to rules.</param>
     /// <returns>True if at least one matching rule exists, false otherwise.</returns>
-    public virtual bool Contains<T>(Expression<Func<T, string?>> expression, 
+    public virtual bool Contains<T>(Expression<Func<T, string?>> expression,
     Func<IValidationRuleGroup, bool>? filter = null)
     {
         var member = expression.GetMemberInfo();
@@ -218,7 +218,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <param name="member">The member for which to retrieve rules.</param>
     /// <param name="filter">Optional rule filter.</param>
     /// <returns>A read-only list of matching rules.</returns>
-    public virtual ValidationRuleGroupList FindRules(Type objectType, MemberInfo member, 
+    public virtual ValidationRuleGroupList FindRules(Type objectType, MemberInfo member,
     Func<IValidationRuleGroup, bool>? filter = null)
     {
         if (!_ruleRegistry.TryGetValue(objectType, out var rules))
@@ -274,8 +274,8 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <inheritdoc />
     public virtual List<IValidationRule> GetRulesForType(Type type)
     {
-        return !_ruleRegistry.TryGetValue(type, out var groups) 
-            ? [] 
+        return !_ruleRegistry.TryGetValue(type, out var groups)
+            ? []
             : [.. groups.SelectMany(g => g.Rules)];
     }
 
@@ -307,8 +307,8 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <returns>The number of rules removed.</returns>
     public int RemoveAll(Type objectType, Predicate<MemberInfo> predicate)
     {
-        return !_ruleRegistry.TryGetValue(objectType, out var groups) 
-            ? 0 
+        return !_ruleRegistry.TryGetValue(objectType, out var groups)
+            ? 0
             : groups.RemoveRulesForMember(predicate);
     }
 
@@ -367,8 +367,8 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// <returns>The number of rules removed.</returns>
     public int RemoveAllForType(Type objectType, Predicate<MemberInfo>? filter = null)
     {
-        return !_ruleRegistry.TryGetValue(objectType, out var groups) 
-            ? 0 
+        return !_ruleRegistry.TryGetValue(objectType, out var groups)
+            ? 0
             : groups.RemoveAll(g => filter is null || filter(g.Member));
     }
 
@@ -388,7 +388,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
     /// </remarks>
     /// <returns>A new <see cref="ConcurrentDictionary{TKey, TValue}"/> containing copies
     /// of the type-rule mappings.</returns>
-    protected internal ConcurrentDictionary<Type, ValidationRuleGroupList> GetRegistryForMember(Type objectType, MemberInfo member)
+    public ConcurrentDictionary<Type, IList<IValidationRuleGroup>> GetRegistryForMember(Type objectType, MemberInfo member)
     {
         if (!_ruleRegistry.TryGetValue(objectType, out var groups))
         {
@@ -396,7 +396,7 @@ public class ValidationRuleGroupRegistry : IRuleRegistry
         }
 
         var filteredGroups = groups.Where(g => member.AreSameMembers(g.Member));
-        var result = new ConcurrentDictionary<Type, ValidationRuleGroupList>();
+        var result = new ConcurrentDictionary<Type, IList<IValidationRuleGroup>>();
         if (filteredGroups.Any())
         {
             var newList = new ValidationRuleGroupList(objectType);
