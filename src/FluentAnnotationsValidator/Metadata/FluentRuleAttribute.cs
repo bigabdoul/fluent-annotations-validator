@@ -1,4 +1,6 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Extensions;
+using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Metadata;
@@ -26,9 +28,31 @@ public class FluentRuleAttribute(Type objectType) : FluentValidationAttribute
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
-        var validator = CreateValidator(ObjectType);
-        var result = validator.Validate(validationContext);
-        return GetValidationResult(result.Errors);
+        ArgumentNullException.ThrowIfNull(value);
+
+        var registry = RuleRegistry;
+        var resolver = MessageResolver;
+
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(validationContext.MemberName);
+
+        var member = validationContext.ObjectType.GetMember(validationContext.MemberName)[0];
+        var memberRules = registry.GetRulesByMember(ObjectType).Where(g => string.Equals(member.Name, g.Key.Name));
+        var items = validationContext.Items;
+
+        foreach (var rules in memberRules)
+        {
+            var results = rules.Validate(value, member, resolver, registry, items);
+            if (results.Count > 0)
+            {
+                Errors.AddRange(results.Select(e => new FluentValidationFailure(e)));
+            }
+        }
+
+        return Errors.Count == 0
+            ? ValidationResult.Success :
+            this.GetFailedValidationResult(validationContext);
     }
 }
 
@@ -53,8 +77,30 @@ public class FluentRuleAsyncAttribute(Type objectType) : FluentRuleAttribute(obj
     /// <inheritdoc/>
     public async Task<ValidationResult?> ValidateAsync(object? value, ValidationContext validationContext, CancellationToken cancellationToken)
     {
-        var validator = CreateValidator(ObjectType);
-        var result = await validator.ValidateAsync(validationContext, cancellationToken);
-        return GetValidationResult(result.Errors);
+        ArgumentNullException.ThrowIfNull(value);
+
+        var registry = RuleRegistry;
+        var resolver = MessageResolver;
+
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(validationContext.MemberName);
+
+        var member = validationContext.ObjectType.GetMember(validationContext.MemberName)[0];
+        var memberRules = registry.GetRulesByMember(ObjectType).Where(g => string.Equals(member.Name, g.Key.Name));
+        var items = validationContext.Items;
+
+        foreach (var rules in memberRules)
+        {
+            var results = await rules.ValidateAsync(value, member, resolver, registry, items, cancellationToken);
+            if (results.Count > 0)
+            {
+                Errors.AddRange(results.Select(e => new FluentValidationFailure(e)));
+            }
+        }
+
+        return Errors.Count == 0
+            ? ValidationResult.Success :
+            this.GetFailedValidationResult(validationContext);
     }
 }
