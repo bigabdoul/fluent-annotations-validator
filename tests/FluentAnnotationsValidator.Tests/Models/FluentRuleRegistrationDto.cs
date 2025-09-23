@@ -2,8 +2,8 @@
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
-//[FluentRuleFrom(typeof(TestRegistrationDto))]
-public class FluentRuleRegistrationDto : IFluentValidatable
+//[InheritRules(typeof(TestRegistrationDto))]
+public class FluentRuleRegistrationDto
 {
     [FluentRule(typeof(TestRegistrationDto))]
     public string Email { get; set; } = default!;
