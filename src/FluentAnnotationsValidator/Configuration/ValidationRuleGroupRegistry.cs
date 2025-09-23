@@ -16,6 +16,7 @@ namespace FluentAnnotationsValidator.Configuration;
 public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
 {
     private readonly ConcurrentDictionary<Type, ValidationRuleGroupList> _ruleRegistry = new();
+    private readonly ConcurrentDictionary<Type, bool> _isBuiltByType = new();
 
     #region Default
 
@@ -44,6 +45,7 @@ public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
         {
             existing.Merge(group);
         }
+        MarkBuilt(type, true);
     }
 
     /// <summary>
@@ -274,6 +276,10 @@ public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
     /// <inheritdoc />
     public virtual List<IValidationRule> GetRulesForType(Type type)
     {
+        if (!_isBuiltByType.TryGetValue(type, out var built) || !built)
+            throw new FluentValidationException($"Validation rules for {type.Name} were not finalized. " +
+                $"Did you forget to call FluentTypeValidator<{type.Name}>.Build()?");
+
         return !_ruleRegistry.TryGetValue(type, out var groups)
             ? []
             : [.. groups.SelectMany(g => g.Rules)];
@@ -405,6 +411,12 @@ public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
         }
 
         return result;
+    }
+
+    /// <inheritdoc/>
+    public void MarkBuilt(Type type, bool status)
+    {
+        _isBuiltByType[type] = status;
     }
 
     private static Type GetTypeFromMember(MemberInfo member) => member.ReflectedType ?? member.DeclaringType ??

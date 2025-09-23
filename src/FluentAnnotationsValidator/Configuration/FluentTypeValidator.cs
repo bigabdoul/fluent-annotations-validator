@@ -530,16 +530,12 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
             {
                 foreach (var attr in pendingRule.Attributes)
                 {
-                    var newRule = pendingRule.CreateRuleFromPending(member, attr);
-                    newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
-                    registrationList.Add(newRule);
+                    AddRuleToList(pendingRule, member, attr);
                 }
             }
             else
             {
-                var newRule = pendingRule.CreateRuleFromPending(member);
-                newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
-                registrationList.Add(newRule);
+                AddRuleToList(pendingRule, member, null);
             }
         }
 
@@ -552,11 +548,19 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
         // Clear the temporary collections
         _pendingRules.Clear();
         _validationRuleBuilders.Clear();
-
         RulesFromLastBuild.Clear();
         RulesFromLastBuild.AddRange(registrationList);
 
+        Registry.MarkBuilt(typeof(T), true);
+
         return registrationList;
+
+        void AddRuleToList(PendingRule<T> pendingRule, MemberInfo member, ValidationAttribute? attr)
+        {
+            var newRule = pendingRule.CreateRuleFromPending(member, attr);
+            newRule.ConfigureBeforeValidation = pendingRule.ConfigureBeforeValidation;
+            registrationList.Add(newRule);
+        }
     }
 
     /// <inheritdoc/>

@@ -20,7 +20,12 @@ public class FluentTypeValidatorRoot(IValidationRuleGroupRegistry registry) : IF
     /// </summary>
     /// <typeparam name="T">The model type to configure validation rules for.</typeparam>
     /// <returns>A <see cref="FluentTypeValidator{T}"/> to define rules for the specified type.</returns>
-    public virtual FluentTypeValidator<T> For<T>() => new(this);
+    public virtual FluentTypeValidator<T> For<T>()
+    {
+        // Any new configuration for the type marks it as not built.
+        Registry.MarkBuilt(typeof(T), false);
+        return new(this);
+    }
 
     /// <summary>
     /// Gets the validation rule group registry.
