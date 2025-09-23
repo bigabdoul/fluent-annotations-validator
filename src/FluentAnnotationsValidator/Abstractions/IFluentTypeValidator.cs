@@ -125,8 +125,9 @@ public interface IFluentTypeValidator<T>
     IFluentTypeValidator<T> RemoveRulesExceptFor<TMember>(Expression<Func<T, TMember>> memberExpression);
 
     /// <summary>
-    /// Clears all validation rules currently registered for the configured type <typeparamref name="T"/>.
-    /// This operation includes all pending fluent rules and all rules registered in the <see cref="ValidationBehaviorOptions"/>.
+    /// Clears all validation rules currently registered for the configured type 
+    /// <typeparamref name="T"/>. This operation includes all pending fluent rules 
+    /// and all rules registered in the <see cref="ValidationRuleGroupRegistry"/>.
     /// </summary>
     /// <returns>The current configurator instance for further chaining.</returns>
     IFluentTypeValidator<T> ClearRules();
