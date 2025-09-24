@@ -56,10 +56,10 @@ public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalize
             {
                 if (formatArg != null)
                 {
-                    try { return FormatMessage(CultureInfo.CurrentCulture, rule.Message, new object[] { memberName, formatArg }); }
+                    try { return FormatMessage(culture, rule.Message, new object[] { memberName, formatArg }); }
                     catch { }
                 }
-                return string.Format(rule.Message, memberName);
+                return string.Format(culture, rule.Message, memberName);
             }
         }
 
