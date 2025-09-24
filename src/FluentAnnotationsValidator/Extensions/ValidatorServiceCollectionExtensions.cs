@@ -306,9 +306,6 @@ public static class ValidatorServiceCollectionExtensions
     public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, ConfigurationOptions configurationOptions)
     {
         var builder = services.AddFluentAnnotationsValidators(configurationOptions);
-        var configurator = builder.UseFluentAnnotations();
-        configurationOptions.ConfigureValidatorRoot?.Invoke(configurator);
-
         var validator = builder.UseFluentAnnotations();
         configurationOptions.ConfigureValidatorRoot?.Invoke(validator);
 
