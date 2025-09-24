@@ -42,6 +42,9 @@ public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalize
     {
         // 1️ Rule-based explicit message override
         rule ??= (attr as FluentValidationAttribute)?.Rule;
+        var formatArg = GetFormatValue(attr);
+        var globalOptions = registry ?? GlobalRegistry.Default;
+        var culture = rule?.Culture ?? globalOptions.SharedCulture ?? CultureInfo.CurrentCulture;
 
         if (rule is not null)
         {
@@ -51,17 +54,17 @@ public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalize
             }
             if (!string.IsNullOrWhiteSpace(rule.Message))
             {
+                if (formatArg != null)
+                {
+                    try { return FormatMessage(CultureInfo.CurrentCulture, rule.Message, new object[] { memberName, formatArg }); }
+                    catch { }
+                }
                 return string.Format(rule.Message, memberName);
             }
         }
 
-        var globalOptions = registry ?? GlobalRegistry.Default;
-        var formatArg = GetFormatValue(attr);
-        var culture = rule?.Culture ?? globalOptions.SharedCulture ?? CultureInfo.CurrentCulture;
         var objectType = objectInstance.GetType();
-
         var attrErrorMessageResourceType = attr.ErrorMessageResourceType ?? objectType.GetCustomAttribute<ValidationResourceAttribute>()?.ErrorMessageResourceType;
-
         var resourceType = rule?.ResourceType ?? attrErrorMessageResourceType ?? globalOptions.SharedResourceType;
         var useConventionalKeys = rule?.UseConventionalKeys ?? globalOptions.UseConventionalKeys;
 
@@ -260,15 +263,19 @@ public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalize
     /// an <c>object[]</c>, or a typed array like <c>int[]</c>.
     /// </param>
     /// <returns>The fully formatted and culture-aware message string.</returns>
-    protected static string FormatMessage(CultureInfo culture, string format, object? args)
+    protected static string FormatMessage(CultureInfo culture, string format, object? args) =>
+    args switch
     {
-        // Dynamically unpack array-based formatArg for string.Format — supports object[], int[], etc.
-        // Falls back to single value formatting if not array
-        return args switch
-        {
-            object[] list => string.Format(culture, format, list),
-            Array arr => string.Format(culture, format, [.. arr.Cast<object>()]),
-            _ => string.Format(culture, format, args)
-        };
-    }
+        null => string.Format(culture, format, args),
+
+        // Special case: [object, object[]]
+        object[] { Length: 2 } arr when arr[0] is object a && arr[1] is object[] b =>
+            string.Format(culture, format, [a, .. b]),
+
+        object[] list => string.Format(culture, format, list),
+
+        Array arr => string.Format(culture, format, [.. arr.Cast<object>()]),
+
+        _ => string.Format(culture, format, args)
+    };
 }
