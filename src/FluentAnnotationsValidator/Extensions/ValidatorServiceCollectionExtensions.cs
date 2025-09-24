@@ -1,6 +1,7 @@
 ﻿using FluentAnnotationsValidator.Abstractions;
 using FluentAnnotationsValidator.Configuration;
 using FluentAnnotationsValidator.Messages;
+using FluentAnnotationsValidator.Metadata;
 using FluentAnnotationsValidator.Runtime.Validators;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -166,6 +167,7 @@ public static class ValidatorServiceCollectionExtensions
             .Where(t => t.IsClass && !t.IsAbstract)
             .Where(t =>
                 typeof(IFluentValidatable).IsAssignableFrom(t) ||
+                t.GetCustomAttributes(typeof(ValidationAttribute)).Any() ||
                 t.GetProperties().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
                 t.GetFields().Any(p => p.GetCustomAttributes(typeof(ValidationAttribute), true).Length > 0) ||
 

@@ -23,6 +23,14 @@ public static class ValidationAttributeAdapter
     {
         ValidationAttribute[] attributes = [.. member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
+        // Add class-level custom attributes to the mix.
+        var classAttributes = instanceType.GetCustomAttributes<Metadata.InheritRulesAttribute>();
+        
+        if (classAttributes.Any())
+        {
+            attributes = [.. classAttributes.Union(classAttributes)];
+        }
+
         LambdaExpression defaultExpression = (object instance) => member;
 
         var rules = new List<IValidationRule>();
