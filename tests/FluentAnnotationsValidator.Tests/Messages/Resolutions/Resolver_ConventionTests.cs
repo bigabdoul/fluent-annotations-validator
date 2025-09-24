@@ -4,6 +4,7 @@ using FluentAnnotationsValidator.Tests.Resources;
 using Microsoft.Extensions.Localization;
 using Moq;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
 using static TestHelpers;
@@ -20,11 +21,11 @@ public class Resolver_ConventionTests
         var registry = GlobalRegistry.Default;
         registry.UseConventionalKeys = true;
         registry.SharedResourceType = typeof(ConventionValidationMessages);
-
+        registry.SharedCulture = ConventionValidationMessages.Culture = CultureInfo.CurrentCulture;
         var localizerFactoryMock = MockStringLocalizerFactory<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
         // 3. Create the resolver with the mocked factory
-        var resolver = new ValidationMessageResolver(new GlobalRegistry(), localizerFactoryMock);
+        var resolver = new ValidationMessageResolver(registry, localizerFactoryMock);
 
         // Act
         var msg = resolver.ResolveMessage(new LoginDtoWithResource(), EmailName, attr);

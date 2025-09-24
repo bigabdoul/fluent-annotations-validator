@@ -3,8 +3,10 @@ using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.Localization;
+using Microsoft.Win32;
 using Moq;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -78,6 +80,7 @@ public class Resolver_PriorityTests
     {
         var attr = new RequiredAttribute();
         var (member, instanceType) = CreateInfo<TestLoginDtoWithResource>(x => x.Email);
+        ConventionValidationMessages.Culture = CultureInfo.CurrentCulture;
         var resolver = GetMessageResolver<ConventionValidationMessages>(ConventionValidationMessages.Email_Required);
 
         // Act
