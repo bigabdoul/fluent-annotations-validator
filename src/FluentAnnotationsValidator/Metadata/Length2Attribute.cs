@@ -20,7 +20,7 @@ namespace FluentAnnotationsValidator.Metadata;
 /// </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
-public class Length2Attribute : LengthAttribute
+public class Length2Attribute : ValidationAttribute
 {
     /// <summary>
     /// Gets or sets an optional message resolver to provide localized error messages.
@@ -31,9 +31,19 @@ public class Length2Attribute : LengthAttribute
     /// Initializes a new instance of the <see cref="Length2Attribute"/> class with a maximum length.
     /// </summary>
     /// <param name="maximum">The maximum allowed length or count.</param>
-    public Length2Attribute(int maximum) : base(0, maximum)
+    public Length2Attribute(int maximum) : this(0, maximum)
     {
         EnsureLegalLengths();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Length2Attribute"/> class with a specified maximum length.
+    /// The minimum length is set to zero by default.
+    /// </summary>
+    /// <param name="maximum">The maximum allowed length.</param>
+    /// <param name="errorMessage">The error message to display when validation fails.</param>
+    public Length2Attribute(int maximum, string errorMessage) : this(0, maximum, errorMessage)
+    {
     }
 
     /// <summary>
@@ -41,10 +51,35 @@ public class Length2Attribute : LengthAttribute
     /// </summary>
     /// <param name="minimum">The minimum allowed length or count.</param>
     /// <param name="maximum">The maximum allowed length or count.</param>
-    public Length2Attribute(int minimum, int maximum) : base(minimum, maximum)
+    public Length2Attribute(int minimum, int maximum)
     {
+        MinimumLength = minimum;
+        MaximumLength = maximum;
         EnsureLegalLengths();
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Length2Attribute"/> class with specified minimum and maximum lengths.
+    /// </summary>
+    /// <param name="minimum">The minimum allowed length.</param>
+    /// <param name="maximum">The maximum allowed length.</param>
+    /// <param name="errorMessage">The error message to display when validation fails.</param>
+    public Length2Attribute(int minimum, int maximum, string errorMessage) : base(errorMessage)
+    {
+        MinimumLength = minimum;
+        MaximumLength = maximum;
+        EnsureLegalLengths();
+    }
+
+    /// <summary>
+    ///     Gets the minimum allowable length of the collection/string data.
+    /// </summary>
+    public int MinimumLength { get; }
+
+    /// <summary>
+    ///     Gets the maximum allowable length of the collection/string data.
+    /// </summary>
+    public int MaximumLength { get; }
 
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
@@ -62,7 +97,7 @@ public class Length2Attribute : LengthAttribute
             : ValidationResult.Success;
     }
 
-    /// <inheritdoc cref="FormatErrorMessage(string)"/>
+    /// <inheritdoc />
     public override string FormatErrorMessage(string name)
     {
         EnsureLegalLengths();
@@ -73,7 +108,7 @@ public class Length2Attribute : LengthAttribute
     /// Checks that <see cref="LengthAttribute.MinimumLength"/> and <see cref="LengthAttribute.MaximumLength"/> have legal values.
     /// Throws <see cref="ArgumentOutOfRangeException"/> if not.
     /// </summary>
-    private void EnsureLegalLengths()
+    protected virtual void EnsureLegalLengths()
     {
         if (MinimumLength < 0) throw new ArgumentOutOfRangeException(nameof(MinimumLength), "Cannot be negative.");
 

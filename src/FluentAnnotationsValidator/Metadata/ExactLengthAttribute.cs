@@ -1,4 +1,6 @@
-﻿namespace FluentAnnotationsValidator.Metadata;
+﻿using System.Globalization;
+
+namespace FluentAnnotationsValidator.Metadata;
 
 /// <summary>
 /// Specifies that a string, collection, or other countable type must have an exact, specified length.
@@ -9,6 +11,20 @@
 /// enforce a precise character count for strings or item count for collections and arrays.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
-public sealed class ExactLengthAttribute(int length) : Length2Attribute(length, length)
+public sealed class ExactLengthAttribute(int length) : Length2Attribute(length, length, "The string or collection {0} must contain exactly {1} items.")
 {
+    /// <inheritdoc />
+    public override string FormatErrorMessage(string name)
+    {
+        EnsureLegalLengths();
+        return string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, MinimumLength);
+    }
+
+    /// <inheritdoc />
+    protected override void EnsureLegalLengths()
+    {
+        base.EnsureLegalLengths();
+        if (MinimumLength != MaximumLength)
+            throw new ArgumentException("The lengths are not matching.");
+    }
 }
