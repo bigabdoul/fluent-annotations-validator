@@ -19,7 +19,7 @@ public class BeforeValidationConfigurationTests
 
     public BeforeValidationConfigurationTests()
     {
-        _services.AddFluentAnnotations
+        _services.AddFluentAnnotationsValidators
         (
             new ConfigurationOptions
             {

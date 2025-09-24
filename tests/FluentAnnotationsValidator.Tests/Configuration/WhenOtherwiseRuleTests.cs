@@ -16,7 +16,7 @@ public class WhenOtherwiseRuleTests
 
     public WhenOtherwiseRuleTests()
     {
-        _services.AddFluentAnnotations(new ConfigurationOptions
+        _services.AddFluentAnnotationsValidators(new ConfigurationOptions
         {
             ConfigureValidatorRoot = config => _configurator = config.For<ConditionalTestDto>(),
             ExtraValidatableTypesFactory = () => [typeof(ConditionalTestDto)],

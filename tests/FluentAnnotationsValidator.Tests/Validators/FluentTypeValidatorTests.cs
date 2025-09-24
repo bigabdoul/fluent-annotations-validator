@@ -3,7 +3,9 @@ using FluentAnnotationsValidator.Tests.Models;
 using FluentAnnotationsValidator.Tests.Resources;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 using static TestHelpers;
@@ -26,7 +28,7 @@ public class FluentTypeValidatorTests
 
     public FluentTypeValidatorTests()
     {
-        _services.AddFluentAnnotations(new ConfigurationOptions
+        _services.AddFluentAnnotationsValidators(new ConfigurationOptions
         {
             ConfigureRegistry = options => _mockOptions = new(options),
             ConfigureValidatorRoot = validation =>
@@ -405,6 +407,7 @@ public class FluentTypeValidatorTests
     public void Preemptive_Rule_ComplexPassword_Should_Return_CorrectResult(string password, bool validResult)
     {
         // Arrange
+        ConventionValidationMessages.Culture = CultureInfo.CurrentCulture;
         var configurator = _configurator.ClearRules(); // Focus only on the Password property
 
         configurator.Rule(x => x.Password, must: BeComplexPassword)

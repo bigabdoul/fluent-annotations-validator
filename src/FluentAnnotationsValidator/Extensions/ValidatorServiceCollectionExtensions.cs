@@ -190,8 +190,6 @@ public static class ValidatorServiceCollectionExtensions
 
         configurationOptions.ConfigureRegistry?.Invoke(ruleRegistry);
 
-        var builder = new FluentAnnotationsBuilder(services, ruleRegistry);
-
         // Filter the types to only include the most derived classes
         var mostDerivedTypes = attributeDecoratedTypes
             .Where(type => !attributeDecoratedTypes.Any(otherType => otherType.IsSubclassOf(type)))
@@ -258,6 +256,11 @@ public static class ValidatorServiceCollectionExtensions
         // Register the custom message resolver and the main validator service
         services.AddSingleton<IValidationMessageResolver, ValidationMessageResolver>();
 
+        var builder = new FluentAnnotationsBuilder(services, ruleRegistry);
+        var validator = new FluentTypeValidatorRoot(ruleRegistry);
+        services.AddTransient(sp => validator);
+        configurationOptions.ConfigureValidatorRoot?.Invoke(validator);
+
         return builder;
     }
 
@@ -281,15 +284,19 @@ public static class ValidatorServiceCollectionExtensions
     Action<LocalizationOptions>? configureLocalization = null,
     Func<IStringLocalizerFactory, StringLocalizerFactoryResult>? localizerFactory = null,
     Func<IEnumerable<Type>>? extraValidatableTypes = null,
-    params Type[] targetAssembliesTypes) => services.AddFluentAnnotations(new ConfigurationOptions
+    params Type[] targetAssembliesTypes)
     {
-        ConfigureValidatorRoot = configure,
-        ConfigureRegistry = configureRegistry,
-        ConfigureLocalization = configureLocalization,
-        ExtraValidatableTypesFactory = extraValidatableTypes,
-        LocalizerFactory = localizerFactory,
-        TargetAssembliesTypes = targetAssembliesTypes,
-    });
+        services.AddFluentAnnotationsValidators(new ConfigurationOptions
+        {
+            ConfigureValidatorRoot = configure,
+            ConfigureRegistry = configureRegistry,
+            ConfigureLocalization = configureLocalization,
+            ExtraValidatableTypesFactory = extraValidatableTypes,
+            LocalizerFactory = localizerFactory,
+            TargetAssembliesTypes = targetAssembliesTypes,
+        });
+        return services;
+    }
 
     /// <summary>
     /// Registers and configures the Fluent Annotations Validator in the service collection.
@@ -303,12 +310,10 @@ public static class ValidatorServiceCollectionExtensions
     /// <param name="services">The <see cref="IServiceCollection"/> to add the validator services to.</param>
     /// <param name="configurationOptions">An object containing all the configuration options for the validator setup.</param>
     /// <returns>The same <see cref="IServiceCollection"/> instance so that additional services can be chained.</returns>
+    [Obsolete("Use " + nameof(AddFluentAnnotationsValidators))]
     public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, ConfigurationOptions configurationOptions)
     {
-        var builder = services.AddFluentAnnotationsValidators(configurationOptions);
-        var validator = builder.UseFluentAnnotations();
-        configurationOptions.ConfigureValidatorRoot?.Invoke(validator);
-
+        _ = services.AddFluentAnnotationsValidators(configurationOptions);
         return services;
     }
 
