@@ -22,8 +22,6 @@ public class FluentTypeValidatorRoot(IValidationRuleGroupRegistry registry) : IF
     /// <returns>A <see cref="FluentTypeValidator{T}"/> to define rules for the specified type.</returns>
     public virtual FluentTypeValidator<T> For<T>()
     {
-        // Any new configuration for the type marks it as not built.
-        Registry.MarkBuilt(typeof(T), false);
         return new(this);
     }
 

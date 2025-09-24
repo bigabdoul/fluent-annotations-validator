@@ -138,6 +138,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
             useConventionalKeys: _useConventionalKeys
         );
 
+        MarkAsUnbuilt();
         return this;
     }
 
@@ -165,7 +166,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
 
         var configurator = new ValidationRuleBuilder<T, TMember>(newPendingRule, Registry);
         _validationRuleBuilders.Add(configurator);
-
+        MarkAsUnbuilt();
         return configurator;
     }
 
@@ -184,7 +185,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
         var newPendingRule = new PendingRule<T>(expression);
         var configurator = new ValidationRuleBuilder<T, TElement>(newPendingRule, Registry);
         _validationRuleBuilders.Add(configurator);
-
+        MarkAsUnbuilt();
         return configurator;
     }
 
@@ -513,6 +514,8 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
     {
         CommitCurrentRule();
 
+        Registry.MarkBuilt(typeof(T), true);
+
         if (IsEmpty)
         {
             return RulesFromLastBuild.AsReadOnly();
@@ -550,8 +553,6 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
         _validationRuleBuilders.Clear();
         RulesFromLastBuild.Clear();
         RulesFromLastBuild.AddRange(registrationList);
-
-        Registry.MarkBuilt(typeof(T), true);
 
         return registrationList;
 
@@ -847,6 +848,12 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
     }
 
     #region helpers
+
+    private void MarkAsUnbuilt()
+    {
+        // Any new configuration for the type marks it as not built.
+        Registry.MarkBuilt(typeof(T), false);
+    }
 
     [DoesNotReturn]
     private static void ThrowPreValidationError(string memberName)
