@@ -2,34 +2,43 @@
 
 namespace FluentAnnotationsValidator.Tests.Models;
 
-public class FluentRuleRegistrationDto
+public class FluentRuleRegistrationBase
+{
+    public virtual string Email { get; set; } = default!;
+
+    public virtual string Password { get; set; } = default!;
+
+    public virtual string? FirstName { get; set; }
+
+    public virtual string? LastName { get; set; }
+
+    public virtual DateTime? BirthDate { get; set; }
+}
+
+public class FluentRuleRegistrationDto : FluentRuleRegistrationBase
 {
     [FluentRule(typeof(TestRegistrationDto))]
-    public string Email { get; set; } = default!;
+    public override string Email { get; set; } = default!;
     
     [FluentRule(typeof(TestRegistrationDto))]
-    public string Password { get; set; } = default!;
+    public override string Password { get; set; } = default!;
 
     [FluentRule(typeof(TestRegistrationDto))]
-    public string? FirstName { get; set; }
+    public override string? FirstName { get; set; }
     
     [FluentRule(typeof(TestRegistrationDto))]
-    public string? LastName { get; set; }
+    public override string? LastName { get; set; }
     
     [FluentRule(typeof(TestRegistrationDto))]
-    public DateTime? BirthDate { get; set; }
+    public override DateTime? BirthDate { get; set; }
 }
 
 [InheritRules(typeof(TestRegistrationDto))]
-public class InheritRulesRegistrationDto
+public class InheritRulesRegistrationDto : FluentRuleRegistrationBase
 {
-    public string Email { get; set; } = default!;
+}
 
-    public string Password { get; set; } = default!;
-
-    public string? FirstName { get; set; }
-
-    public string? LastName { get; set; }
-
-    public DateTime? BirthDate { get; set; }
+[InheritRulesAsync(typeof(TestRegistrationDto))]
+public class InheritRulesAsyncRegistrationDto : FluentRuleRegistrationBase
+{
 }

@@ -185,4 +185,55 @@ public class FluentRuleAttributeTests
         result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains("must be 'Jonathan'"));
         result.Errors.Should().Contain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("must be 'Doe'"));
     }
+
+
+    [Fact]
+    public async Task InheritRUles_Should_Validate_Static_And_Dynamic_Rules_Async()
+    {
+        // Arrange
+        var dto = new InheritRulesAsyncRegistrationDto
+        {
+            Email = "user", // Invalid: [EmailAddress]
+            Password = "Strong!3290P@$$w0rD",
+            FirstName = "Jean", // Invalid: Must be "Jonathan"
+            LastName = "Dupont", // Invalid: Must be "Doe"
+        };
+
+        // Further configure TestRegistrationDto by adding dynamic rules, which
+        // should get picked up by the validator of InheritRulesAsyncRegistrationDto.
+        var dynamicConfig = _fluentTypeValidatorRoot.For<TestRegistrationDto>();
+
+        dynamicConfig.RuleFor(x => x.FirstName)
+            .Must(firstname => firstname == "Jonathan")
+            .WithMessage("The first name must be 'Jonathan'.");
+
+        dynamicConfig.RuleFor(x => x.LastName)
+            .Must(lastname => lastname == "Doe")
+            .WithMessage("The last name must be 'Doe'.");
+
+        dynamicConfig.Build();
+
+        var configurator = _fluentTypeValidatorRoot.For<InheritRulesAsyncRegistrationDto>();
+        configurator.RuleFor(r => r.FirstName)
+            .ExactLength(8)
+            .WithMessage("{0} must be exactly {1} chars long.");
+
+        configurator.Build();
+
+        var validator = _serviceProvider.GetRequiredService<IFluentValidator<InheritRulesAsyncRegistrationDto>>();
+
+        // Act
+        var result = await validator.ValidateAsync(dto);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().HaveCount(4);
+
+        result.Errors.Should().Contain(e => e.PropertyName == InheritEmail && e.ErrorMessage.Contains("not a valid e-mail"));
+        result.Errors.Should().NotContain(e => e.PropertyName == InheritPassword);
+
+        result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains($"{InheritFirstName} must be exactly 8 chars long"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains("must be 'Jonathan'"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("must be 'Doe'"));
+    }
 }
