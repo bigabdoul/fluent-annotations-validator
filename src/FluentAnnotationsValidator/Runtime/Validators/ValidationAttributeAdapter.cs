@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Runtime.Validators;
+using Metadata;
 
 /// <summary>
 /// Converts <see cref="ValidationAttribute"/> instances into runtime validation rules.
@@ -24,13 +25,19 @@ public static class ValidationAttributeAdapter
         ValidationAttribute[] attributes = [.. member.GetCustomAttributes<ValidationAttribute>(inherit: true)];
 
         // Add class-level custom attributes to the mix.
-        var classAttributes = instanceType.GetCustomAttributes<Metadata.InheritRulesAttribute>();
-        
-        if (classAttributes.Any())
+        var classAsyncAttributes = instanceType.GetCustomAttributes<InheritRulesAsyncAttribute>(inherit: true);
+        var classAttributes = instanceType.GetCustomAttributes<InheritRulesAttribute>(inherit: true);
+
+        if (classAsyncAttributes.Any())
         {
-            attributes = [.. classAttributes.Union(classAttributes)];
+            attributes = [.. attributes.Union(classAsyncAttributes)];
         }
 
+        if (classAttributes.Any())
+        {
+            attributes = [.. attributes.Union(classAttributes)];
+        }
+        
         LambdaExpression defaultExpression = (object instance) => member;
 
         var rules = new List<IValidationRule>();
