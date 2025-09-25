@@ -798,29 +798,40 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
     }
 
     /// <summary>
-    /// Performs consistency checks before adding the specified rules to the <see cref="ValidationRuleGroupRegistry"/>.
+    /// Organizes and registers validation rules by their associated type and member 
+    /// while performing consistency checks and before adding the specified rules to the 
+    /// <see cref="ValidationRuleGroupRegistry"/>.
     /// </summary>
     /// <param name="rules">The rules to check and register.</param>
+    /// <remarks>It handles the inheritance hierarchy to ensure rules are correctly applied to subclasses.</remarks>
     protected virtual void RegisterRules(List<IValidationRule> rules)
     {
-        // Group rules by type and ensure we don't include member's without reflected or declaring type.
-        var typeGroups = rules.GroupBy(r => (r.Member.ReflectedType ?? r.Member.DeclaringType)!)
+        // Group the validation rules by the type of the member they apply to.
+        // This ensures we have a clear, single source of rules for each member's defining type.
+        var groupedRules = rules.GroupBy(r => (r.Member.ReflectedType ?? r.Member.DeclaringType)!)
             .Where(r => r.Key != null);
 
-        foreach (var validationRules in typeGroups)
-        {
-            var type = validationRules.Key;
+        var currentType = typeof(T);
 
-            // Each group corresponds to a specific type.
+        foreach (var validationRules in groupedRules)
+        {
+            // Determine the most appropriate type to register the rules under, considering inheritance.
+            // If the current type (T) is a subclass of the member's type, we use the current type.
+            // This ensures that inherited rules are correctly registered for the specific model being validated.
+            // Otherwise, we use the original type where the member was defined.
+            var type = currentType.IsSubclassOf(validationRules.Key) ? currentType : validationRules.Key;
+
+            // Create a new group to hold the rules for this specific type.
             ValidationRuleGroupList group = new(type);
 
-            // Group the rules by member to optimize merge operations within the registry.
+            // Further group the rules by member to streamline the registry merge process.
+            // This prevents duplicate rule groups for the same member from being created.
             foreach (var memberRules in validationRules.GroupBy(r => r.Member))
             {
                 List<IValidationRule> memberRuleList = [];
                 foreach (var rule in memberRules)
                 {
-                    // Check for duplicate pre-validation delegates using the dedicated method.
+                    // Ensure there's only one 'ConfigureBeforeValidation' delegate per member.
                     if (rule.ConfigureBeforeValidation != null)
                     {
                         EnsureSinglePreValidationValueProvider(rule.Member, rule.ConfigureBeforeValidation);
@@ -830,7 +841,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
                 group.Add(new ValidationRuleGroup(type, memberRules.Key, memberRuleList));
             }
 
-            // Register the rules for the current type
+            // Add the newly organized rule group to the central registry.
             Registry.AddRules(type, group);
         }
     }
