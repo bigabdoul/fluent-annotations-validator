@@ -1,31 +1,30 @@
-﻿using FluentAnnotationsValidator.Extensions;
+﻿using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Extensions;
 using FluentAnnotationsValidator.Results;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Metadata;
 
 /// <summary>
-/// Specifies that a set of reusable validation rules should be applied to a member.
+/// Specifies that a set of reusable validation rules should be applied to a member asynchronously.
 /// The rules are sourced from a class that has been configured with the validator.
 /// </summary>
 /// <remarks>
-/// This attribute enables the reuse of complex validation logic by referencing a type
-/// that contains the configured rules.
-/// </remarks>
-/// <remarks>
-/// Initializes a new instance of the <see cref="FluentRuleAttribute"/> class.
+/// Initializes a new instance of the <see cref="FluentRuleAsyncAttribute"/> class.
 /// </remarks>
 /// <param name="objectType">The type that holds the validation rules.</param>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = true)]
-public class FluentRuleAttribute(Type objectType) : FluentValidationAttribute
+public class FluentRuleAsyncAttribute(Type objectType) : FluentRuleAttribute(objectType), IAsyncValidationAttribute
 {
-    /// <summary>
-    /// Gets the type that contains the configured validation rules to be applied.
-    /// </summary>
-    public Type ObjectType { get; } = objectType ?? throw new ArgumentNullException(nameof(objectType));
-
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+    {
+        throw new InvalidOperationException("The attribute supports only asynchronous validation. " +
+            $"Invoke the {nameof(ValidateAsync)} method.");
+    }
+
+    /// <inheritdoc/>
+    public async Task<ValidationResult?> ValidateAsync(object? value, ValidationContext validationContext, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(value);
 
@@ -42,7 +41,7 @@ public class FluentRuleAttribute(Type objectType) : FluentValidationAttribute
 
         foreach (var rules in memberRules)
         {
-            var results = rules.Validate(value, member, resolver, registry, items);
+            var results = await rules.ValidateAsync(value, member, resolver, registry, items, cancellationToken);
             if (results.Count > 0)
             {
                 Errors.AddRange(results.Select(e => new FluentValidationFailure(e)));
