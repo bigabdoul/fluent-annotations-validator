@@ -11,6 +11,16 @@ public class FluentRuleAttributeTests
     private readonly FluentTypeValidatorRoot _fluentTypeValidatorRoot;
     private readonly FluentTypeValidator<FluentRuleRegistrationDto> _configurator;
 
+    private const string FluentEmail = nameof(FluentRuleRegistrationDto.Email);
+    private const string FluentPassword = nameof(FluentRuleRegistrationDto.Password);
+    private const string FluentFirstName = nameof(FluentRuleRegistrationDto.FirstName);
+    private const string FluentLastName = nameof(FluentRuleRegistrationDto.LastName);
+
+    private const string InheritEmail = nameof(InheritRulesRegistrationDto.Email);
+    private const string InheritFirstName = nameof(InheritRulesRegistrationDto.FirstName);
+    private const string InheritLastName = nameof(InheritRulesRegistrationDto.LastName);
+    private const string InheritPassword = nameof(InheritRulesRegistrationDto.Password);
+
     private IFluentValidator<FluentRuleRegistrationDto> Validator =>
         _serviceProvider.GetRequiredService<IFluentValidator<FluentRuleRegistrationDto>>();
 
@@ -38,10 +48,10 @@ public class FluentRuleAttributeTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(3);
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Email) && e.ErrorMessage.Contains("is not a valid e-mail address"));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Password) && e.ErrorMessage.Contains("minimum length"));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.FirstName) && e.ErrorMessage.Contains("maximum length"));
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.LastName));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentEmail && e.ErrorMessage.Contains("is not a valid e-mail address"));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentPassword && e.ErrorMessage.Contains("minimum length"));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentFirstName && e.ErrorMessage.Contains("maximum length"));
+        result.Errors.Should().NotContain(e => e.PropertyName == FluentLastName);
     }
 
     [Fact]
@@ -59,8 +69,8 @@ public class FluentRuleAttributeTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(1);
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Email) && e.AttemptedValue == null && e.ErrorMessage.Contains("required"));
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Password));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentEmail && e.AttemptedValue == null && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().NotContain(e => e.PropertyName == FluentPassword);
     }
 
 
@@ -85,9 +95,9 @@ public class FluentRuleAttributeTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(2);
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Email) && e.ErrorMessage.Contains("required"));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Email) && e.ErrorMessage.Contains("cannot be empty"));
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(FluentRuleRegistrationDto.Password));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentEmail && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().Contain(e => e.PropertyName == FluentEmail && e.ErrorMessage.Contains("cannot be empty"));
+        result.Errors.Should().NotContain(e => e.PropertyName == FluentPassword);
     }
 
     [Fact]
@@ -117,13 +127,13 @@ public class FluentRuleAttributeTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(4);
 
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.Password) && e.ErrorMessage.Contains("required"));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.Password) && e.ErrorMessage.Contains("minimum length"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritPassword && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritPassword && e.ErrorMessage.Contains("minimum length"));
         
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.FirstName) && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains("required"));
         
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.LastName) && e.ErrorMessage.Contains("maximum length"));
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.LastName) && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("maximum length"));
+        result.Errors.Should().NotContain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("required"));
     }
 
     [Fact]
@@ -168,10 +178,11 @@ public class FluentRuleAttributeTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(4);
 
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.Email) && e.ErrorMessage.Contains("not a valid e-mail"));
-        result.Errors.Should().NotContain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.Password));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritEmail && e.ErrorMessage.Contains("not a valid e-mail"));
+        result.Errors.Should().NotContain(e => e.PropertyName == InheritPassword);
 
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.FirstName) && e.ErrorMessage.Contains("must be 'Jonathan'"));
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(InheritRulesRegistrationDto.LastName) && e.ErrorMessage.Contains("must be 'Doe'"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains($"{InheritFirstName} must be exactly 8 chars long"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains("must be 'Jonathan'"));
+        result.Errors.Should().Contain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("must be 'Doe'"));
     }
 }
