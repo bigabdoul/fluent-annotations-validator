@@ -226,6 +226,7 @@ public class ValidationMessageResolver(IGlobalRegistry registry, IStringLocalize
         return attr switch
         {
             ExactLengthAttribute m => m.MinimumLength,
+            LengthAttribute m => m.MaximumLength,
             Length2Attribute m => m.MinimumLength > 0
                 ? new[] { m.MinimumLength, m.MaximumLength }
                 : m.MaximumLength,
