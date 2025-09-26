@@ -6,6 +6,71 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0-preview.2.3] - 2025-09-26
+
+This preview release introduces advanced validation capabilities, dynamic rule composition, and full support for inheritance-aware and asynchronous validation. It’s a major step toward a fully fluent, annotation-driven validation engine with zero external dependencies.
+
+---
+
+### New Features
+
+- **RuleForEach Support**  
+  Validate each item in a collection with fluent rules, including nested `ChildRules`, `When(...)`, and `Otherwise(...)` branches.
+
+- **LengthAttribute Integration**  
+  Added support for `[Length]` annotations to enforce exact or ranged string lengths.
+
+- **ExactLength Rule**  
+  Introduced `.ExactLength(n)` for precise string length enforcement with customizable error messages.
+
+- **BeforeValidation Hooks**  
+  Normalize or initialize values before validation begins using `.BeforeValidation(...)`.
+
+- **Dynamic Rule Composition**  
+  Inject rules at runtime using `.RuleFor(...)` and `.Build()`, ideal for context-aware validation scenarios.
+
+- **Inheritance-Aware Validation**  
+  Validators now respect rules defined in base types and apply them to derived DTOs, including both static and dynamic rules.
+
+- **Async Validation Support**  
+  Full support for asynchronous validation flows, including inherited and dynamically composed rules.
+
+- **Multi-Error Aggregation**  
+  Properties can accumulate multiple errors from different rule sources (e.g., `[Required]`, `.NotEmpty()`, `.Must(...)`).
+
+---
+
+### Improvements
+
+- Improved `FluentTypeValidator<T>` configuration flow with clearer `Build()` semantics.
+- Enhanced diagnostics and error messaging for conditional validation branches.
+
+---
+
+### Testing & Debugging
+
+- A total fo 100 unit tests for:
+  - Static and dynamic rule validation.
+  - Inheritance scenarios with async validation.
+  - Conditional logic with `Must(...)`, `NotEmpty()`, and `ExactLength(...)`.
+  - Error aggregation and message formatting.
+- Improved test workflow alignment with build artifacts.
+- Full Source Link and step-through debugging support.
+
+---
+
+### Installation
+
+```bash
+dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2.3
+```
+
+---
+
+This release sets the foundation for a stable v2.0.0 by refining the fluent DSL, improving extensibility, and empowering developers to build scalable, contributor-friendly validation flows.
+
+---
+
 ## [v2.0.0-preview.2.2] - 2025-08-31
 
 This release introduces a new, more expressive **fluent API**, marking a significant 

@@ -1,24 +1,53 @@
-## FluentAnnotationsValidator v2.0.0-preview.2.2
+## FluentAnnotationsValidator v2.0.0-preview.2.3
 
-**Release date:** 2025-08-31
+**Release date:** 2025-09-26
 
-This release, `v2.0.0-preview.2.2`, marks a major architectural shift with the introduction of a new, highly expressive **fluent API**. This new API provides a more powerful and intuitive way to define complex and conditional validation rules, moving beyond a simple attribute-based approach.
+This preview release introduces powerful new capabilities for collection validation, enhanced conditional logic, and improved developer ergonomics. It continues the evolution toward a fully native, annotation-driven validation engine—no external dependencies required.
 
-#### Key Highlights
+### New Features
 
-#### Conditional and Custom Validation
-* **`When` and `Otherwise`**: You can now define `if/else` logic within your validation rules. This allows for complex validation scenarios where rules are only applied when a specific condition is met.
-* **`Must`**: Integrate custom, predicate-based validation logic directly into your fluent chain for highly specific business rules that go beyond standard data annotations.
+- **RuleForEach Support**:  
+  Apply validation rules to each item in a collection with full support for conditional logic via `When(...)` and `Otherwise(...)`. Nested `ChildRules` allow for deep, expressive validation of complex DTO hierarchies.
 
-#### Pre-Validation Value Providers
-A brand-new mechanism has been introduced to give you control over a member's value *before* validation begins. This is perfect for data normalization, populating default values, or preparing data from external sources.
+- **Pre-Validation Value Providers**:  
+  Introduced `BeforeValidation(...)` hooks to normalize or initialize values before validation begins. Ideal for scenarios like auto-generating GUIDs or sanitizing input.
 
-#### Enhanced Fluent API
-* **`Rule(...)`**: This method now preemptively replaces existing rules for a member, making it the perfect tool for explicitly overriding a previous configuration.
-* **`RuleFor(...)`**: This new method provides a non-destructive way to add rules to a member, allowing you to chain validation logic without overwriting previous rules.
+- **Dynamic Rule Composition**:  
+  Validators now support runtime rule injection via `.RuleFor(...)` and `.Build()`, enabling flexible, context-aware validation logic without modifying DTOs.
 
-#### Core Changes & Utilities
-* **Dependency Removal**: The dependency on the `FluentValidation` package has been removed entirely. All references to `IFluentValidator<T>` should be updated to `IFluentValidator<T>`.
-* **MemberInfo Extensions**: New utility methods (`GetValue`, `SetValue`, and `TrySetValue`) have been added to simplify dynamic access to object properties and fields using reflection.
+- **Inheritance-Aware Validation**:  
+  Validation rules defined for base types (e.g., `TestRegistrationDto`) are automatically respected by derived types (e.g., `InheritRulesRegistrationDto`), including both static and dynamic rules.
 
-This version lays the groundwork for a more flexible, powerful, and maintainable validation framework.
+- **ExactLength Rule Support**:  
+  Introduced `.ExactLength(n)` for precise string length enforcement, with customizable error messages using format placeholders.
+
+- **Async Validation for Inherited Rules**:  
+  Full support for asynchronous validation flows, even when rules are inherited or composed dynamically. This ensures consistent behavior across sync and async pipelines.
+
+- **Multi-Error Aggregation**:  
+  Properties can now accumulate multiple validation errors from different rule sources (e.g., `[Required]`, `.NotEmpty()`, `.Must(...)`), improving diagnostic clarity.
+
+### Improvements
+
+- Refined async unit testing for inheritance scenarios.
+- Improved test workflow alignment with build artifacts.
+- Updated documentation and examples for advanced validation flows.
+- Enhanced support for models without `[ValidationAttribute]` via `IFluentValidatable` or `extraValidatableTypes`.
+
+### Testing & Debugging
+
+- Expanded test coverage for:
+  - Deeply nested validation chains.
+  - Conditional branches with multiple violations.
+  - Localization fallback and override behavior.
+- Full Source Link and step-through debugging support.
+
+### Installation
+
+```bash
+dotnet add package FluentAnnotationsValidator --version 2.0.0-preview.2.3
+```
+
+---
+
+This release sets the stage for a stable v2.0.0 by refining the fluent DSL and empowering developers to build scalable, contributor-friendly validation flows.
