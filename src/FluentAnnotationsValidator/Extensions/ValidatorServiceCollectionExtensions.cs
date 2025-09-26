@@ -310,7 +310,6 @@ public static class ValidatorServiceCollectionExtensions
     /// <param name="services">The <see cref="IServiceCollection"/> to add the validator services to.</param>
     /// <param name="configurationOptions">An object containing all the configuration options for the validator setup.</param>
     /// <returns>The same <see cref="IServiceCollection"/> instance so that additional services can be chained.</returns>
-    [Obsolete("Use " + nameof(AddFluentAnnotationsValidators))]
     public static IServiceCollection AddFluentAnnotations(this IServiceCollection services, ConfigurationOptions configurationOptions)
     {
         _ = services.AddFluentAnnotationsValidators(configurationOptions);
