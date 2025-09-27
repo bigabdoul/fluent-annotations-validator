@@ -39,13 +39,12 @@ public class Compare2Attribute(string otherProperty, ComparisonOperator @operato
     /// <inheritdoc/>
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
-        var instance = validationContext.ObjectInstance;
-        var otherProp = instance.GetType().GetProperty(otherProperty, BindingFlags.Public | BindingFlags.Instance);
+        var otherMember = validationContext.ObjectType.GetMember(otherProperty).FirstOrDefault();
 
-        if (otherProp is null)
-            return new ValidationResult($"Property '{otherProperty}' not found on type '{instance.GetType().Name}'.");
+        if (otherMember is null)
+            return new ValidationResult($"Member '{otherProperty}' not found on type '{validationContext.ObjectType.Name}'.");
 
-        var otherValue = otherProp.GetValue(instance);
+        var otherValue = otherMember.GetValue(validationContext.ObjectInstance);
 
         if (value is IComparable left && otherValue is IComparable right)
         {
