@@ -1,0 +1,93 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace FluentAnnotationsValidator.Metadata;
+
+/// <summary>
+/// Specifies the maximum allowable value for a data field. The minimum is automatically set to the minimum value of the corresponding type.
+/// </summary>
+public class MaximumAttribute : RangeAttribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="byte"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(byte value) : base(byte.MinValue, value) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="short"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(short value) : base(short.MinValue, value) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="int"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(int value) : base(int.MinValue, value) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="long"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(long value) : base(typeof(long), $"{long.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="Int128"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(Int128 value) : base(typeof(Int128), $"{Int128.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="IntPtr"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(IntPtr value) : base(typeof(IntPtr), $"{IntPtr.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="float"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(float value) : base(typeof(float), $"{float.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="double"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(double value) : base(double.MinValue, value) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="decimal"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(decimal value) : base(typeof(decimal), $"{decimal.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="ushort"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(ushort value) : base(typeof(ushort), $"{ushort.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="uint"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(uint value) : base(typeof(uint), $"{uint.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="UIntPtr"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(UIntPtr value) : base(typeof(UIntPtr), $"{UIntPtr.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="ulong"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(ulong value) : base(typeof(ulong), $"{ulong.MinValue}", value.ToString()) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="UInt128"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(UInt128 value) : base(typeof(UInt128), $"{UInt128.MinValue}", value.ToString()) { }
+}

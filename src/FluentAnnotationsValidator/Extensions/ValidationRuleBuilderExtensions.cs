@@ -272,6 +272,329 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>A reference to the current builder instance for method chaining.</returns>
     public static IValidationRuleBuilder<T, TProp> Range<T, TProp>(this IValidationRuleBuilder<T, TProp> builder,
         Type type, string minimum, string maximum) => builder.SetValidator(new RangeAttribute(type, minimum, maximum));
+    #region MinimumAttribute
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, byte value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, short value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, int value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, long value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, Int128 value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, IntPtr value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, float value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, double value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, decimal value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    #region unsigned overloads
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, ushort value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, uint value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, ulong value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, UIntPtr value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be greater than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The minimum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, UInt128 value)
+        => builder.SetValidator(new MinimumAttribute(value));
+
+    #endregion
+
+    #endregion
+
+    #region MaximumAttribute
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, byte value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, short value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, int value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, long value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, Int128 value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, IntPtr value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, float value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, double value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, decimal value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    #region unsigned overloads
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, ushort value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, uint value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, ulong value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, UIntPtr value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, UInt128 value)
+        => builder.SetValidator(new MaximumAttribute(value));
+
+    #endregion
+
+    #endregion
 
     /// <summary>
     /// Adds a rule by instantiating and attaching a specified <see cref="ValidationAttribute"/> to the rule builder.
