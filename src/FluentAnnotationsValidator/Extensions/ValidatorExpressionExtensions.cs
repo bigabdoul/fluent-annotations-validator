@@ -61,7 +61,7 @@ public static class ValidatorExpressionExtensions
             MethodInfo method when method.GetParameters().Length == 0 =>
                 method.Invoke(instance, null),
             //ConstructorInfo => null,
-            Type type => instance,
+            Type => instance,
             _ => throw new NotSupportedException("The specified expression is not supported.")
         };
     }
