@@ -1,6 +1,7 @@
 ﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
 
@@ -235,5 +236,46 @@ public class FluentRuleAttributeTests
         result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains($"{InheritFirstName} must be exactly 8 chars long"));
         result.Errors.Should().Contain(e => e.PropertyName == InheritFirstName && e.ErrorMessage.Contains("must be 'Jonathan'"));
         result.Errors.Should().Contain(e => e.PropertyName == InheritLastName && e.ErrorMessage.Contains("must be 'Doe'"));
+    }
+
+    [Fact]
+    public void FluentRule_Should_Validate_InstanceExpression()
+    {
+        var dto = new FluentRuleRegistrationDto
+        {
+            Email = "user1@example.com",
+            Password = "short", // Too short: [MinLength(6)]
+        };
+
+        static bool SetInvalidEmail(FluentRuleRegistrationDto x)
+        {
+            // Invalidate the email; it shouldn't have any effect
+            // since the initial value was OK. If mutating the instance
+            // is a must, consider defining the BeforeValidation() hook.
+            x.Email = "user1";
+            return false; // This makes the validation fail.
+        }
+
+        // Since this rule is inherited from TestRegistrationDto, trying to remove it
+        // won't have any effect on the FluentRuleRegistrationDto type validator.
+        // If we wanted to suppress the rule, we should do it on a type validator for
+        // TestRegistrationDto. We'll keep this as a reminder to implement inherited
+        // rules removal.
+
+        //_configurator.RemoveRulesFor(x => x.Email, typeof(EmailAddressAttribute));
+
+        _configurator.RuleFor(x => x)
+            .Must(SetInvalidEmail); // This should set a valid email.
+
+        _configurator.Build();
+
+        // Act
+        var result = Validator.Validate(dto);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().HaveCount(2);
+        result.Errors.Should().Contain(e => e.PropertyName == FluentPassword && e.ErrorMessage.Contains("minimum length"));
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(FluentRuleRegistrationDto) && e.ErrorMessage.Contains("invalid"));
     }
 }

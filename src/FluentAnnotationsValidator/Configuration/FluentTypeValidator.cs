@@ -808,7 +808,7 @@ public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
     {
         // Group the validation rules by the type of the member they apply to.
         // This ensures we have a clear, single source of rules for each member's defining type.
-        var groupedRules = rules.GroupBy(r => (r.Member.ReflectedType ?? r.Member.DeclaringType)!)
+        var groupedRules = rules.GroupBy(r => (r.Member.ReflectedType ?? r.Member.DeclaringType ?? r.Member as Type)!)
             .Where(r => r.Key != null);
 
         var currentType = typeof(T);

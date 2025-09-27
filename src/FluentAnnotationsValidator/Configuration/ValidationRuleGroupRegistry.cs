@@ -290,7 +290,7 @@ public class ValidationRuleGroupRegistry : IValidationRuleGroupRegistry
     {
         var rules = GetRulesForType(forType);
         return rules
-            .Where(rule => true == rule.Member.ReflectedType?.IsAssignableFrom(forType))
+            .Where(rule => (rule.Member as Type) == forType || true == rule.Member.ReflectedType?.IsAssignableFrom(forType))
             .GroupBy(r => r.Member);
     }
 
