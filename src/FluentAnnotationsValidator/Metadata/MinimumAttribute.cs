@@ -9,7 +9,7 @@ namespace FluentAnnotationsValidator.Metadata;
 /// </summary>
 public class MinimumAttribute : RangeAttribute
 {
-    private bool _isObjectValue;
+    private readonly bool _isObjectValue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MinimumAttribute"/> class for <see cref="byte"/> values.

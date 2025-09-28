@@ -9,7 +9,7 @@ namespace FluentAnnotationsValidator.Metadata;
 /// </summary>
 public class MaximumAttribute : RangeAttribute
 {
-    private bool _isObjectValue;
+    private readonly bool _isObjectValue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="byte"/> values.
