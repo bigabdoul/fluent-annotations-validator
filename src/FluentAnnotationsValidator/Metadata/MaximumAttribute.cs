@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace FluentAnnotationsValidator.Metadata;
 
@@ -7,6 +9,8 @@ namespace FluentAnnotationsValidator.Metadata;
 /// </summary>
 public class MaximumAttribute : RangeAttribute
 {
+    private bool _isObjectValue;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="byte"/> values.
     /// </summary>
@@ -90,4 +94,66 @@ public class MaximumAttribute : RangeAttribute
     /// </summary>
     /// <param name="value">The maximum allowable value.</param>
     public MaximumAttribute(UInt128 value) : base(typeof(UInt128), $"{UInt128.MinValue}", value.ToString()) { }
+
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MaximumAttribute"/> class for <see cref="object"/> values.
+    /// </summary>
+    /// <param name="value">The maximum allowable value.</param>
+    public MaximumAttribute(object value) : base(value.GetType(), $"{value}", $"{value}")
+    {
+        if (!typeof(IComparable).IsAssignableFrom(OperandType))
+            throw new InvalidOperationException($"Arbitrary type {OperandType.Name} is not comparable.");
+        _isObjectValue = true;
+    }
+
+    /// <inheritdoc/>
+    public override bool IsValid(object? value)
+    {
+        if (!_isObjectValue)
+            return base.IsValid(value);
+
+        // Automatically pass if value is null or empty. RequiredAttribute should be used to assert a value is not empty.
+        if (value is null or string { Length: 0 })
+        {
+            return true;
+        }
+
+        if (!typeof(IComparable).IsAssignableFrom(value.GetType()))
+            return false;
+
+        Type operandType = OperandType;
+        TypeConverter converter = TypeDescriptor.GetConverter(operandType);
+
+        IComparable max = (IComparable)(operandType.IsEnum
+                ? Convert.ChangeType(converter.ConvertFromString((string)Maximum), Enum.GetUnderlyingType(operandType))
+                : ConvertValueInInvariantCulture
+                    ? converter.ConvertFromInvariantString((string)Maximum)!
+                        : converter.ConvertFromString((string)Maximum))!;
+
+        object? convertedValue;
+
+        try
+        {
+            convertedValue = operandType.IsEnum
+                ? Convert.ChangeType(value, Enum.GetUnderlyingType(operandType))
+                : ConvertValueInInvariantCulture
+                    ? converter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
+                    : converter.ConvertFrom(value);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (InvalidCastException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+
+        return MaximumIsExclusive ? max.CompareTo(convertedValue) > 0 : max.CompareTo(convertedValue) >= 0;
+    }
 }

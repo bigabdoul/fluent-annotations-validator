@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace FluentAnnotationsValidator.Metadata;
 
@@ -7,6 +9,8 @@ namespace FluentAnnotationsValidator.Metadata;
 /// </summary>
 public class MinimumAttribute : RangeAttribute
 {
+    private bool _isObjectValue;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MinimumAttribute"/> class for <see cref="byte"/> values.
     /// </summary>
@@ -90,4 +94,65 @@ public class MinimumAttribute : RangeAttribute
     /// </summary>
     /// <param name="value">The minimum allowable value.</param>
     public MinimumAttribute(UIntPtr value) : base(typeof(UIntPtr), value.ToString(), $"{UIntPtr.MaxValue}") { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MinimumAttribute"/> class for <see cref="object"/> values.
+    /// </summary>
+    /// <param name="value">The minimum allowable value.</param>
+    public MinimumAttribute(object value) : base(value.GetType(), $"{value}", $"{value}")
+    {
+        if (!typeof(IComparable).IsAssignableFrom(OperandType))
+            throw new InvalidOperationException($"Arbitrary type {OperandType.Name} is not comparable.");
+        _isObjectValue = true;
+    }
+
+    /// <inheritdoc/>
+    public override bool IsValid(object? value)
+    {
+        if (!_isObjectValue)
+            return base.IsValid(value);
+
+        // Automatically pass if value is null or empty. RequiredAttribute should be used to assert a value is not empty.
+        if (value is null or string { Length: 0 })
+        {
+            return true;
+        }
+
+        if (!typeof(IComparable).IsAssignableFrom(value.GetType()))
+            return false;
+
+        Type operandType = OperandType;
+        TypeConverter converter = TypeDescriptor.GetConverter(operandType);
+
+        IComparable min = (IComparable)(operandType.IsEnum
+                ? Convert.ChangeType(converter.ConvertFromString((string)Minimum), Enum.GetUnderlyingType(operandType))
+                : ConvertValueInInvariantCulture
+                    ? converter.ConvertFromInvariantString((string)Minimum)!
+                        : converter.ConvertFromString((string)Minimum))!;
+
+        object? convertedValue;
+
+        try
+        {
+            convertedValue = operandType.IsEnum
+                ? Convert.ChangeType(value, Enum.GetUnderlyingType(operandType))
+                : ConvertValueInInvariantCulture
+                    ? converter.ConvertFrom(null, CultureInfo.InvariantCulture, value)
+                    : converter.ConvertFrom(value);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+        catch (InvalidCastException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+
+        return MinimumIsExclusive ? min.CompareTo(convertedValue) < 0 : min.CompareTo(convertedValue) <= 0;
+    }
 }

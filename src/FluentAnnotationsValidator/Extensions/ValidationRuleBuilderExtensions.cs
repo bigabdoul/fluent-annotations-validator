@@ -373,6 +373,17 @@ public static class ValidationRuleBuilderExtensions
     public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, decimal value)
         => builder.SetValidator(new MinimumAttribute(value));
 
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given minimum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Minimum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, TProp value)
+        => builder.SetValidator(new MinimumAttribute(value!));
+
     #region unsigned overloads
 
     /// <summary>
@@ -534,6 +545,17 @@ public static class ValidationRuleBuilderExtensions
     /// <returns>The updated validation rule builder.</returns>
     public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, decimal value)
         => builder.SetValidator(new MaximumAttribute(value));
+
+    /// <summary>
+    /// Specifies that the value of the property must be less than or equal to the given maximum.
+    /// </summary>
+    /// <typeparam name="T">The type of the object being validated.</typeparam>
+    /// <typeparam name="TProp">The type of the property being validated.</typeparam>
+    /// <param name="builder">The validation rule builder.</param>
+    /// <param name="value">The maximum allowable value.</param>
+    /// <returns>The updated validation rule builder.</returns>
+    public static IValidationRuleBuilder<T, TProp> Maximum<T, TProp>(this IValidationRuleBuilder<T, TProp> builder, TProp value)
+        => builder.SetValidator(new MaximumAttribute(value!));
 
     #region unsigned overloads
 
