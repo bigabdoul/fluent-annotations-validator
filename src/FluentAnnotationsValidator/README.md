@@ -4,6 +4,12 @@ A fluent, type-safe validation engine for .NET that transforms `[ValidationAttri
 
 ---
 
+### Version 2.0.0-rc.1.0.0: New Modular Foundation
+
+
+
+---
+
 ### Version 2.0.0-preview.2: Introducing a Fluent API
 
 This release marks a significant architectural shift by introducing a new, 

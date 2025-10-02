@@ -1,9 +1,5 @@
-﻿using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Localization;
-using Microsoft.Win32;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
@@ -11,6 +7,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+
+using Models;
+using Resources;
 using static TestHelpers;
 
 public class Resolver_PriorityTests

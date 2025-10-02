@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+	<!-- NuGet metadata -->
+	<PackageId>FluentAnnotationsValidator.AspNetCore</PackageId>
+	<Authors>bigabdoul</Authors>
+	<Company>2KS Solutions</Company>
+	<Product>FluentAnnotationsValidator.AspNetCore</Product>
+	<Description>Provides ASP.NET Core endpoint integration for FluentAnnotationsValidator, enabling automatic model validation via endpoint filters and fluent rule composition. Supports minimal APIs, custom attributes, and localized error messages with zero boilerplate.</Description>
+	<PackageTags>aspnetcore;validation;fluentvalidation;minimalapi;endpointfilter;modelbinding;attributes;localization;dotnet;middleware</PackageTags>
+	<PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
+	<RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
+	<RepositoryType>git</RepositoryType>
+	<LicenseExpression>MIT</LicenseExpression>
+	<PackageIcon>icon.png</PackageIcon>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+
+	<!-- Release version and notes -->
+	<Version>2.0.0-rc.1.0.0</Version>
+	<PackageReleaseNotes>$(ReleaseNotesText)</PackageReleaseNotes>
+
+	<!-- Build and diagnostics -->
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<PublishRepositoryUrl>true</PublishRepositoryUrl>
+	<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	<IncludeSymbols>true</IncludeSymbols>
+	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	<Deterministic>true</Deterministic>
+	<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	<GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<None Include="icon.png" Pack="true" PackagePath="" />
+	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="RELEASE_NOTES.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <ProjectReference Include="..\FluentAnnotationsValidator.Core\FluentAnnotationsValidator.Core.csproj" />
+  </ItemGroup>
+
+</Project>

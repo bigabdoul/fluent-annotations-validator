@@ -1,6 +1,4 @@
-﻿using FluentAnnotationsValidator.Abstractions;
-
-namespace FluentAnnotationsValidator.Tests.Models;
+﻿namespace FluentAnnotationsValidator.Tests.Models;
 
 // Test DTO used for unit tests.
 public class BeforeValidationTestDto : IFluentValidatable

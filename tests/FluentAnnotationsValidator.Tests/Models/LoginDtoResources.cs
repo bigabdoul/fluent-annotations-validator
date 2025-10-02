@@ -1,7 +1,6 @@
-﻿using FluentAnnotationsValidator.Metadata;
-using FluentAnnotationsValidator.Tests.Resources;
+﻿namespace FluentAnnotationsValidator.Tests.Models;
 
-namespace FluentAnnotationsValidator.Tests.Models;
+using Resources;
 
 [ValidationResource(typeof(ConventionValidationMessages))]
 public class TestLoginDtoWithResource

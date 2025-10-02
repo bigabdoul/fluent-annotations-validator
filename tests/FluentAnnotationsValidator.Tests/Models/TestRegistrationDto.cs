@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using FluentAnnotationsValidator.Metadata;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 

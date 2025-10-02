@@ -1,5 +1,4 @@
-﻿using FluentAnnotationsValidator.Results;
-using FluentAnnotationsValidator.Tests.Models;
+﻿using FluentAnnotationsValidator.Tests.Models;
 using FluentAssertions;
 using FluentAssertions.Collections;
 using Microsoft.Extensions.DependencyInjection;
@@ -260,11 +259,11 @@ static class FluentValidationFailureAssertions
         this GenericCollectionAssertions<FluentValidationFailure> assertions,
         string expectedPath,
         int collectionIndex,
-        int parentIndex = -1)
+        int? parentIndex = null)
     {
         return assertions.Contain(e =>
             e.CollectionIndex == collectionIndex &&
-            (parentIndex < 0 || e.ParentCollectionIndex == parentIndex) &&
+            (parentIndex == null || e.ParentCollectionIndex == parentIndex) &&
             e.CustomState != null &&
             ((IDictionary<string, object>)e.CustomState).ContainsKey("ItemPath") &&
             ((IDictionary<string, object>)e.CustomState)["ItemPath"].ToString() == expectedPath);

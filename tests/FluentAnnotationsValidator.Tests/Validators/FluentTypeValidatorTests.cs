@@ -1,13 +1,12 @@
-﻿using FluentAnnotationsValidator.Metadata;
-using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Validators;
+
+using Models;
+using Resources;
 using static TestHelpers;
 
 public class FluentTypeValidatorTests
@@ -146,7 +145,7 @@ public class FluentTypeValidatorTests
         nameRules.Count.Should().Be(1);
         nameRules.Should().NotContain(r => r.Rule.Validator is RequiredAttribute);
         nameRules.Should().NotContain(r => r.Rule.Validator is MinLengthAttribute);
-        nameRules.Should().Contain(r => r.Rule.Validator is Length2Attribute);
+        nameRules.Should().Contain(r => r.Rule.Validator is LengthCountAttribute);
     }
 
     [Fact]

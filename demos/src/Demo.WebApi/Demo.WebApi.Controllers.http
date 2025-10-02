@@ -1,0 +1,30 @@
+@Demo.WebApi.Controllers_HostAddress = http://localhost:5149
+
+GET {{Demo.WebApi.Controllers_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+POST {{Demo.WebApi.Controllers_HostAddress}}/auth/register/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "12345678",
+  "firstName": null,
+  "lastName": "S.",
+  "phoneNumber": "+224 123 456 789"
+}
+
+###
+
+POST {{Demo.WebApi.Controllers_HostAddress}}/auth/login/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "1234567",
+  "rememberMe": true
+}

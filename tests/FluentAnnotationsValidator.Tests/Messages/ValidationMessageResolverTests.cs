@@ -1,12 +1,12 @@
-﻿using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Localization;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 
 namespace FluentAnnotationsValidator.Tests.Messages;
+
+using Models;
+using Resources;
 using static TestHelpers;
 
 public class ValidationMessageResolverTests

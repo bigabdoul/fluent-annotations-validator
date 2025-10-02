@@ -1,13 +1,12 @@
-﻿using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+
+using Models;
+using Resources;
 using static TestHelpers;
 
 public class Resolver_CultureTests

@@ -1,12 +1,12 @@
-﻿using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using Microsoft.Extensions.Localization;
+﻿using Microsoft.Extensions.Localization;
 using Moq;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 namespace FluentAnnotationsValidator.Tests.Messages.Resolutions;
+
+using Models;
+using Resources;
 using static TestHelpers;
 
 public class Resolver_ConventionTests

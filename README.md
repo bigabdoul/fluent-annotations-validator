@@ -184,7 +184,7 @@ Install via NuGet:
 Create your Data Transfer Object (DTO) and decorate properties with standard `System.ComponentModel.DataAnnotations`.
 
 ```csharp
-using FluentAnnotationsValidator.Metadata;
+using FluentAnnotationsValidator.Annotations;
 using System.ComponentModel.DataAnnotations;
 
 public class BaseIdentityModel

@@ -1,6 +1,6 @@
-## FluentAnnotationsValidator v2.0.0-preview.2.3
+## FluentAnnotationsValidator v2.0.0-rc.1.0.0
 
-**Release date:** 2025-09-26
+**Release date:** 2025-10-02
 
 This preview release introduces powerful new capabilities for collection validation, enhanced conditional logic, and improved developer ergonomics. It continues the evolution toward a fully native, annotation-driven validation engine—no external dependencies required.
 

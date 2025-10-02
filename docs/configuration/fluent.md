@@ -15,7 +15,7 @@ This release introduces a new, more expressive fluent API for configuring valida
 You can continue to use standard `System.ComponentModel.DataAnnotations` on your Data Transfer Objects (DTOs).
 
 ```csharp
-using FluentAnnotationsValidator.Metadata;
+using FluentAnnotationsValidator.Annotations;
 using System.ComponentModel.DataAnnotations;
 
 public class BaseIdentityModel
@@ -161,20 +161,6 @@ public static partial class FluentValidationUtils
             !string.Equals(email, "admin", StringComparison.OrdinalIgnoreCase) && 
             !string.Equals(email, "superuser", StringComparison.OrdinalIgnoreCase) &&
             !user.Scopes.Contains("admin");
-    }
-
-    private static bool BeComplexPassword(string password)
-    {
-        // A regular expression that checks for a complex password.
-        // (?=.*[a-z])    - Must contain at least one lowercase letter.
-        // (?=.*[A-Z])    - Must contain at least one uppercase letter.
-        // (?=.*\d)       - Must contain at least one digit.
-        // (?=.*[!@#$%^&*()_+=[{\]};:"'<,>.?/|\-`~]) - Must contain at least one non-alphanumeric character.
-        // .              - Matches any character (except newline).
-
-        var passwordRegex = ComplexPasswordRegex();
-
-        return passwordRegex.IsMatch(password);
     }
 
     [GeneratedRegex(@"(?:\+?224|00224)?[\s.-]?(?:\d{3}[\s.-]?\d{3}[\s.-]?\d{3}|\d{3}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2})")]
