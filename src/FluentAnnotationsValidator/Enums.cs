@@ -1,6 +1,5 @@
 ﻿namespace FluentAnnotationsValidator;
 
-
 /// <summary>
 /// Specifies how rules should cascade when one fails.
 /// </summary>

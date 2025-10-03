@@ -1,14 +1,18 @@
-﻿using FluentAnnotationsValidator.Abstractions;
-using FluentAnnotationsValidator.Configuration;
-using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Metadata;
-using FluentAnnotationsValidator.Runtime.Validators;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
+﻿using Microsoft.Extensions.Localization;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace FluentAnnotationsValidator.Extensions;
+#pragma warning disable IDE0130 // Namespace "Microsoft.Extensions.DependencyInjection" does not match folder structure, expected "FluentAnnotationsValidator.Extensions"
+
+namespace Microsoft.Extensions.DependencyInjection;
+
+#pragma warning restore IDE0130
+
+using FluentAnnotationsValidator;
+using FluentAnnotationsValidator.Core;
+using FluentAnnotationsValidator.Core.Interfaces;
+using FluentAnnotationsValidator.Runtime;
+using FluentAnnotationsValidator.Runtime.Extensions;
 
 /// <summary>
 /// ASP.NET Core-specific service registration utilities for FluentAnnotationsValidator.
@@ -214,7 +218,7 @@ public static class ValidatorServiceCollectionExtensions
 
             foreach (var member in members)
             {
-                var rules = ValidationAttributeAdapter.ParseRules(modelType, member);
+                var rules = modelType.ParseRules(member);
                 ValidationRuleGroup validationRuleGroup = new(modelType, member, rules);
                 groups.Add(validationRuleGroup);
             }
@@ -258,6 +262,7 @@ public static class ValidatorServiceCollectionExtensions
 
         var builder = new FluentAnnotationsBuilder(services, ruleRegistry);
         var validator = new FluentTypeValidatorRoot(ruleRegistry);
+
         services.AddTransient(sp => validator);
         configurationOptions.ConfigureValidatorRoot?.Invoke(validator);
 

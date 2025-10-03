@@ -1,11 +1,11 @@
-﻿using FluentAnnotationsValidator.Messages;
-using FluentAnnotationsValidator.Tests.Models;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using System.Text.RegularExpressions;
 
 namespace FluentAnnotationsValidator.Tests;
+
+using Models;
 
 internal static partial class TestHelpers
 {

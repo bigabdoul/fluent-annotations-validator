@@ -1,10 +1,11 @@
-﻿using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Validators;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 using System.Reflection;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
+
+using Models;
+using Validators;
 
 public class BeforeValidationConfigurationTests
 {

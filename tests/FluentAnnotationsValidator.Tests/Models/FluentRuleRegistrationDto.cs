@@ -1,4 +1,4 @@
-﻿using FluentAnnotationsValidator.Metadata;
+﻿using FluentAnnotationsValidator.Annotations;
 
 namespace FluentAnnotationsValidator.Tests.Models;
 

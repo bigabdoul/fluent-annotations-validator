@@ -1,10 +1,11 @@
-﻿using FluentAnnotationsValidator.Tests.Models;
-using FluentAnnotationsValidator.Tests.Resources;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using System.Linq.Expressions;
 
 namespace FluentAnnotationsValidator.Tests.Configuration;
+
+using Models;
+using Resources;
 
 public class LocalizationResourcesTests
 {

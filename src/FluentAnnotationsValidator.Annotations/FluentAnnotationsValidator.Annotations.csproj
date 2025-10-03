@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+
+    <!-- NuGet metadata -->
+    <PackageId>FluentAnnotationsValidator.Annotations</PackageId>
+    <Authors>bigabdoul</Authors>
+    <Company>2KS Solutions</Company>
+    <Product>FluentAnnotationsValidator.Annotations</Product>
+    <Description>Provides a rich set of custom validation attributes for fluent rule composition in .NET applications. Designed for use with FluentAnnotationsValidator, enabling expressive, localized, and extensible validation pipelines.</Description>
+    <PackageTags>Validation;Attributes;FluentValidation;DataAnnotations;Localization;RuntimeRules;DotNet</PackageTags>
+    <PackageProjectUrl>https://github.com/bigabdoul/fluent-annotations-validator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bigabdoul/fluent-annotations-validator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <LicenseExpression>MIT</LicenseExpression>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Release version and notes -->
+    <Version>2.0.0-rc.1.0.0</Version>
+    <PackageReleaseNotes>$(ReleaseNotesText)</PackageReleaseNotes>
+
+    <!-- Build and diagnostics -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	<GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <Target Name="ReadReleaseNotes" BeforeTargets="Pack">
+	<ReadLinesFromFile File="RELEASE_NOTES.md">
+	  <Output TaskParameter="Lines" PropertyName="ReleaseNotesText" />
+	</ReadLinesFromFile>
+  </Target>
+
+  <ItemGroup>
+	<None Include="icon.png" Pack="true" PackagePath="" />
+	<None Include="README.md" Pack="true" PackagePath="" />
+	<None Include="RELEASE_NOTES.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+	<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FluentAnnotationsValidator.Core\FluentAnnotationsValidator.Core.csproj" />
+  </ItemGroup>
+	
+</Project>

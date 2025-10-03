@@ -1,7 +1,6 @@
-﻿using FluentAnnotationsValidator.Results;
-using FluentAnnotationsValidator.Tests.Models;
+﻿namespace FluentAnnotationsValidator.Tests.Ranging;
 
-namespace FluentAnnotationsValidator.Tests.Ranging;
+using Models;
 
 internal static class RangeAttributeExtensions
 {
