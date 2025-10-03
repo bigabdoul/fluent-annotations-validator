@@ -8,7 +8,7 @@ version: v2.0.0-rc.1.0.0
 
 This release introduces a new, more expressive fluent API for configuring validation. It enhances flexibility for complex and conditional validation, providing a more intuitive and powerful developer experience.
 
-## 🚀 Quickstart
+## Quickstart
 
 ### 1\. DTO Annotations
 

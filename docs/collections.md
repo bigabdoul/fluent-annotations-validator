@@ -1,7 +1,7 @@
 ---
 title: Customization & Extensibility
 breadcrumb: FluentAnnotationsValidator > Documentation > Customization & Extensibility
-version: v2.0.0-preview.2.3
+version: v2.0.0-rc.1.0.0
 ---
 
 # Collections
