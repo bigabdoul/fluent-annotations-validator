@@ -63,13 +63,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Infrastructure", "demo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAnnotationsValidator.AspNetCore", "src\FluentAnnotationsValidator.AspNetCore\FluentAnnotationsValidator.AspNetCore.csproj", "{4522641E-B24B-481F-8F96-D0A86CE4E541}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github-pages", "github-pages", "{3DB84C98-1187-4D8A-97D1-8F0B0117C449}"
-	ProjectSection(SolutionItems) = preProject
-		github-pages\docfx.json = github-pages\docfx.json
-		github-pages\index.md = github-pages\index.md
-		github-pages\toc.yml = github-pages\toc.yml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
