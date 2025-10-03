@@ -1,6 +1,6 @@
-## FluentAnnotationsValidator – Release Notes
+ï»¿## FluentAnnotationsValidator â€“ Release Notes
 
-### Version 2.0.0-rc.1.0.0 – Modular Architecture Release Candidate
+### Version 2.0.0-rc.1.0.0 â€“ Modular Architecture Release Candidate
 
 **Release Date:** 2025-10-02
 
@@ -21,7 +21,7 @@ To better support standalone use cases and encourage clean separation of concern
 
 ### Why Modular?
 
-- **Reusability**: Use only what you need—attributes, core APIs, or runtime—without pulling in unnecessary dependencies.
+- **Reusability**: Use only what you needâ€”attributes, core APIs, or runtimeâ€”without pulling in unnecessary dependencies.
 - **Interoperability**: Plug into other validation frameworks or custom engines with minimal friction.
 - **Testability**: Smaller, focused packages simplify unit testing and contributor onboarding.
 - **NuGet Clarity**: Each package has a distinct purpose, making it easier to discover and adopt.

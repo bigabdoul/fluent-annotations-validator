@@ -1,6 +1,6 @@
-## FluentAnnotationsValidator – Release Notes
+ï»¿## FluentAnnotationsValidator â€“ Release Notes
 
-### Version 2.0.0-rc.1.0.0 – Modular Architecture Release Candidate
+### Version 2.0.0-rc.1.0.0 â€“ Modular Architecture Release Candidate
 
 **Release Date:** 2025-10-02
 

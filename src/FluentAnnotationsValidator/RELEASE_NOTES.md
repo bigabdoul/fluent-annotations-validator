@@ -2,7 +2,7 @@
 
 **Release date:** 2025-10-02
 
-This preview release introduces powerful new capabilities for collection validation, enhanced conditional logic, and improved developer ergonomics. It continues the evolution toward a fully native, annotation-driven validation engine—no external dependencies required.
+This preview release introduces powerful new capabilities for collection validation, enhanced conditional logic, and improved developer ergonomics. It continues the evolution toward a fully native, annotation-driven validation engineâ€”no external dependencies required.
 
 ### New Features
 

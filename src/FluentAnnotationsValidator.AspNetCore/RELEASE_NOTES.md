@@ -1,6 +1,6 @@
-## Release Notes – FluentAnnotationsValidator.AspNetCore
+ï»¿## Release Notes â€“ FluentAnnotationsValidator.AspNetCore
 
-### v2.0.0-rc.1.0.0 – Release Candidate
+### v2.0.0-rc.1.0.0 â€“ Release Candidate
 
 First release candidate of version 2 of FluentAnnotationsValidator.AspNetCore!
 
