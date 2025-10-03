@@ -1,4 +1,4 @@
-name: GitHub Pages Docs
+name: GitHub Pages
 
 # Trigger the action on push to main
 on:
