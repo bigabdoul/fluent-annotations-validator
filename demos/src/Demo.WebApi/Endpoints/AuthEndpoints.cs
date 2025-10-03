@@ -37,9 +37,10 @@ public static class AuthEndpoints
             var user = new ApplicationUser
             {
                 Id = model.Id = Guid.NewGuid().ToString(),
+                Email = model.Email,
+                UserName = model.Email,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
-                Email = model.Email,
                 PhoneNumber = model.PhoneNumber,
             };
 
