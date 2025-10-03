@@ -1,10 +1,10 @@
 ---
 title: Architecture Overview
 breadcrumb: FluentAnnotationsValidator > Documentation > Architecture Overview
-version: v2.0.0-preview.2.3
+version: v2.0.0-rc.1.0.0
 ---
 
-# 🏗️ Architecture Overview
+# Architecture Overview
 
 ### 1. **Core Design Philosophy**
 FluentAnnotationsValidator is built around a **type-safe, override-safe validation engine** 
@@ -89,30 +89,3 @@ localization support.
 - `ConditionalValidationRule`: Supports per-rule predicates and override logic.
 - `BeforeValidation(...)`: Allows pre-validation value transformation or initialization.
 - `ValidationBehaviorOptions`: Centralized configuration for culture, resource types, and rule override behavior.
-
----
-
-### 5. **Solution Structure**
-
-```
-src/
-├── FluentAnnotationsValidator/
-│   ├── Abstractions/
-│   ├── Configuration/
-│   ├── Extensions/
-│   ├── Internals/Reflection/
-│   ├── Messages/
-│   ├── Metadata/
-│   ├── Results/
-│   └── Runtime/Validators/
-
-tests/
-├── FluentAnnotationsValidator.Tests/
-│   ├── Configuration/
-│   ├── Messages/
-│   ├── Models/
-│   ├── Resources/
-│   ├── Results/
-│   ├── Validators/
-│   └── TestHelpers.cs
-```

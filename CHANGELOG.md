@@ -6,6 +6,38 @@ All notable changes to this project will be documented in this file.
 
 All notable changes to this project will be documented in this file.
 
+## [v2.0.0-rc.1.0.0] - 2025-10-03
+
+This release marks a major architectural evolution of FluentAnnotationsValidator, introducing a modular design that enhances clarity, reusability, and integration flexibility across .NET projects.
+
+### A New Modular Foundation
+
+To better support standalone use cases and encourage clean separation of concerns, the original FluentAnnotationsValidator project has been split into five focused packages:
+
+- **FluentAnnotationsValidator**  
+  This layer integrates with DI containers, orchestrates the discovery and registration of custom attributes inheriting from `ValidationAttribute`, and contains `IFluentValidator<T>`, and `IValidationMessageResolver` implementations.
+
+- **FluentAnnotationsValidator.Annotations**  
+  Contains all custom validation attributes used in fluent rule composition. Designed to be lightweight and reusable across validation frameworks.
+
+- **FluentAnnotationsValidator.Core**  
+  Hosts the core abstractions, rule builders, and fluent APIs for defining and composing validation logic. This is the heart of the fluent validation experience.
+
+- **FluentAnnotationsValidator.Runtime**  
+  Provides runtime services for rule discovery, attribute parsing, localization, and validation execution. This layer powers dynamic validation pipelines and integrates with DI containers.
+
+- **FluentAnnotationsValidator.AspNetCore**  
+  Provides ASP.NET Core endpoint integration for `FluentAnnotationsValidator`, enabling automatic model validation via endpoint filters.
+
+
+### Installation
+
+```bash
+dotnet add package FluentAnnotationsValidator --version 2.0.0-rc.1.0.0
+```
+
+---
+
 ## [v2.0.0-preview.2.3] - 2025-09-26
 
 This preview release introduces advanced validation capabilities, dynamic rule composition, and full support for inheritance-aware and asynchronous validation. It’s a major step toward a fully fluent, annotation-driven validation engine with zero external dependencies.

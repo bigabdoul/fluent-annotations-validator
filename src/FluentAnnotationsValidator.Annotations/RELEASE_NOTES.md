@@ -47,7 +47,8 @@ This release introduces **breaking changes** as part of the modular restructurin
 
 **Step-by-step migration guide**
 1. Remove all references to `FluentAnnotationsValidator.Configuration`
-2. Add the following packages and bring their corresponding namespaces into scope:
+2. Add the following packages and bring their corresponding namespaces into scope as required:
+	- `FluentAnnotationsValidator`
 	- `FluentAnnotationsValidator.Core`
 	- `FluentAnnotationsValidator.Annotations`
 	- `FluentAnnotationsValidator.Runtime`
@@ -65,14 +66,6 @@ This release introduces **breaking changes** as part of the modular restructurin
 
 - **Tests and tooling**:
   - Unit tests referencing internal types or reflection-based rule discovery may need to be updated to reflect new namespaces and type locations
-
----
-
-## What's Next
-
-- Improved diagnostics and rule introspection tools
-- Conditional and cross-property validation attributes
-- Enhanced localization scaffolding for multilingual applications
 
 ---
 

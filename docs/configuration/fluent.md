@@ -1,7 +1,7 @@
 ---
 title: Fluent Configuration API
 breadcrumb: FluentAnnotationsValidator > Documentation > Fluent Configuration API
-version: v2.0.0-preview.2
+version: v2.0.0-rc.1.0.0
 ---
 
 # Fluent Configuration API
@@ -70,20 +70,21 @@ public class FluentValidationMessages
 Use the AddFluentAnnotations(...) extension method in your Startup.cs or Program.cs to configure validation rules.
 
 ```csharp
-using FluentAnnotationsValidator.Extensions;
-using FluentAnnotationsValidator.Configuration;
+using FluentAnnotationsValidator;
 
 public static partial class FluentValidationUtils
 {
     public static IServiceCollection ConfigureFluentAnnotations(this IServiceCollection services)
     {
-        services.AddFluentAnnotations(
+        services.AddFluentAnnotations(new ConfigurationOptions
+        {
             // This factory makes the validation exclusively French
-            localizerFactory: factory => new(SharedResourceType: typeof(FluentValidationMessages), SharedCulture: CultureInfo.GetCultureInfo("fr")),
-            configure: config =>
+            LocalizerFactory = factory => new(SharedResourceType: typeof(FluentValidationMessages), SharedCulture: CultureInfo.GetCultureInfo("fr")),
+            ConfigureValidatorRoot = config =>
             {
                 // RegisterModel configuration
-                var registrationConfig = config.For<RegisterModel>();
+                // Note: When the `using` statement is used, the `Build()` method is automatically invoked on disposal.
+                using var registrationConfig = config.For<RegisterModel>();
 
                 // Add a preemptive rule that overrides any previous configuration for 'Email'
                 registrationConfig.Rule(x => x.Email)
@@ -104,10 +105,10 @@ public static partial class FluentValidationUtils
                 registrationConfig.RuleFor(x => x.BirthDate)
                     .When(x => x.BirthDate.HasValue, rule => rule.Must(BeAtLeast13));
 
-                registrationConfig.Build();
+                // registrationConfig.Build(); // No need to call this method when the `using` statement is applied.
 
                 // LoginModel configuration
-                var loginConfig = config.For<LoginModel>();
+                using var loginConfig = config.For<LoginModel>();
 
                 // Non-preemptive rule that retains statically defined constraints (RequiredAttribute).
                 // Add a rule to distinguish between admins, and other users. This scenario is:
@@ -120,11 +121,9 @@ public static partial class FluentValidationUtils
                 // This Must(...) method is an alias for When(...) to make the intent clearer.
                 loginConfig.RuleFor(x => x.Email)
                     .Must(BeValidEmailAddressIfNotAdmin, rule => rule.EmailAddress());
-
-                loginConfig.Build();
             },
-            targetAssembliesTypes: [typeof(RegisterModel)]
-        );
+            TargetAssembliesTypes = [typeof(RegisterModel)]
+        });
     }
     
     private static bool BeAtLeast13(DateTime? date) => DateTime.UtcNow.AddYears(-13) >= date;
@@ -177,7 +176,7 @@ To ensure the library handles cases where a model's members don't contain any Va
 Declare types:
 
 ```csharp
-using FluentAnnotationsValidator.Abstractions;
+using FluentAnnotationsValidator.Core.Interfaces;
 
 public class Product : IFluentValidatable
 {
@@ -198,10 +197,11 @@ public class ProductOrder
 Add validation rules:
 
 ```csharp
-services.AddFluentAnnotations(
-    configure: config =>
+services.AddFluentAnnotations(new ConfigurationOptions
+{
+    ConfigureValidatorRoot = config =>
     {
-        var productConfigurator = config.For<Product>();
+        using var productConfigurator = config.For<Product>();
         // Configure Product and Build
         productConfigurator.RuleFor(x => x.ShippingAddress)
             .When(x => x.IsPhysicalProduct, rule =>
@@ -216,20 +216,16 @@ services.AddFluentAnnotations(
                     .WithMessage("The shipping address for non-physical products must be N/A.");
             });
 
-        productConfigurator.Build();
-
         // Configure ProductOrder and Build
-        var orderConfigurator = config.For<ProductOrder>();
+        using var orderConfigurator = config.For<ProductOrder>();
         
         orderConfigurator.RuleFor(x => x.OrderId)
             .NotEmpty()
             .MinimumLength(8);
-
-        orderConfigurator.Build();
     },
-    extraValidatableTypes: () => [typeof(ProductOrder)],
-    targetAssembliesTypes: [typeof(Product)]
-);
+    ExtraValidatableTypesFactory = () => [typeof(ProductOrder)],
+    TrgetAssembliesTypes = [typeof(Product)]
+});
 ```
 
 #### 3\.2 Pre-Validation Value Providers
@@ -238,10 +234,11 @@ Pre-validation value providers are a new mechanism to modify or retrieve a membe
 Example:
 
 ```csharp
-services.AddFluentAnnotations(
-    configure: config =>
+services.AddFluentAnnotations(new ConfigurationOptions
+{
+    ConfigureValidatorRoot = config =>
     {
-        var productConfigurator = config.For<ProductModel>();
+        using var productConfigurator = config.For<ProductModel>();
 
         // BeforeValidation(...) can be called in any order, but only
         // ONCE for this configurator, ProductModel, and ProductId.
@@ -250,10 +247,8 @@ services.AddFluentAnnotations(
             .Required()
             .NotEmpty()
             .ExactLength(36);
-
-        productConfigurator.Build();
     }
-);
+});
 
 // Makes sure productId is not blank.
 static string? EnsureProductIdInitialized(ProductModel product, MemberInfo member, string? productId)

@@ -4,9 +4,9 @@ breadcrumb: FluentAnnotationsValidator > Documentation > Customization & Extensi
 version: v2.0.0-preview.2.3
 ---
 
-# 🧩 Customization & Extensibility – Updated Extension Point
+## Customization & Extensibility – Updated Extension Point
 
-## IValidationMessageResolver
+### IValidationMessageResolver
 
 You can implement your own message resolution strategy by inheriting:
 
@@ -31,18 +31,7 @@ Register via DI:
 services.AddSingleton<IValidationMessageResolver, MyCustomResolver>();
 ```
 
-## Control Validator Caching
-
-By default, validators are cached per DTO type. To disable:
-
-```csharp
-services.Configure<ValidatorOptions>(options =>
-{
-    options.EnableCaching = false;
-});
-```
-
-## Add Custom Rules
+### Add Custom Rules
 Extend DataAnnotationsValidator with your own attributes:
 
 ```csharp

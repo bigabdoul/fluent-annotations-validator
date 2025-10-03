@@ -1,10 +1,10 @@
 ---
 title: Localization Strategy
 breadcrumb: FluentAnnotationsValidator > Documentation > Localization Strategy
-version: v2.0.0-preview.2.3
+version: v2.0.0-rc.1.0.0
 ---
 
-# 🧠 Localization Strategy
+# Localization Strategy
 
 ## Supported Resource Models
 
@@ -26,17 +26,6 @@ version: v2.0.0-preview.2.3
 3. **Inline Message or Fallback**  
    If `ErrorMessage` is set, format and return it  
    Else, fallback to `"Invalid value for {Property}"`
-
-## Technical Note
-
-The `PropertyValidationInfo` now includes a new field:
-
-```csharp
-public Type TargetModelType { get; set; }
-```
-
-This enables resolution logic to anchor back to the declaring DTO for 
-resource scanning and convention fallback.
 
 ## Example
 
