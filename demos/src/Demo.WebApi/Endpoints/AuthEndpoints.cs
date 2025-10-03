@@ -1,6 +1,8 @@
 ﻿using Demo.Application.DTOs;
+using Demo.Infrastructure.Entities;
 using FluentAnnotationsValidator;
 using FluentAnnotationsValidator.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace Demo.WebApi.Endpoints;
 
@@ -30,10 +32,29 @@ public static class AuthEndpoints
     {
         // This mapping method automatically performs fluent validation before getting hit.
         // See the extension methods in Demo.WebApi.Endpoints.EndpointRouteBuilderExtensions.
-        app.MapValidPost<RegisterModel>("/register", (RegisterModel model, ILogger<RegisterModel> logger) =>
+        app.MapValidPost<RegisterModel>("/register", async (RegisterModel model, UserManager<ApplicationUser> userManager, ILogger<RegisterModel> logger) =>
         {
-            logger.LogInformation("Registration succeeded. User ID is {Id}", model.Id);
-            return Results.Ok(model);
+            var user = new ApplicationUser
+            {
+                Id = model.Id = Guid.NewGuid().ToString(),
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Email,
+                PhoneNumber = model.PhoneNumber,
+            };
+
+            var result = await userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+                logger.LogInformation("Registration succeeded. User ID is {Id}", model.Id);
+                return Results.Ok(model);
+            }
+
+            var errors = result.Errors.Select(e => $"Code: {e.Code} ; Description: {e.Description}");
+            logger.LogError("User registration failed for {Email}. Details: {Errors}", model.Email, errors);
+
+            return Results.Ok(new { error = "Registration failed" });
         })
         .Produces(StatusCodes.Status400BadRequest)
         .Produces(StatusCodes.Status200OK);
