@@ -14,8 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{02EA681E-C
 		docs\architecture.md = docs\architecture.md
 		docs\collections.md = docs\collections.md
 		docs\customization.md = docs\customization.md
-		docs\docfx.json = docs\docfx.json
 		docs\index.md = docs\index.md
+		docs\introduction.md = docs\introduction.md
 		docs\localization.md = docs\localization.md
 		docs\validation-flow.md = docs\validation-flow.md
 	EndProjectSection
@@ -38,6 +38,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{0C200576-93CD-4386-868E-030D242DF945}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\docfx.yml = .github\workflows\docfx.yml
 		.github\workflows\nuget-publish.yml = .github\workflows\nuget-publish.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
 	EndProjectSection
@@ -61,6 +62,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Infrastructure", "demos\src\Demo.Infrastructure\Demo.Infrastructure.csproj", "{4CB1DB19-8D42-49E9-BE95-AEE5CF51F0F3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentAnnotationsValidator.AspNetCore", "src\FluentAnnotationsValidator.AspNetCore\FluentAnnotationsValidator.AspNetCore.csproj", "{4522641E-B24B-481F-8F96-D0A86CE4E541}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github-pages", "github-pages", "{3DB84C98-1187-4D8A-97D1-8F0B0117C449}"
+	ProjectSection(SolutionItems) = preProject
+		github-pages\docfx.json = github-pages\docfx.json
+		github-pages\index.md = github-pages\index.md
+		github-pages\toc.yml = github-pages\toc.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
