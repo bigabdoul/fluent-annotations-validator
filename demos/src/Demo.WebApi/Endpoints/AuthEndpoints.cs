@@ -61,7 +61,7 @@ public static class AuthEndpoints
         .Produces(StatusCodes.Status200OK);
 
         // When using regular mapping, we must inject IFluentValidator<T> for more validation control.
-        app.MapPost("/login", async (LoginModel model, IFluentValidator<LoginModel> validator, ILogger<LoginModel> logger) =>
+        app.MapPost("/login", async (LoginModel model, IFluentValidator<LoginModel> validator, UserManager<ApplicationUser> userManager, ILogger<LoginModel> logger) =>
         {
             var result = await validator.ValidateAsync(model);
             if (!result.IsValid)
@@ -69,10 +69,21 @@ public static class AuthEndpoints
                 logger.LogWarning("Login failed for {Email}", model.Email);
                 return Results.BadRequest(result.Errors);
             }
+
+            // Authenticate against the database using the submitted email and password.
+            var user = await userManager.FindByEmailAsync(model.Email);
+            
+            if (user == null || !await userManager.CheckPasswordAsync(user, model.Password))
+            {
+                logger.LogWarning("Authenticaton failed for user {User}.", model.Email);
+                return Results.Unauthorized();
+            }
+
             logger.LogInformation("Login succeeded for {Email}", model.Email);
             return Results.Ok(new { Token = Guid.NewGuid() });
         })
         .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status200OK);
 
         return app;
