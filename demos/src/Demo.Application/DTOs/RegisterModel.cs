@@ -5,7 +5,7 @@ namespace Demo.Application.DTOs;
 
 public class RegisterModel : IdentityModelBase
 {
-    public string Id { get; } = Guid.NewGuid().ToString();
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 
     [NotEmpty, MaxLength(50)]
     public string FirstName { get; set; } = default!;
