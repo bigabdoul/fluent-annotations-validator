@@ -31,29 +31,30 @@ using Runtime.Interfaces;
 ///
 /// Typical usages:
 /// <code>
-/// services.AddFluentAnnotations(
-///     localizerFactory: factory => new(typeof(FluentValidationMessages), CultureInfo.GetCultureInfo("fr")),
-///     configure: config =>
+/// services.AddFluentAnnotations(new()
+/// {
+///     ConfigureValidatorRoot = root =>
 ///     {
-///         var registrationValidator = config.For&lt;RegisterModel>();
-///
-///         registrationValidator.RuleFor(x => x.BirthDate)
-///             .When(x => x.BirthDate.HasValue, user => user.Must(BeAtLeast13));
-///
-///         registrationValidator.RuleFor(x => x.Email)
-///             .Required()
-///             .EmailAddress();
-///
-///         registrationValidator.RuleFor(x => x.Password)
-///             .Must(BeComplexPassword);
-///             
-///         registrationValidator.RuleFor(x => x.PhoneNumber)
-///             .When(x => !string.IsNullOrEmpty(x.PhoneNumber), number => number.MinimumLength(9).Must(BeValidPhoneNumber));
-///
-///         registrationValidator.Build();
-///
+///         root.For&lt;CatalogModel>()
+///            .WithCulture(new ("fr-FR"))
+///            .WithValidationResource&lt;CatalogModel>()
+///            .Rule(x => x.Name, RuleDefinitionBehavior.Preserve)
+///            .MinimumLength(3)
+///            .When(x => !string.IsNullOrWhiteSpace(x.Name))
+///            .Build();
+/// 
+///         using var config = root.For&lt;CatalogModel>();
+///         
+///         config.RuleFor(x => x.UserId)
+///            .WhenAsync(IsNewEntity, rule =>
+///            {
+///                 rule.MustAsync(HasExistingUser)
+///                     .WithMessage(catalog => $"User ID {catalog.UserId} was not found.");
+///            });
 ///     },
-///     targetAssembliesTypes: typeof(RegisterModel));
+///     LocalizerFactory = factory => new(typeof(CatalogModel), new("fr-FR")),
+///     TargetAssembliesTypes = [typeof(CatalogModel), typeof(PaginationList&lt;>)],
+/// });
 /// </code>
 /// </remarks>
 public class FluentTypeValidator<T>(FluentTypeValidatorRoot root)
