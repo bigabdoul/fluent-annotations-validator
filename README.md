@@ -8,6 +8,7 @@
 [![NuGet Publish](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/nuget-publish.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions)
 [![Build](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/build.yml)
 [![Test](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/test.yml)
+[![GitHub Pages](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/docfx.yml/badge.svg)](https://github.com/bigabdoul/fluent-annotations-validator/actions/workflows/docfx.yml)
 [![Source Link](https://img.shields.io/badge/SourceLink-enabled-brightgreen)](https://github.com/dotnet/sourcelink)
 
 **FluentAnnotationsValidator** is a modern, fluent validation library for .NET that simplifies the process of defining complex validation rules for your C# models. It combines the declarative clarity of `[ValidationAttribute]` annotations with the expressive power of a fluent API, enabling ergonomic, type-safe rule configuration.
