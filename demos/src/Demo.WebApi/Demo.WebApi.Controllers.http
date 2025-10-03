@@ -11,8 +11,8 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "12345678",
-  "firstName": null,
+  "password": "1g234D5678!",
+  "firstName": "Daud",
   "lastName": "S.",
   "phoneNumber": "+224 123 456 789"
 }
@@ -25,6 +25,6 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "1234567",
+  "password": "1g234D5678!",
   "rememberMe": true
 }
