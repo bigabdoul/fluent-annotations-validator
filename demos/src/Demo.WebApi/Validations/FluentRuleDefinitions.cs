@@ -146,7 +146,7 @@ public static partial class FluentRuleDefinitions
     #region Helpers
 
     private static Task<bool> IsValidEmail(RegisterModel x, CancellationToken cancellationToken)
-        => Task.FromResult(string.IsNullOrWhiteSpace(x.Email));
+        => Task.FromResult(!string.IsNullOrWhiteSpace(x.Email));
 
     private static async Task<bool> BeUniqueEmail(string? email, CancellationToken cancellationToken)
     {
