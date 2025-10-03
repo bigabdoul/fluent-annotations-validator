@@ -31,5 +31,3 @@ Fluent Annotations Validator automatically discovers and executes all validation
 ### How It Works
 
 The validation process follows a clear two-step pipeline. When a DTO is validated, the library first processes all static attributes to perform a quick initial check. Then, it executes any fluent rules you have configured, including powerful conditional logic. This ensures that your data is thoroughly validated from multiple angles.
-
-To get started, head over to the [Getting Started](getting-started.md) guide.
