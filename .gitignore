@@ -418,3 +418,8 @@ FodyWeavers.xsd
 *.msp
 /src/FluentAnnotationsValidator/Internals/AccessorCache.cs
 /src/FluentAnnotationsValidator/Internals/RuleBase.cs
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
