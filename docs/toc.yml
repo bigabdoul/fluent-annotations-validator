@@ -1,5 +1,7 @@
 - name: Home
-  href: index.md
+  href: ./index.md
+- name: Getting Started
+  href: ./getting-started.md
 - name: API Reference
   href: api/
   topicHref: api/index.md
