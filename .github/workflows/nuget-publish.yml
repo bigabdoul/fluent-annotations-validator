@@ -32,8 +32,15 @@ jobs:
         run: dotnet build FluentAnnotationsValidator.sln --configuration Release --no-restore
 
       - name: Pack NuGet packages (with symbols, source, and deterministic metadata)
-        run: dotnet pack src/**/*.csproj --no-restore --configuration Release /p:Version=${{ env.VERSION }} --output ./nupkg --include-symbols --include-source --property:ContinuousIntegrationBuild=true
-
+        #run: dotnet pack src/**/*.csproj --no-restore --configuration Release /p:Version=${{ env.VERSION }} --output ./nupkg --include-symbols --include-source --property:ContinuousIntegrationBuild=true
+        run: |
+            for proj in $(find src -name '*.csproj'); do
+            dotnet pack "$proj" --no-restore --configuration Release \
+                /p:Version=${{ env.VERSION }} \
+                --output ./nupkg \
+                --include-symbols --include-source \
+                /p:ContinuousIntegrationBuild=true
+            done
       - name: Push to NuGet.org
         run: dotnet nuget push ./nupkg/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
         env:
